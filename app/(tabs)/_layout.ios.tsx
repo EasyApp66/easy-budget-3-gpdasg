@@ -1,7 +1,7 @@
 
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, Pressable, View, StyleSheet } from 'react-native';
+import { Pressable, View, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { IconSymbol } from '@/components/IconSymbol';
 import { colors } from '@/styles/commonStyles';
@@ -32,11 +32,11 @@ function CustomTabBar() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // Context-aware: add expense on budget, subscription on abos
     if (pathname.includes('budget')) {
-      // TODO: Backend Integration - Open add expense modal
-      console.log('Add expense');
+      // TODO: Backend Integration - Trigger add expense functionality
+      console.log('Add expense - This will be connected to the Budget screen add expense function');
     } else if (pathname.includes('abos')) {
-      // TODO: Backend Integration - Open add subscription modal
-      console.log('Add subscription');
+      // TODO: Backend Integration - Trigger add subscription functionality
+      console.log('Add subscription - This will be connected to the Abos screen add subscription function');
     }
   };
 
