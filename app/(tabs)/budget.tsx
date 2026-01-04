@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -112,7 +112,8 @@ export default function BudgetScreen() {
     setMonths([...months, newMonth]);
   };
 
-  const handleAddExpense = () => {
+  // Fixed: Wrapped handleAddExpense in useCallback to fix exhaustive-deps warning
+  const handleAddExpense = useCallback(() => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -125,14 +126,14 @@ export default function BudgetScreen() {
       isPinned: false,
     };
 
-    setMonths(
-      months.map((m) =>
+    setMonths((prevMonths) =>
+      prevMonths.map((m) =>
         m.id === selectedMonthId
           ? { ...m, expenses: [...m.expenses, newExpense] }
           : m
       )
     );
-  };
+  }, [selectedMonth, selectedMonthId]);
 
   // Expose add function globally for tab bar
   React.useEffect(() => {
@@ -140,7 +141,7 @@ export default function BudgetScreen() {
     return () => {
       delete (global as any).addExpense;
     };
-  }, [selectedMonth, months]);
+  }, [handleAddExpense]);
 
   const handleDeleteMonth = (monthId: string) => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
