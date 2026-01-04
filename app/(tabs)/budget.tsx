@@ -20,6 +20,8 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/styles/commonStyles';
+import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
+import { usePremium } from '@/hooks/usePremium';
 
 interface Expense {
   id: string;
@@ -37,6 +39,8 @@ interface Month {
 }
 
 export default function BudgetScreen() {
+  const { isPremium, checkLimit } = usePremium();
+  
   const [months, setMonths] = useState<Month[]>([
     {
       id: '1',
@@ -74,6 +78,8 @@ export default function BudgetScreen() {
   }>({ visible: false, type: null, value: '', itemId: null });
 
   const [cashLabel, setCashLabel] = useState('CASH');
+  const [premiumModalVisible, setPremiumModalVisible] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{ type: 'expense' | 'month'; id?: string } | null>(null);
 
   const selectedMonth = months.find((m) => m.id === selectedMonthId);
   const totalExpenses = selectedMonth?.expenses.reduce((sum, e) => sum + e.amount, 0) || 0;
@@ -102,6 +108,15 @@ export default function BudgetScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    
+    // Check premium limit
+    const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
+    if (checkLimit(totalExpenses, months.length + 1, 0)) {
+      setPendingAction({ type: 'month' });
+      setPremiumModalVisible(true);
+      return;
+    }
+    
     const newMonth: Month = {
       id: Date.now().toString(),
       name: `MONAT ${months.length + 1}`,
@@ -119,6 +134,14 @@ export default function BudgetScreen() {
     }
     if (!selectedMonth) return;
 
+    // Check premium limit
+    const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
+    if (checkLimit(totalExpenses + 1, months.length, 0)) {
+      setPendingAction({ type: 'expense' });
+      setPremiumModalVisible(true);
+      return;
+    }
+
     const newExpense: Expense = {
       id: Date.now().toString(),
       name: 'NEUE AUSGABE',
@@ -133,7 +156,7 @@ export default function BudgetScreen() {
           : m
       )
     );
-  }, [selectedMonth, selectedMonthId]);
+  }, [selectedMonth, selectedMonthId, months, checkLimit]);
 
   // Expose add function globally for tab bar
   React.useEffect(() => {
@@ -298,6 +321,31 @@ export default function BudgetScreen() {
 
   const formatNumber = (num: number): string => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  };
+
+  const handlePremiumPurchase = (type: 'onetime' | 'monthly') => {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    // TODO: Backend Integration - Process premium purchase via Stripe
+    console.log(`Premium purchase: ${type}`);
+    Alert.alert('Erfolg!', 'Premium wurde aktiviert! (Placeholder - Stripe Integration folgt)');
+    setPremiumModalVisible(false);
+    setPendingAction(null);
+  };
+
+  const handlePremiumClose = () => {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    // Delete the pending item when closing without purchase
+    if (pendingAction?.type === 'expense' && pendingAction.id) {
+      handleDeleteExpense(pendingAction.id);
+    } else if (pendingAction?.type === 'month' && pendingAction.id) {
+      handleDeleteMonth(pendingAction.id);
+    }
+    setPremiumModalVisible(false);
+    setPendingAction(null);
   };
 
   const TopPill = ({ label, value, editable, color, onPressLabel, onPressValue }: any) => {
@@ -588,6 +636,13 @@ export default function BudgetScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Premium Paywall Modal */}
+      <PremiumPaywallModal
+        visible={premiumModalVisible}
+        onClose={handlePremiumClose}
+        onPurchase={handlePremiumPurchase}
+      />
     </SafeAreaView>
   );
 }

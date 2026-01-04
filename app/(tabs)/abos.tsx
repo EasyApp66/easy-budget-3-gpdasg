@@ -21,6 +21,8 @@ import Animated, {
   withTiming,
   runOnJS,
 } from 'react-native-reanimated';
+import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
+import { usePremium } from '@/hooks/usePremium';
 
 const colors = {
   black: '#000000',
@@ -38,6 +40,8 @@ interface Subscription {
 }
 
 export default function AbosScreen() {
+  const { isPremium, checkLimit } = usePremium();
+  
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([
     { id: '1', name: 'NETFLIX', monthlyCost: 15, isPinned: true },
     { id: '2', name: 'APPLE CARE', monthlyCost: 14, isPinned: false },
@@ -51,6 +55,8 @@ export default function AbosScreen() {
   const [editValue, setEditValue] = useState('');
   const [newSubName, setNewSubName] = useState('');
   const [newSubAmount, setNewSubAmount] = useState('');
+  const [premiumModalVisible, setPremiumModalVisible] = useState(false);
+  const [pendingSubId, setPendingSubId] = useState<string | null>(null);
 
   const totalCost = subscriptions.reduce((sum, sub) => sum + sub.monthlyCost, 0);
   const totalCount = subscriptions.length;
@@ -153,6 +159,25 @@ export default function AbosScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    
+    // Check premium limit
+    if (checkLimit(0, 0, subscriptions.length + 1)) {
+      const newSubId = Date.now().toString();
+      const newSub: Subscription = {
+        id: newSubId,
+        name: newSubName.toUpperCase(),
+        monthlyCost: parseFloat(newSubAmount) || 0,
+        isPinned: false,
+      };
+      setSubscriptions([...subscriptions, newSub]);
+      setPendingSubId(newSubId);
+      setAddModalVisible(false);
+      setNewSubName('');
+      setNewSubAmount('');
+      setPremiumModalVisible(true);
+      return;
+    }
+    
     const newSub: Subscription = {
       id: Date.now().toString(),
       name: newSubName.toUpperCase(),
@@ -163,6 +188,29 @@ export default function AbosScreen() {
     setAddModalVisible(false);
     setNewSubName('');
     setNewSubAmount('');
+  };
+
+  const handlePremiumPurchase = (type: 'onetime' | 'monthly') => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    // TODO: Backend Integration - Process premium purchase via Stripe
+    console.log(`Premium purchase: ${type}`);
+    Alert.alert('Erfolg!', 'Premium wurde aktiviert! (Placeholder - Stripe Integration folgt)');
+    setPremiumModalVisible(false);
+    setPendingSubId(null);
+  };
+
+  const handlePremiumClose = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    // Delete the pending subscription when closing without purchase
+    if (pendingSubId) {
+      setSubscriptions(subscriptions.filter((sub) => sub.id !== pendingSubId));
+      setPendingSubId(null);
+    }
+    setPremiumModalVisible(false);
   };
 
   // Expose add function globally for tab bar
@@ -392,6 +440,13 @@ export default function AbosScreen() {
             </View>
           </Pressable>
         </Modal>
+
+        {/* Premium Paywall Modal */}
+        <PremiumPaywallModal
+          visible={premiumModalVisible}
+          onClose={handlePremiumClose}
+          onPurchase={handlePremiumPurchase}
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );

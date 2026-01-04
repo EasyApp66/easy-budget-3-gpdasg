@@ -22,6 +22,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useAuth } from '@/contexts/AuthContext';
 import * as MailComposer from 'expo-mail-composer';
+import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
+import { usePremium } from '@/hooks/usePremium';
 
 const colors = {
   black: '#000000',
@@ -82,8 +84,8 @@ const SettingsItem = ({ iosIcon, androidIcon, iconColor, title, onPress }: Setti
 export default function ProfilScreen() {
   const router = useRouter();
   const { signOut, user } = useAuth();
+  const { isPremium } = usePremium();
   const [username, setUsername] = useState('mirosnic.ivan');
-  const [isPremium, setIsPremium] = useState(true);
   const [language, setLanguage] = useState<'Deutsch' | 'English'>('Deutsch');
   
   // Modal states
@@ -153,24 +155,17 @@ export default function ProfilScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    const price = type === 'onetime' ? '9.99' : '2.99';
-    Alert.alert(
-      'Premium kaufen',
-      `${type === 'onetime' ? 'Einmaliger Kauf' : 'Monatliches Abo'} für CHF ${price}?`,
-      [
-        { text: 'Abbrechen', style: 'cancel' },
-        {
-          text: 'Kaufen',
-          onPress: () => {
-            // TODO: Backend Integration - Process premium purchase
-            console.log(`Purchase premium: ${type}`);
-            setIsPremium(true);
-            setPremiumModalVisible(false);
-            Alert.alert('Erfolg!', 'Premium wurde aktiviert!');
-          },
-        },
-      ]
-    );
+    // TODO: Backend Integration - Process premium purchase via Stripe
+    console.log(`Premium purchase: ${type}`);
+    Alert.alert('Erfolg!', 'Premium wurde aktiviert! (Placeholder - Stripe Integration folgt)');
+    setPremiumModalVisible(false);
+  };
+
+  const handlePremiumClose = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setPremiumModalVisible(false);
   };
 
   const handleEditName = () => {
@@ -578,59 +573,11 @@ export default function ProfilScreen() {
       </Modal>
 
       {/* Premium Purchase Modal */}
-      <Modal
+      <PremiumPaywallModal
         visible={premiumModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPremiumModalVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setPremiumModalVisible(false)}>
-          <View style={styles.premiumModal}>
-            <Pressable style={styles.closeButton} onPress={() => setPremiumModalVisible(false)}>
-              <IconSymbol 
-                ios_icon_name="xmark" 
-                android_material_icon_name="close"
-                size={24} 
-                color={colors.white} 
-              />
-            </Pressable>
-
-            <View style={styles.starIconContainer}>
-              <IconSymbol 
-                ios_icon_name="star.fill" 
-                android_material_icon_name="star"
-                size={40} 
-                color={colors.neonGreen} 
-              />
-            </View>
-
-            <Text style={styles.modalTitle}>Premium Kaufen</Text>
-            <Text style={styles.premiumSubtitle}>Schalte alle Premium-Funktionen frei</Text>
-
-            <Pressable 
-              style={styles.premiumOption} 
-              onPress={() => handlePurchasePremium('onetime')}
-            >
-              <View>
-                <Text style={styles.premiumOptionTitle}>Einmaliger Kauf</Text>
-                <Text style={styles.premiumOptionDesc}>Lebenslanger Zugang</Text>
-              </View>
-              <Text style={styles.premiumOptionPrice}>CHF 9.99</Text>
-            </Pressable>
-
-            <Pressable 
-              style={styles.premiumOption} 
-              onPress={() => handlePurchasePremium('monthly')}
-            >
-              <View>
-                <Text style={styles.premiumOptionTitle}>Monatliches Abo</Text>
-                <Text style={styles.premiumOptionDesc}>Jederzeit kündbar</Text>
-              </View>
-              <Text style={styles.premiumOptionPrice}>CHF 2.99/Monat</Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
+        onClose={handlePremiumClose}
+        onPurchase={handlePurchasePremium}
+      />
     </SafeAreaView>
   );
 }
@@ -893,31 +840,6 @@ const styles = StyleSheet.create({
   },
   donateButtonText: {
     color: colors.white,
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  premiumOption: {
-    backgroundColor: '#333',
-    borderRadius: 12,
-    padding: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  premiumOptionTitle: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 5,
-  },
-  premiumOptionDesc: {
-    color: '#999',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  premiumOptionPrice: {
-    color: colors.neonGreen,
     fontSize: 18,
     fontWeight: '800',
   },
