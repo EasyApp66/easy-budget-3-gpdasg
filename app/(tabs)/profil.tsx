@@ -1,6 +1,4 @@
 
-import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -10,8 +8,10 @@ import {
   Platform,
   Alert,
   Modal,
+  TextInput,
 } from 'react-native';
 import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -20,18 +20,26 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/IconSymbol';
-import { colors } from '@/styles/commonStyles';
+import { useAuth } from '@/contexts/AuthContext';
+import * as MailComposer from 'expo-mail-composer';
+
+const colors = {
+  black: '#000000',
+  white: '#FFFFFF',
+  neonGreen: '#BFFE84',
+  darkGray: '#232323',
+  red: '#C43C3E',
+};
 
 interface SettingsItemProps {
-  icon: string;
+  iosIcon: string;
+  androidIcon: string;
   iconColor: string;
   title: string;
   onPress: () => void;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-function SettingsItem({ icon, iconColor, title, onPress }: SettingsItemProps) {
+const SettingsItem = ({ iosIcon, androidIcon, iconColor, title, onPress }: SettingsItemProps) => {
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -39,7 +47,7 @@ function SettingsItem({ icon, iconColor, title, onPress }: SettingsItemProps) {
   }));
 
   const handlePress = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+    if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     scale.value = withSpring(0.95, {}, () => {
@@ -49,259 +57,578 @@ function SettingsItem({ icon, iconColor, title, onPress }: SettingsItemProps) {
   };
 
   return (
-    <AnimatedPressable style={[styles.settingsItem, animatedStyle]} onPress={handlePress}>
-      <View style={styles.settingsItemContent}>
-        <IconSymbol
-          ios_icon_name={icon}
-          android_material_icon_name={icon}
-          size={24}
-          color={iconColor}
+    <Pressable onPress={handlePress}>
+      <Animated.View style={[styles.settingsItem, animatedStyle]}>
+        <View style={styles.settingsItemLeft}>
+          <IconSymbol 
+            ios_icon_name={iosIcon} 
+            android_material_icon_name={androidIcon}
+            size={24} 
+            color={iconColor} 
+          />
+          <Text style={styles.settingsItemText}>{title}</Text>
+        </View>
+        <IconSymbol 
+          ios_icon_name="chevron.right" 
+          android_material_icon_name="chevron-right"
+          size={20} 
+          color="#666" 
         />
-        <Text style={styles.settingsItemText}>{title}</Text>
-      </View>
-    </AnimatedPressable>
+      </Animated.View>
+    </Pressable>
   );
-}
+};
 
 export default function ProfilScreen() {
   const router = useRouter();
   const { signOut, user } = useAuth();
+  const [username, setUsername] = useState('mirosnic.ivan');
+  const [isPremium, setIsPremium] = useState(true);
+  const [language, setLanguage] = useState<'Deutsch' | 'English'>('Deutsch');
+  
+  // Modal states
+  const [bugModalVisible, setBugModalVisible] = useState(false);
+  const [donateModalVisible, setDonateModalVisible] = useState(false);
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
+  const [editNameModalVisible, setEditNameModalVisible] = useState(false);
+  
+  // Form states
+  const [bugDescription, setBugDescription] = useState('');
+  const [selectedDonation, setSelectedDonation] = useState(5);
+  const [customDonation, setCustomDonation] = useState('');
+  const [newUsername, setNewUsername] = useState('');
 
   const handleLogout = async () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+    if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    Alert.alert('Ausloggen', 'Möchtest du dich wirklich ausloggen?', [
+      { text: 'Abbrechen', style: 'cancel' },
+      {
+        text: 'Ausloggen',
+        style: 'destructive',
+        onPress: async () => {
+          await signOut();
+          router.replace('/welcome');
+        },
+      },
+    ]);
+  };
+
+  const handleLanguageChange = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    const newLang = language === 'Deutsch' ? 'English' : 'Deutsch';
+    setLanguage(newLang);
     Alert.alert(
-      'Abmelden',
-      'Möchtest du dich wirklich abmelden?',
+      'Sprache geändert',
+      `Die App-Sprache wurde zu ${newLang} geändert. Diese Funktion wird in einer zukünftigen Version vollständig implementiert.`
+    );
+  };
+
+  const handleRestorePremium = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    Alert.alert('Premium wiederherstellen', 'Käufe werden wiederhergestellt...', [
+      {
+        text: 'OK',
+        onPress: () => {
+          // TODO: Backend Integration - Restore premium purchases
+          console.log('Restore premium purchases');
+        },
+      },
+    ]);
+  };
+
+  const handleBuyPremium = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setPremiumModalVisible(true);
+  };
+
+  const handlePurchasePremium = (type: 'onetime' | 'monthly') => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    const price = type === 'onetime' ? '9.99' : '2.99';
+    Alert.alert(
+      'Premium kaufen',
+      `${type === 'onetime' ? 'Einmaliger Kauf' : 'Monatliches Abo'} für CHF ${price}?`,
       [
         { text: 'Abbrechen', style: 'cancel' },
         {
-          text: 'Abmelden',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-              router.replace('/welcome');
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert('Fehler', 'Abmeldung fehlgeschlagen');
-            }
+          text: 'Kaufen',
+          onPress: () => {
+            // TODO: Backend Integration - Process premium purchase
+            console.log(`Purchase premium: ${type}`);
+            setIsPremium(true);
+            setPremiumModalVisible(false);
+            Alert.alert('Erfolg!', 'Premium wurde aktiviert!');
           },
         },
       ]
     );
   };
 
-  const handleLanguageChange = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+  const handleEditName = () => {
+    if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    Alert.alert('Sprache', 'Sprachauswahl wird bald verfügbar sein');
+    setNewUsername(username);
+    setEditNameModalVisible(true);
   };
 
-  const handleRestorePremium = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+  const saveNewUsername = () => {
+    if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    Alert.alert('Premium wiederherstellen', 'Premium-Käufe werden wiederhergestellt...');
+    if (newUsername.trim()) {
+      setUsername(newUsername.trim());
+      setEditNameModalVisible(false);
+    }
   };
 
-  const handleBuyPremium = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+  const handleBugReport = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setBugModalVisible(true);
+  };
+
+  const handleDonation = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setDonateModalVisible(true);
+  };
+
+  const sendBugReport = async () => {
+    if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    setPremiumModalVisible(true);
+    
+    if (!bugDescription.trim()) {
+      Alert.alert('Fehler', 'Bitte beschreibe den Fehler.');
+      return;
+    }
+
+    try {
+      const isAvailable = await MailComposer.isAvailableAsync();
+      if (isAvailable) {
+        await MailComposer.composeAsync({
+          recipients: ['support@easybudget.app'],
+          subject: 'Bug Report - EASY BUDGET',
+          body: `Bug Beschreibung:\n\n${bugDescription}\n\n---\nUser: ${username}\nVersion: 1.0.0\nPlatform: ${Platform.OS}`,
+        });
+      } else {
+        Alert.alert('Fehler', 'E-Mail ist auf diesem Gerät nicht verfügbar.');
+      }
+    } catch (error) {
+      console.error('Error sending bug report:', error);
+      Alert.alert('Fehler', 'Fehler beim Senden des Bug Reports.');
+    }
+    
+    setBugModalVisible(false);
+    setBugDescription('');
   };
 
-  const handlePurchase = (type: 'onetime' | 'monthly') => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const processDonation = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    setPremiumModalVisible(false);
-    Alert.alert(
-      'Kauf',
-      type === 'onetime' 
-        ? 'Einmalige Zahlung von CHF 10.00 wird verarbeitet...' 
-        : 'Monatliches Abo von CHF 1.00/Monat wird verarbeitet...'
-    );
+    const amount = customDonation || selectedDonation.toString();
+    Alert.alert('Danke!', `Deine Spende von CHF ${amount}.00 wird verarbeitet.`, [
+      {
+        text: 'OK',
+        onPress: () => {
+          // TODO: Backend Integration - Process donation payment
+          console.log(`Process donation: CHF ${amount}`);
+          setDonateModalVisible(false);
+          setCustomDonation('');
+          setSelectedDonation(5);
+        },
+      },
+    ]);
   };
 
-  const handleAGB = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+  const handleSupport = async () => {
+    if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    Alert.alert('AGB', 'Allgemeine Geschäftsbedingungen');
+    try {
+      const isAvailable = await MailComposer.isAvailableAsync();
+      if (isAvailable) {
+        await MailComposer.composeAsync({
+          recipients: ['support@easybudget.app'],
+          subject: 'Support Anfrage - EASY BUDGET',
+          body: `Hallo Support Team,\n\n`,
+        });
+      } else {
+        Alert.alert('Fehler', 'E-Mail ist auf diesem Gerät nicht verfügbar.');
+      }
+    } catch (error) {
+      console.error('Error opening mail composer:', error);
+    }
   };
 
-  const handleTerms = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+  const handleSuggestion = async () => {
+    if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    Alert.alert('Nutzungsbedingungen', 'Nutzungsbedingungen');
+    try {
+      const isAvailable = await MailComposer.isAvailableAsync();
+      if (isAvailable) {
+        await MailComposer.composeAsync({
+          recipients: ['feedback@easybudget.app'],
+          subject: 'Vorschlag - EASY BUDGET',
+          body: `Mein Vorschlag:\n\n`,
+        });
+      } else {
+        Alert.alert('Fehler', 'E-Mail ist auf diesem Gerät nicht verfügbar.');
+      }
+    } catch (error) {
+      console.error('Error opening mail composer:', error);
+    }
   };
 
-  const handlePrivacy = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+  const handleTextPage = (title: string, content: string) => {
+    if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    Alert.alert('Datenschutz', 'Datenschutzerklärung');
-  };
-
-  const handleEditName = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    Alert.alert('Namen bearbeiten', 'Namensänderung wird bald verfügbar sein');
+    Alert.alert(title, content);
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* User Info */}
-        <Pressable style={styles.userCard} onPress={handleEditName}>
-          <View style={styles.userAvatar}>
-            <Text style={styles.userAvatarText}>
-              {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
-            </Text>
+        {/* User Profile Card */}
+        <View style={styles.profileCard}>
+          <View style={styles.userIconContainer}>
+            <IconSymbol 
+              ios_icon_name="person.fill" 
+              android_material_icon_name="person"
+              size={60} 
+              color={colors.white} 
+            />
           </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.name || 'Benutzer'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'email@example.com'}</Text>
-            <View style={styles.premiumBadge}>
-              <Text style={styles.premiumBadgeText}>Premium: Ja</Text>
-            </View>
-          </View>
-        </Pressable>
+          <Pressable onPress={handleEditName}>
+            <Text style={styles.username}>{username}</Text>
+            <Text style={styles.usernameHint}>Tippe um Namen zu ändern</Text>
+          </Pressable>
+          <Text style={styles.premiumStatus}>Premium: {isPremium ? 'Ja' : 'Nein'}</Text>
+        </View>
 
         {/* Settings Items */}
-        <View style={styles.settingsSection}>
+        <View style={styles.settingsList}>
           <SettingsItem
-            icon="language"
-            iconColor={colors.white}
-            title="Sprache"
+            iosIcon="arrow.right.square"
+            androidIcon="exit-to-app"
+            iconColor={colors.neonGreen}
+            title="Ausloggen"
+            onPress={handleLogout}
+          />
+          <SettingsItem
+            iosIcon="globe"
+            androidIcon="language"
+            iconColor={colors.neonGreen}
+            title={`Sprache ändern: ${language}`}
             onPress={handleLanguageChange}
           />
           <SettingsItem
-            icon="star"
+            iosIcon="arrow.clockwise"
+            androidIcon="refresh"
             iconColor={colors.neonGreen}
-            title="Premium kaufen"
-            onPress={handleBuyPremium}
-          />
-          <SettingsItem
-            icon="restore"
-            iconColor={colors.white}
-            title="Premium wiederherstellen"
+            title="Premium Wiederherstellen"
             onPress={handleRestorePremium}
           />
           <SettingsItem
-            icon="description"
-            iconColor={colors.white}
-            title="Nutzungsbedingungen"
-            onPress={handleTerms}
+            iosIcon="star.fill"
+            androidIcon="star"
+            iconColor={colors.neonGreen}
+            title="Premium Kaufen"
+            onPress={handleBuyPremium}
           />
           <SettingsItem
-            icon="privacy-tip"
-            iconColor={colors.white}
-            title="Datenschutz"
-            onPress={handlePrivacy}
-          />
-          <SettingsItem
-            icon="gavel"
+            iosIcon="doc.text"
+            androidIcon="description"
             iconColor={colors.white}
             title="AGB"
-            onPress={handleAGB}
+            onPress={() => handleTextPage('AGB', 'Allgemeine Geschäftsbedingungen\n\nHier stehen die AGBs...')}
           />
           <SettingsItem
-            icon="logout"
-            iconColor={colors.red}
-            title="Abmelden"
-            onPress={handleLogout}
+            iosIcon="shield"
+            androidIcon="shield"
+            iconColor={colors.white}
+            title="Nutzungsbedingungen"
+            onPress={() => handleTextPage('Nutzungsbedingungen', 'Nutzungsbedingungen\n\nHier stehen die Nutzungsbedingungen...')}
           />
+          <SettingsItem
+            iosIcon="lock.shield"
+            androidIcon="lock"
+            iconColor={colors.white}
+            title="Datenschutz"
+            onPress={() => handleTextPage('Datenschutz', 'Datenschutzerklärung\n\nHier steht die Datenschutzerklärung...')}
+          />
+          <SettingsItem
+            iosIcon="info.circle"
+            androidIcon="info"
+            iconColor={colors.white}
+            title="Impressum"
+            onPress={() => handleTextPage('Impressum', 'Impressum\n\nEASY BUDGET 3.0\nVersion 1.0.0')}
+          />
+          <SettingsItem
+            iosIcon="envelope"
+            androidIcon="email"
+            iconColor={colors.white}
+            title="Support"
+            onPress={handleSupport}
+          />
+          <SettingsItem
+            iosIcon="lightbulb"
+            androidIcon="lightbulb-outline"
+            iconColor={colors.white}
+            title="Vorschlag"
+            onPress={handleSuggestion}
+          />
+          <SettingsItem
+            iosIcon="ant"
+            androidIcon="bug-report"
+            iconColor={colors.neonGreen}
+            title="Bug Melden"
+            onPress={handleBugReport}
+          />
+          <SettingsItem
+            iosIcon="heart.fill"
+            androidIcon="favorite"
+            iconColor={colors.red}
+            title="Donation"
+            onPress={handleDonation}
+          />
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Version 1.0.0</Text>
+          <Text style={styles.footerText}>
+            Made with <Text style={{ color: colors.red }}>❤️</Text>
+          </Text>
         </View>
       </ScrollView>
 
-      {/* Premium Modal */}
+      {/* Edit Name Modal */}
+      <Modal
+        visible={editNameModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditNameModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setEditNameModalVisible(false)}>
+          <View style={styles.editModal}>
+            <Text style={styles.modalTitle}>Namen ändern</Text>
+            <TextInput
+              style={styles.input}
+              value={newUsername}
+              onChangeText={setNewUsername}
+              placeholder="Neuer Name"
+              placeholderTextColor="#666"
+              autoFocus
+            />
+            <Pressable style={styles.primaryButton} onPress={saveNewUsername}>
+              <Text style={styles.primaryButtonText}>Speichern</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Bug Report Modal */}
+      <Modal
+        visible={bugModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBugModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setBugModalVisible(false)}>
+          <View style={styles.bugModal}>
+            <Pressable style={styles.closeButton} onPress={() => setBugModalVisible(false)}>
+              <IconSymbol 
+                ios_icon_name="xmark" 
+                android_material_icon_name="close"
+                size={24} 
+                color={colors.white} 
+              />
+            </Pressable>
+
+            <View style={styles.bugIconContainer}>
+              <IconSymbol 
+                ios_icon_name="ant" 
+                android_material_icon_name="bug-report"
+                size={40} 
+                color={colors.neonGreen} 
+              />
+            </View>
+
+            <Text style={styles.modalTitle}>Bug Melden</Text>
+
+            <TextInput
+              style={styles.bugInput}
+              value={bugDescription}
+              onChangeText={setBugDescription}
+              placeholder="Beschreibe den Fehler..."
+              placeholderTextColor="#666"
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+
+            <Pressable style={styles.sendButton} onPress={sendBugReport}>
+              <IconSymbol 
+                ios_icon_name="paperplane.fill" 
+                android_material_icon_name="send"
+                size={20} 
+                color={colors.black} 
+              />
+              <Text style={styles.sendButtonText}>Senden</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Donation Modal */}
+      <Modal
+        visible={donateModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDonateModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setDonateModalVisible(false)}>
+          <View style={styles.donateModal}>
+            <Pressable style={styles.closeButton} onPress={() => setDonateModalVisible(false)}>
+              <IconSymbol 
+                ios_icon_name="xmark" 
+                android_material_icon_name="close"
+                size={24} 
+                color={colors.white} 
+              />
+            </Pressable>
+
+            <View style={styles.heartIconContainer}>
+              <Text style={styles.heartIcon}>❤️</Text>
+            </View>
+
+            <Text style={styles.modalTitle}>Donate</Text>
+            <Text style={styles.donateSubtitle}>Support the development of the app</Text>
+
+            <View style={styles.donationAmounts}>
+              {[1, 5, 10, 20].map((amount) => (
+                <Pressable
+                  key={amount}
+                  style={[
+                    styles.amountButton,
+                    selectedDonation === amount && styles.amountButtonSelected,
+                  ]}
+                  onPress={() => {
+                    if (Platform.OS === 'ios') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                    setSelectedDonation(amount);
+                    setCustomDonation('');
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.amountText,
+                      selectedDonation === amount && styles.amountTextSelected,
+                    ]}
+                  >
+                    {amount}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <TextInput
+              style={styles.customAmountInput}
+              value={customDonation}
+              onChangeText={setCustomDonation}
+              placeholder="CHF Custom amount"
+              placeholderTextColor="#666"
+              keyboardType="numeric"
+            />
+
+            <Pressable style={styles.donateButton} onPress={processDonation}>
+              <IconSymbol 
+                ios_icon_name="heart.fill" 
+                android_material_icon_name="favorite"
+                size={20} 
+                color={colors.white} 
+              />
+              <Text style={styles.donateButtonText}>
+                Donate CHF {customDonation || selectedDonation}.00
+              </Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* Premium Purchase Modal */}
       <Modal
         visible={premiumModalVisible}
         transparent
         animationType="fade"
         onRequestClose={() => setPremiumModalVisible(false)}
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setPremiumModalVisible(false)}
-        >
-          <Pressable style={styles.premiumModal} onPress={(e) => e.stopPropagation()}>
-            {/* Close Button */}
-            <Pressable
-              style={styles.closeButton}
-              onPress={() => setPremiumModalVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>✕</Text>
+        <Pressable style={styles.modalOverlay} onPress={() => setPremiumModalVisible(false)}>
+          <View style={styles.premiumModal}>
+            <Pressable style={styles.closeButton} onPress={() => setPremiumModalVisible(false)}>
+              <IconSymbol 
+                ios_icon_name="xmark" 
+                android_material_icon_name="close"
+                size={24} 
+                color={colors.white} 
+              />
             </Pressable>
 
-            {/* Star Icon */}
-            <View style={styles.starIcon}>
-              <Text style={styles.starEmoji}>⭐</Text>
+            <View style={styles.starIconContainer}>
+              <IconSymbol 
+                ios_icon_name="star.fill" 
+                android_material_icon_name="star"
+                size={40} 
+                color={colors.neonGreen} 
+              />
             </View>
 
-            {/* Title */}
-            <Text style={styles.premiumTitle}>Premium Kaufen</Text>
+            <Text style={styles.modalTitle}>Premium Kaufen</Text>
+            <Text style={styles.premiumSubtitle}>Schalte alle Premium-Funktionen frei</Text>
 
-            {/* Subtitle */}
-            <Text style={styles.premiumSubtitle}>
-              Erhalte unbegrenzte App-Funktionen:
-            </Text>
-
-            {/* Features List */}
-            <View style={styles.featuresList}>
-              <View style={styles.featureItem}>
-                <Text style={styles.featureBullet}>•</Text>
-                <Text style={styles.featureText}>Unbegrenzte Abo Counter</Text>
+            <Pressable 
+              style={styles.premiumOption} 
+              onPress={() => handlePurchasePremium('onetime')}
+            >
+              <View>
+                <Text style={styles.premiumOptionTitle}>Einmaliger Kauf</Text>
+                <Text style={styles.premiumOptionDesc}>Lebenslanger Zugang</Text>
               </View>
-              <View style={styles.featureItem}>
-                <Text style={styles.featureBullet}>•</Text>
-                <Text style={styles.featureText}>Unbegrenzte Ausgabenliste</Text>
+              <Text style={styles.premiumOptionPrice}>CHF 9.99</Text>
+            </Pressable>
+
+            <Pressable 
+              style={styles.premiumOption} 
+              onPress={() => handlePurchasePremium('monthly')}
+            >
+              <View>
+                <Text style={styles.premiumOptionTitle}>Monatliches Abo</Text>
+                <Text style={styles.premiumOptionDesc}>Jederzeit kündbar</Text>
               </View>
-              <View style={styles.featureItem}>
-                <Text style={styles.featureBullet}>•</Text>
-                <Text style={styles.featureText}>Unbegrenzte Monate</Text>
-              </View>
-            </View>
-
-            {/* One-time Payment Option */}
-            <View style={styles.paymentOption}>
-              <Text style={styles.paymentTitle}>Einmalige Zahlung</Text>
-              <Text style={styles.paymentPrice}>CHF 10.00</Text>
-              <Pressable
-                style={styles.paymentButton}
-                onPress={() => handlePurchase('onetime')}
-              >
-                <Text style={styles.paymentButtonText}>Bezahlen</Text>
-              </Pressable>
-            </View>
-
-            {/* Divider */}
-            <Text style={styles.divider}>ODER</Text>
-
-            {/* Monthly Subscription Option */}
-            <View style={styles.paymentOption}>
-              <Text style={styles.paymentTitle}>Monatliches Abo</Text>
-              <Text style={styles.paymentPrice}>CHF 1.00/Monat</Text>
-              <Pressable
-                style={styles.paymentButton}
-                onPress={() => handlePurchase('monthly')}
-              >
-                <Text style={styles.paymentButtonText}>Bezahlen</Text>
-              </Pressable>
-            </View>
-          </Pressable>
+              <Text style={styles.premiumOptionPrice}>CHF 2.99/Monat</Text>
+            </Pressable>
+          </View>
         </Pressable>
       </Modal>
     </SafeAreaView>
@@ -316,192 +643,282 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  contentContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 24,
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
     paddingBottom: 120,
   },
-  userCard: {
+  profileCard: {
     backgroundColor: colors.darkGray,
     borderRadius: 20,
-    padding: 20,
-    flexDirection: 'row',
+    padding: 30,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  userAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  userIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: colors.neonGreen,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginBottom: 15,
   },
-  userAvatarText: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.black,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 20,
-    fontWeight: '800',
+  username: {
     color: colors.white,
-    marginBottom: 4,
-    letterSpacing: 0.5,
+    fontSize: 24,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 5,
   },
-  userEmail: {
+  usernameHint: {
+    color: '#666',
     fontSize: 14,
-    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  premiumStatus: {
     color: colors.white,
-    opacity: 0.7,
-    marginBottom: 8,
+    fontSize: 16,
+    fontWeight: '700',
   },
-  premiumBadge: {
-    backgroundColor: colors.neonGreen,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  premiumBadgeText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: colors.black,
-    letterSpacing: 0.5,
-  },
-  settingsSection: {
+  settingsList: {
     gap: 12,
   },
   settingsItem: {
     backgroundColor: colors.darkGray,
     borderRadius: 16,
     padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  settingsItemContent: {
+  settingsItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 15,
   },
   settingsItemText: {
-    fontSize: 16,
-    fontWeight: '800',
     color: colors.white,
-    letterSpacing: 0.5,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  footer: {
+    marginTop: 30,
+    alignItems: 'center',
+    gap: 5,
+  },
+  footerText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  editModal: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
+    padding: 30,
+    width: '85%',
+    maxWidth: 400,
+  },
+  bugModal: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
+    padding: 30,
+    width: '85%',
+    maxWidth: 400,
+  },
+  donateModal: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
+    padding: 30,
+    width: '85%',
+    maxWidth: 400,
   },
   premiumModal: {
     backgroundColor: colors.darkGray,
     borderRadius: 20,
-    padding: 24,
+    padding: 30,
     width: '85%',
     maxWidth: 400,
-    position: 'relative',
   },
   closeButton: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
+    top: 15,
+    right: 15,
     zIndex: 10,
   },
-  closeButtonText: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.white,
-  },
-  starIcon: {
+  bugIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#2a2a2a',
+    justifyContent: 'center',
+    alignItems: 'center',
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
-  starEmoji: {
-    fontSize: 48,
+  heartIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#3a2020',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 20,
   },
-  premiumTitle: {
+  starIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#2a2a20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  heartIcon: {
+    fontSize: 40,
+  },
+  modalTitle: {
+    color: colors.white,
     fontSize: 24,
     fontWeight: '800',
-    color: colors.white,
     textAlign: 'center',
-    marginBottom: 12,
-    letterSpacing: 0.5,
+    marginBottom: 10,
   },
-  premiumSubtitle: {
+  donateSubtitle: {
+    color: '#999',
     fontSize: 14,
-    fontWeight: '600',
-    color: colors.white,
     textAlign: 'center',
     marginBottom: 20,
-    opacity: 0.8,
   },
-  featuresList: {
-    marginBottom: 24,
-    gap: 8,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  featureBullet: {
-    fontSize: 18,
-    color: colors.neonGreen,
-    fontWeight: '800',
-  },
-  featureText: {
+  premiumSubtitle: {
+    color: '#999',
     fontSize: 14,
-    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 25,
+  },
+  input: {
+    backgroundColor: '#333',
+    borderRadius: 12,
+    padding: 15,
     color: colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 20,
   },
-  paymentOption: {
-    borderWidth: 2,
-    borderColor: colors.neonGreen,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  paymentTitle: {
-    fontSize: 18,
-    fontWeight: '800',
+  bugInput: {
+    backgroundColor: '#333',
+    borderRadius: 12,
+    padding: 15,
     color: colors.white,
-    marginBottom: 4,
-    letterSpacing: 0.5,
+    fontSize: 16,
+    height: 120,
+    marginBottom: 20,
+    textAlignVertical: 'top',
   },
-  paymentPrice: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.neonGreen,
-    marginBottom: 12,
-    letterSpacing: 0.5,
-  },
-  paymentButton: {
+  primaryButton: {
     backgroundColor: colors.neonGreen,
     borderRadius: 12,
-    padding: 14,
+    padding: 15,
+  },
+  primaryButtonText: {
+    color: colors.black,
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  sendButton: {
+    backgroundColor: colors.neonGreen,
+    borderRadius: 12,
+    padding: 15,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+  },
+  sendButtonText: {
+    color: colors.black,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  donationAmounts: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+    gap: 10,
+  },
+  amountButton: {
+    flex: 1,
+    backgroundColor: '#333',
+    borderRadius: 12,
+    padding: 15,
     alignItems: 'center',
   },
-  paymentButtonText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.black,
-    letterSpacing: 0.5,
+  amountButtonSelected: {
+    backgroundColor: colors.neonGreen,
   },
-  divider: {
-    fontSize: 14,
-    fontWeight: '800',
+  amountText: {
     color: colors.white,
-    textAlign: 'center',
-    marginVertical: 8,
-    opacity: 0.5,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  amountTextSelected: {
+    color: colors.black,
+  },
+  customAmountInput: {
+    backgroundColor: '#333',
+    borderRadius: 12,
+    padding: 15,
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+  donateButton: {
+    backgroundColor: colors.red,
+    borderRadius: 12,
+    padding: 15,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+  },
+  donateButtonText: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  premiumOption: {
+    backgroundColor: '#333',
+    borderRadius: 12,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  premiumOptionTitle: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 5,
+  },
+  premiumOptionDesc: {
+    color: '#999',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  premiumOptionPrice: {
+    color: colors.neonGreen,
+    fontSize: 18,
+    fontWeight: '800',
   },
 });

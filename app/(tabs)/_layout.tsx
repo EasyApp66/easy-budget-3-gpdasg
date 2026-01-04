@@ -34,13 +34,22 @@ function CustomTabBar() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    
     // Context-aware: add expense on budget, subscription on abos
     if (pathname.includes('budget')) {
-      // TODO: Backend Integration - Trigger add expense functionality
-      console.log('Add expense - This will be connected to the Budget screen add expense function');
+      // Call global function exposed by Budget screen
+      if ((global as any).addExpense) {
+        (global as any).addExpense();
+      } else {
+        console.log('Add expense function not available');
+      }
     } else if (pathname.includes('abos')) {
-      // TODO: Backend Integration - Trigger add subscription functionality
-      console.log('Add subscription - This will be connected to the Abos screen add subscription function');
+      // Call global function exposed by Abos screen
+      if ((global as any).addSubscription) {
+        (global as any).addSubscription();
+      } else {
+        console.log('Add subscription function not available');
+      }
     }
   };
 

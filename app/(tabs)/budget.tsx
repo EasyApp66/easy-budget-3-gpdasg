@@ -134,6 +134,14 @@ export default function BudgetScreen() {
     );
   };
 
+  // Expose add function globally for tab bar
+  React.useEffect(() => {
+    (global as any).addExpense = handleAddExpense;
+    return () => {
+      delete (global as any).addExpense;
+    };
+  }, [selectedMonth, months]);
+
   const handleDeleteMonth = (monthId: string) => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
