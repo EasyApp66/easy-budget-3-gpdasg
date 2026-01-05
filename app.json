@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "EASY BUDGET",
-    "slug": "easy-budget",
+    "name": "Budget Dark",
+    "slug": "Budget Dark",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -44,5 +44,6 @@
       "router": {},
       "backendUrl": "https://wu7kwypubgksy89mk4h6tatrg56ateqy.app.specular.dev"
     }
-  }
+  },
+  "scheme": "Budget Dark"
 }

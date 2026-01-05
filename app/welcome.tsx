@@ -1,5 +1,5 @@
 
-import React from 'react';
+import { colors } from '@/styles/commonStyles';
 import {
   View,
   Text,
@@ -9,41 +9,107 @@ import {
   Linking,
   Alert,
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { colors } from '@/styles/commonStyles';
-import { useAuth } from '@/contexts/AuthContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
+import React from 'react';
+import { Stack, useRouter } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
+import { IconSymbol } from '@/components/IconSymbol';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000000',
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+  },
+  textBlock: {
+    marginBottom: 32, // Reduced spacing for better visual balance
+  },
+  titleText: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  highlightText: {
+    color: '#BFFE84',
+  },
+  budgetText: {
+    fontSize: 42,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
+  abosText: {
+    fontSize: 42,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 1.5,
+  },
+  buttonsContainer: {
+    gap: 16,
+  },
+  button: {
+    height: 56,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 40,
+    left: 24,
+    right: 24,
+  },
+  footerText: {
+    fontSize: 11,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  link: {
+    color: '#BFFE84',
+    textDecorationLine: 'underline',
+  },
+});
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { signInWithGoogle, signInWithApple } = useAuth();
-
-  const handlePress = (callback: () => void) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    callback();
-  };
 
   const AnimatedButton = ({
     title,
     onPress,
     backgroundColor,
     textColor,
-    icon,
+    iosIcon,
+    androidIcon,
   }: {
     title: string;
     onPress: () => void;
     backgroundColor: string;
     textColor: string;
-    icon?: string;
+    iosIcon: string;
+    androidIcon: string;
   }) => {
     const scale = useSharedValue(1);
 
@@ -51,65 +117,59 @@ export default function WelcomeScreen() {
       transform: [{ scale: scale.value }],
     }));
 
+    const handlePress = (callback: () => void) => {
+      if (Platform.OS === 'ios') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+      scale.value = withSpring(0.95, { damping: 10 }, () => {
+        scale.value = withSpring(1);
+      });
+      callback();
+    };
+
     return (
-      <AnimatedPressable
-        style={[
-          styles.button,
-          { backgroundColor },
-          animatedStyle,
-        ]}
-        onPressIn={() => {
-          scale.value = withSpring(0.95);
-          if (Platform.OS === 'ios') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1);
-        }}
-        onPress={onPress}
-      >
-        <Text style={[styles.buttonText, { color: textColor }]}>{title}</Text>
-      </AnimatedPressable>
+      <Animated.View style={animatedStyle}>
+        <Pressable
+          style={[styles.button, { backgroundColor }]}
+          onPress={() => handlePress(onPress)}
+        >
+          <View style={styles.buttonContent}>
+            <IconSymbol
+              ios_icon_name={iosIcon}
+              android_material_icon_name={androidIcon}
+              size={20}
+              color={textColor}
+            />
+            <Text style={[styles.buttonText, { color: textColor }]}>
+              {title}
+            </Text>
+          </View>
+        </Pressable>
+      </Animated.View>
     );
   };
 
   const handleEmailPress = () => {
-    handlePress(() => router.push('/login'));
+    router.push('/login');
   };
 
   const handleApplePress = async () => {
-    handlePress(async () => {
-      try {
-        console.log('[Welcome] Starting Apple sign in...');
-        await signInWithApple();
-        console.log('[Welcome] Apple sign in successful');
-        router.replace('/(tabs)/(home)');
-      } catch (error) {
-        console.error('[Welcome] Apple sign in failed:', error);
-        Alert.alert('Fehler', 'Apple-Anmeldung fehlgeschlagen. Bitte versuche es erneut.');
-      }
-    });
+    try {
+      await signInWithApple();
+    } catch (error) {
+      Alert.alert('Fehler', 'Apple-Anmeldung fehlgeschlagen');
+    }
   };
 
   const handleGooglePress = async () => {
-    handlePress(async () => {
-      try {
-        console.log('[Welcome] Starting Google sign in...');
-        await signInWithGoogle();
-        console.log('[Welcome] Google sign in successful');
-        router.replace('/(tabs)/(home)');
-      } catch (error) {
-        console.error('[Welcome] Google sign in failed:', error);
-        Alert.alert('Fehler', 'Google-Anmeldung fehlgeschlagen. Bitte versuche es erneut.');
-      }
-    });
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      Alert.alert('Fehler', 'Google-Anmeldung fehlgeschlagen');
+    }
   };
 
   const openLink = (url: string) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
     Linking.openURL(url);
   };
 
@@ -117,144 +177,63 @@ export default function WelcomeScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        <View style={styles.content}>
-          <View style={styles.titleContainer}>
-            <Text style={styles.titleText}>Hallo! Ich bin</Text>
-            <Text style={[styles.titleText, styles.titleHighlight]}>
-              EASY BUDGET
-            </Text>
-            <Text style={styles.subtitleText}>Tracke dein</Text>
-            <Text style={[styles.subtitleText, styles.subtitleHighlight]}>
-              BUDGET
-            </Text>
-            <Text style={styles.subtitleText}>Und Deine</Text>
-            <Text style={[styles.subtitleText, styles.subtitleHighlight]}>
-              ABOS
-            </Text>
-          </View>
+        <View style={styles.textBlock}>
+          <Text style={styles.titleText}>
+            Hallo! Ich bin <Text style={styles.highlightText}>EASY BUDGET</Text>
+          </Text>
+          <Text style={styles.budgetText}>
+            Tracke dein <Text style={styles.highlightText}>BUDGET</Text>
+          </Text>
+          <Text style={styles.abosText}>
+            Und Deine <Text style={styles.highlightText}>ABOS</Text>
+          </Text>
+        </View>
 
-          <View style={styles.buttonContainer}>
-            <AnimatedButton
-              title="Mit E-Mail fortfahren"
-              onPress={handleEmailPress}
-              backgroundColor={colors.neonGreen}
-              textColor={colors.black}
-            />
-            <AnimatedButton
-              title="Mit Apple fortfahren"
-              onPress={handleApplePress}
-              backgroundColor={colors.white}
-              textColor={colors.black}
-            />
-            <AnimatedButton
-              title="Mit Google anmelden"
-              onPress={handleGooglePress}
-              backgroundColor={colors.white}
-              textColor={colors.black}
-            />
-          </View>
+        <View style={styles.buttonsContainer}>
+          <AnimatedButton
+            title="Mit E-Mail fortfahren"
+            onPress={handleEmailPress}
+            backgroundColor="#BFFE84"
+            textColor="#000000"
+            iosIcon="envelope.fill"
+            androidIcon="email"
+          />
+          <AnimatedButton
+            title="Mit Apple fortfahren"
+            onPress={handleApplePress}
+            backgroundColor="#FFFFFF"
+            textColor="#000000"
+            iosIcon="apple.logo"
+            androidIcon="phone"
+          />
+          <AnimatedButton
+            title="Mit Google anmelden"
+            onPress={handleGooglePress}
+            backgroundColor="#FFFFFF"
+            textColor="#000000"
+            iosIcon="g.circle.fill"
+            androidIcon="account-circle"
+          />
+        </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              Indem du fortfährst, bestätigst du, dass du die{' '}
-              <Text
-                style={styles.footerLink}
-                onPress={() => openLink('https://example.com/terms')}
-              >
-                Nutzungsbedingungen
-              </Text>{' '}
-              und die{' '}
-              <Text
-                style={styles.footerLink}
-                onPress={() => openLink('https://example.com/privacy')}
-              >
-                Datenschutzerklärung
-              </Text>{' '}
-              und die{' '}
-              <Text
-                style={styles.footerLink}
-                onPress={() => openLink('https://example.com/agb')}
-              >
-                AGBs
-              </Text>{' '}
-              gelesen hast.
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Indem du fortfährst, bestätigst du, dass du die{' '}
+            <Text style={styles.link} onPress={() => openLink('https://example.com/terms')}>
+              Nutzungsbedingungen
             </Text>
-          </View>
+            {' '}und die{' '}
+            <Text style={styles.link} onPress={() => openLink('https://example.com/privacy')}>
+              Datenschutzerklärung
+            </Text>
+            {' '}und die{' '}
+            <Text style={styles.link} onPress={() => openLink('https://example.com/agb')}>
+              AGBs
+            </Text>
+            {' '}gelesen hast.
+          </Text>
         </View>
       </View>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.black,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 40,
-    justifyContent: 'space-between',
-  },
-  titleContainer: {
-    marginBottom: 40,
-  },
-  titleText: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: colors.white,
-    textAlign: 'left',
-    marginBottom: 4,
-    letterSpacing: 0.5,
-  },
-  titleHighlight: {
-    color: colors.neonGreen,
-    fontSize: 36,
-    marginBottom: 24,
-  },
-  subtitleText: {
-    fontSize: 40,
-    fontWeight: '900',
-    color: colors.white,
-    textAlign: 'left',
-    marginBottom: 4,
-    letterSpacing: 0.5,
-  },
-  subtitleHighlight: {
-    color: colors.neonGreen,
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  buttonContainer: {
-    gap: 16,
-    marginBottom: 24,
-  },
-  button: {
-    width: '100%',
-    paddingVertical: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  footer: {
-    paddingTop: 16,
-  },
-  footerText: {
-    fontSize: 12,
-    color: colors.white,
-    textAlign: 'center',
-    lineHeight: 18,
-    opacity: 0.7,
-  },
-  footerLink: {
-    color: colors.neonGreen,
-    textDecorationLine: 'underline',
-  },
-});
