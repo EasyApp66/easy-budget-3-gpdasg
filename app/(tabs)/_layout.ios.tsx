@@ -1,21 +1,20 @@
 
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Pressable, View, StyleSheet } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { IconSymbol } from '@/components/IconSymbol';
-import { colors } from '@/styles/commonStyles';
-import { BlurView } from 'expo-blur';
 import { useRouter, usePathname } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { BlurView } from 'expo-blur';
+import { Tabs } from 'expo-router';
+import { IconSymbol } from '@/components/IconSymbol';
+import React from 'react';
+import { colors } from '@/styles/commonStyles';
+import * as Haptics from 'expo-haptics';
+import { Pressable, View, StyleSheet } from 'react-native';
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-function CustomTabBar() {
+const CustomTabBar = () => {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -30,50 +29,47 @@ function CustomTabBar() {
 
   const handleAddPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Context-aware: add expense on budget, subscription on abos
-    if (pathname.includes('budget')) {
-      // TODO: Backend Integration - Trigger add expense functionality
-      console.log('Add expense - This will be connected to the Budget screen add expense function');
-    } else if (pathname.includes('abos')) {
-      // TODO: Backend Integration - Trigger add subscription functionality
-      console.log('Add subscription - This will be connected to the Abos screen add subscription function');
-    }
   };
 
-  const TabButton = ({ 
-    icon, 
-    route, 
-    label 
-  }: { 
+  const TabButton = ({ icon, route, label }: { 
     icon: string; 
     route: string; 
     label: string;
   }) => {
-    const scale = useSharedValue(1);
     const active = isActive(route);
+    const scale = useSharedValue(1);
+    const iconColor = useSharedValue(active ? 1 : 0);
+
+    React.useEffect(() => {
+      iconColor.value = withTiming(active ? 1 : 0, { duration: 200 });
+    }, [active]);
 
     const animatedStyle = useAnimatedStyle(() => ({
       transform: [{ scale: scale.value }],
     }));
 
+    const iconAnimatedStyle = useAnimatedStyle(() => ({
+      opacity: withTiming(iconColor.value === 1 ? 1 : 0.5, { duration: 200 }),
+    }));
+
+    const handlePress = () => {
+      scale.value = withSpring(0.85, { damping: 10, stiffness: 400 }, () => {
+        scale.value = withSpring(1, { damping: 10, stiffness: 400 });
+      });
+      handleTabPress(route);
+    };
+
     return (
-      <AnimatedPressable
-        style={[styles.tabButton, animatedStyle]}
-        onPressIn={() => {
-          scale.value = withSpring(0.9);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1);
-        }}
-        onPress={() => handleTabPress(route)}
-      >
-        <IconSymbol
-          ios_icon_name={icon}
-          android_material_icon_name={icon}
-          size={24}
-          color={active ? colors.neonGreen : colors.white + '80'}
-        />
-      </AnimatedPressable>
+      <Pressable onPress={handlePress} style={styles.tabButton}>
+        <Animated.View style={[animatedStyle, iconAnimatedStyle]}>
+          <IconSymbol
+            ios_icon_name={icon}
+            android_material_icon_name={icon}
+            size={24}
+            color={active ? colors.neonGreen : colors.white}
+          />
+        </Animated.View>
+      </Pressable>
     );
   };
 
@@ -84,40 +80,81 @@ function CustomTabBar() {
       transform: [{ scale: scale.value }],
     }));
 
+    const handlePress = () => {
+      scale.value = withSpring(0.9, { damping: 10, stiffness: 400 }, () => {
+        scale.value = withSpring(1, { damping: 10, stiffness: 400 });
+      });
+      handleAddPress();
+    };
+
     return (
-      <AnimatedPressable
-        style={[styles.addButton, animatedStyle]}
-        onPressIn={() => {
-          scale.value = withSpring(0.9);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1);
-        }}
-        onPress={handleAddPress}
-      >
-        <IconSymbol
-          ios_icon_name="plus"
-          android_material_icon_name="add"
-          size={32}
-          color={colors.black}
-        />
-      </AnimatedPressable>
+      <Pressable onPress={handlePress} style={styles.addButtonContainer}>
+        <Animated.View style={[styles.addButton, animatedStyle]}>
+          <IconSymbol
+            ios_icon_name="plus"
+            android_material_icon_name="add"
+            size={28}
+            color={colors.black}
+          />
+        </Animated.View>
+      </Pressable>
     );
   };
 
   return (
     <View style={styles.tabBarContainer}>
-      <BlurView intensity={80} tint="dark" style={styles.tabBarBlur}>
+      <BlurView intensity={15} tint="dark" style={styles.blurView}>
         <View style={styles.tabBar}>
-          <TabButton icon="dollarsign.circle.fill" route="/(tabs)/budget" label="Budget" />
-          <TabButton icon="arrow.triangle.2.circlepath" route="/(tabs)/abos" label="Abos" />
-          <TabButton icon="person.circle.fill" route="/(tabs)/profil" label="Profil" />
+          <TabButton icon="attach-money" route="/budget" label="Budget" />
+          <TabButton icon="sync" route="/abos" label="Abos" />
+          <TabButton icon="person" route="/profil" label="Profil" />
           <AddButton />
         </View>
       </BlurView>
     </View>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  tabBarContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  blurView: {
+    borderRadius: 30,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(35, 35, 35, 0.3)',
+  },
+  tabBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  addButtonContainer: {
+    marginLeft: 10,
+  },
+  addButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.neonGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
 
 export default function TabLayout() {
   return (
@@ -127,84 +164,12 @@ export default function TabLayout() {
           headerShown: false,
           tabBarStyle: { display: 'none' },
         }}
+        tabBar={() => <CustomTabBar />}
       >
-        <Tabs.Screen
-          name="budget"
-          options={{
-            title: 'Budget',
-          }}
-        />
-        <Tabs.Screen
-          name="abos"
-          options={{
-            title: 'Abos',
-          }}
-        />
-        <Tabs.Screen
-          name="profil"
-          options={{
-            title: 'Profil',
-          }}
-        />
-        <Tabs.Screen
-          name="(home)"
-          options={{
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            href: null,
-          }}
-        />
-        <Tabs.Screen
-          name="profile.ios"
-          options={{
-            href: null,
-          }}
-        />
+        <Tabs.Screen name="budget" />
+        <Tabs.Screen name="abos" />
+        <Tabs.Screen name="profil" />
       </Tabs>
-      <CustomTabBar />
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBarContainer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    height: 70,
-    borderRadius: 35,
-    overflow: 'hidden',
-  },
-  tabBarBlur: {
-    flex: 1,
-    borderRadius: 35,
-    overflow: 'hidden',
-  },
-  tabBar: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(35, 35, 35, 0.8)',
-  },
-  tabButton: {
-    width: 50,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.neonGreen,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
