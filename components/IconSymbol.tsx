@@ -1,3 +1,4 @@
+
 // This file is a fallback for using MaterialIcons on Android and web.
 
 import React from "react";
@@ -19,13 +20,13 @@ export function IconSymbol({
   ios_icon_name = undefined,
   android_material_icon_name,
   size = 24,
-  color,
+  color = "#666666",
   style,
 }: {
   ios_icon_name?: string | undefined;
   android_material_icon_name: keyof typeof MaterialIcons.glyphMap;
   size?: number;
-  color: string | OpaqueColorValue;
+  color?: string | OpaqueColorValue;
   style?: StyleProp<ViewStyle>;
   weight?: SymbolWeight;
 }) {
