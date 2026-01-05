@@ -1,11 +1,5 @@
 
 import React, { useState } from 'react';
-import { colors } from '@/styles/commonStyles';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import {
   View,
   Text,
@@ -19,101 +13,26 @@ import {
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { authClient } from '@/lib/auth';
+import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
+import { authClient } from '@/lib/auth';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.black,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 24,
-    paddingTop: 80,
-  },
-  backButton: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : 20,
-    left: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.darkGray,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: colors.white,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.white,
-    opacity: 0.7,
-    marginBottom: 40,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: colors.white,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  input: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: colors.white,
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: colors.neonGreen,
-    borderRadius: 12,
-    padding: 18,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.black,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  linkContainer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  link: {
-    fontSize: 14,
-    color: colors.neonGreen,
-    textDecorationLine: 'underline',
-  },
-});
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function ForgotPasswordScreen() {
-  const [email, setEmail] = useState('');
   const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const backScale = useSharedValue(1);
-
-  const backAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: backScale.value }],
-  }));
-
-  const handlePress = (callback: () => void, scaleValue: Animated.SharedValue<number>) => {
+  const handlePress = (callback: () => void) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    scaleValue.value = withSpring(0.95, {}, () => {
-      scaleValue.value = withSpring(1);
-    });
     callback();
   };
 
@@ -127,51 +46,99 @@ export default function ForgotPasswordScreen() {
     disabled?: boolean;
   }) => {
     const scale = useSharedValue(1);
+
     const animatedStyle = useAnimatedStyle(() => ({
       transform: [{ scale: scale.value }],
     }));
 
     return (
-      <Animated.View style={animatedStyle}>
-        <Pressable
-          style={[styles.button, disabled && { opacity: 0.5 }]}
-          onPress={() => {
-            if (!disabled) {
-              handlePress(onPress, scale);
+      <AnimatedPressable
+        style={[
+          styles.button,
+          disabled && styles.buttonDisabled,
+          animatedStyle,
+        ]}
+        onPressIn={() => {
+          if (!disabled) {
+            scale.value = withSpring(0.95);
+            if (Platform.OS === 'ios') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
-          }}
-          disabled={disabled}
-        >
-          <Text style={styles.buttonText}>{title}</Text>
-        </Pressable>
-      </Animated.View>
+          }
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1);
+        }}
+        onPress={onPress}
+        disabled={disabled}
+      >
+        <Text style={styles.buttonText}>{title}</Text>
+      </AnimatedPressable>
     );
   };
 
   const handleSendLink = async () => {
     if (!email) {
-      Alert.alert('Fehler', 'Bitte gib deine E-Mail-Adresse ein');
+      Alert.alert('Fehler', 'Bitte E-Mail-Adresse eingeben');
       return;
     }
 
+    setLoading(true);
     try {
       await authClient.forgetPassword({
         email,
-        redirectTo: '/reset-password',
+        redirectTo: '/reset-password', // User will receive email with reset link
       });
+      console.log('[ForgotPassword] Password reset email sent to:', email);
       Alert.alert(
         'Link gesendet',
-        'Wir haben dir einen Link zum Zurücksetzen deines Passworts gesendet. Bitte überprüfe deine E-Mails.',
-        [{ text: 'OK', onPress: () => router.back() }]
+        'Wir haben dir einen Link zum Zurücksetzen deines Passworts gesendet.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]
       );
-    } catch (error: any) {
-      Alert.alert('Fehler', error.message || 'Link konnte nicht gesendet werden');
+    } catch (error) {
+      console.error('[ForgotPassword] Password reset failed:', error);
+      Alert.alert('Fehler', 'Link konnte nicht gesendet werden. Bitte versuche es erneut.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerTitle: '',
+          headerStyle: {
+            backgroundColor: colors.black,
+          },
+          headerTintColor: colors.white,
+          headerShadowVisible: false,
+          headerLeft: () => (
+            <Pressable
+              onPress={() => {
+                if (Platform.OS === 'ios') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                router.back();
+              }}
+              style={styles.backButton}
+            >
+              <IconSymbol
+                ios_icon_name="chevron.left"
+                android_material_icon_name="arrow-back"
+                size={24}
+                color={colors.white}
+              />
+            </Pressable>
+          ),
+        }}
+      />
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -180,49 +147,130 @@ export default function ForgotPasswordScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View style={[styles.backButton, backAnimatedStyle]}>
-            <Pressable
-              onPress={() => handlePress(() => router.back(), backScale)}
-              style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <IconSymbol
-                name="chevron.left"
-                size={24}
-                color={colors.white}
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Passwort vergessen</Text>
+              <Text style={styles.subtitle}>
+                Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen
+              </Text>
+            </View>
+
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>E-MAIL</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="deine@email.com"
+                  placeholderTextColor={colors.white + '60'}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <AnimatedButton
+                title={loading ? 'Wird gesendet...' : 'Link senden'}
+                onPress={handleSendLink}
+                disabled={loading}
               />
-            </Pressable>
-          </Animated.View>
 
-          <Text style={styles.title}>Passwort vergessen</Text>
-          <Text style={styles.subtitle}>
-            Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen
-          </Text>
-
-          <Text style={styles.label}>E-Mail</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="deine@email.com"
-            placeholderTextColor={colors.white + '50'}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-
-          <AnimatedButton
-            title="Link senden"
-            onPress={handleSendLink}
-            disabled={!email}
-          />
-
-          <View style={styles.linkContainer}>
-            <Pressable onPress={() => router.push('/login')}>
-              <Text style={styles.link}>Zurück zur Anmeldung</Text>
-            </Pressable>
+              <Pressable
+                onPress={() => handlePress(() => router.back())}
+              >
+                <Text style={styles.backToLogin}>Zurück zur Anmeldung</Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.black,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 40,
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.darkGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  header: {
+    marginBottom: 40,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: colors.white,
+    textAlign: 'left',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: colors.white,
+    textAlign: 'left',
+    opacity: 0.7,
+    lineHeight: 24,
+  },
+  form: {
+    gap: 24,
+  },
+  inputContainer: {
+    gap: 8,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.white,
+    letterSpacing: 1,
+  },
+  input: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: colors.white,
+  },
+  button: {
+    backgroundColor: colors.neonGreen,
+    paddingVertical: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.black,
+    letterSpacing: 0.3,
+  },
+  backToLogin: {
+    fontSize: 14,
+    color: colors.neonGreen,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+});

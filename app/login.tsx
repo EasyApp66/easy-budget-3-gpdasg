@@ -1,11 +1,5 @@
 
 import React, { useState } from 'react';
-import { colors } from '@/styles/commonStyles';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
 import {
   View,
   Text,
@@ -17,117 +11,30 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
 import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { colors } from '@/styles/commonStyles';
+import { useAuth } from '@/contexts/AuthContext';
 import { IconSymbol } from '@/components/IconSymbol';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.black,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 24,
-    paddingTop: 80,
-  },
-  backButton: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : 20,
-    left: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.darkGray,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: colors.white,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.white,
-    opacity: 0.7,
-    marginBottom: 40,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: colors.white,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  input: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: colors.white,
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: colors.neonGreen,
-    borderRadius: 12,
-    padding: 18,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.black,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  linkContainer: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  link: {
-    fontSize: 14,
-    color: colors.neonGreen,
-    textDecorationLine: 'underline',
-  },
-  forgotLink: {
-    fontSize: 14,
-    color: colors.white,
-    opacity: 0.7,
-    marginTop: 12,
-    textAlign: 'center',
-  },
-});
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function LoginScreen() {
-  const { signInWithEmail } = useAuth();
   const router = useRouter();
+  const { signInWithEmail } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const backScale = useSharedValue(1);
-  const buttonScale = useSharedValue(1);
-
-  const backAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: backScale.value }],
-  }));
-
-  const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: buttonScale.value }],
-  }));
-
-  const handlePress = (callback: () => void, scaleValue: Animated.SharedValue<number>) => {
+  const handlePress = (callback: () => void) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    scaleValue.value = withSpring(0.95, {}, () => {
-      scaleValue.value = withSpring(1);
-    });
     callback();
   };
 
@@ -141,44 +48,86 @@ export default function LoginScreen() {
     disabled?: boolean;
   }) => {
     const scale = useSharedValue(1);
+
     const animatedStyle = useAnimatedStyle(() => ({
       transform: [{ scale: scale.value }],
     }));
 
     return (
-      <Animated.View style={animatedStyle}>
-        <Pressable
-          style={[styles.button, disabled && { opacity: 0.5 }]}
-          onPress={() => {
-            if (!disabled) {
-              handlePress(onPress, scale);
+      <AnimatedPressable
+        style={[
+          styles.button,
+          disabled && styles.buttonDisabled,
+          animatedStyle,
+        ]}
+        onPressIn={() => {
+          if (!disabled) {
+            scale.value = withSpring(0.95);
+            if (Platform.OS === 'ios') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             }
-          }}
-          disabled={disabled}
-        >
-          <Text style={styles.buttonText}>{title}</Text>
-        </Pressable>
-      </Animated.View>
+          }
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1);
+        }}
+        onPress={onPress}
+        disabled={disabled}
+      >
+        <Text style={styles.buttonText}>{title}</Text>
+      </AnimatedPressable>
     );
   };
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Fehler', 'Bitte fülle alle Felder aus');
+      Alert.alert('Fehler', 'Bitte E-Mail und Passwort eingeben');
       return;
     }
 
+    setLoading(true);
     try {
       await signInWithEmail(email, password);
-      router.replace('/(tabs)/budget');
-    } catch (error: any) {
-      Alert.alert('Fehler', error.message || 'Anmeldung fehlgeschlagen');
+      router.replace('/(tabs)/(home)');
+    } catch (error) {
+      console.error('Login failed:', error);
+      Alert.alert('Fehler', 'Anmeldung fehlgeschlagen. Bitte versuche es erneut.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: false }} />
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerTitle: '',
+          headerStyle: {
+            backgroundColor: colors.black,
+          },
+          headerTintColor: colors.white,
+          headerShadowVisible: false,
+          headerLeft: () => (
+            <Pressable
+              onPress={() => {
+                if (Platform.OS === 'ios') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                router.back();
+              }}
+              style={styles.backButton}
+            >
+              <IconSymbol
+                ios_icon_name="chevron.left"
+                android_material_icon_name="arrow-back"
+                size={24}
+                color={colors.white}
+              />
+            </Pressable>
+          ),
+        }}
+      />
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -187,62 +136,164 @@ export default function LoginScreen() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View style={[styles.backButton, backAnimatedStyle]}>
-            <Pressable
-              onPress={() => handlePress(() => router.back(), backScale)}
-              style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <IconSymbol
-                name="chevron.left"
-                size={24}
-                color={colors.white}
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Willkommen zurück</Text>
+              <Text style={styles.subtitle}>Melde dich an, um fortzufahren</Text>
+            </View>
+
+            <View style={styles.form}>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>E-MAIL</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="deine@email.com"
+                  placeholderTextColor={colors.white + '60'}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>PASSWORT</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="••••••••"
+                  placeholderTextColor={colors.white + '60'}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              <Pressable
+                onPress={() => handlePress(() => router.push('/forgot-password'))}
+              >
+                <Text style={styles.forgotPassword}>Passwort vergessen?</Text>
+              </Pressable>
+
+              <AnimatedButton
+                title={loading ? 'Wird geladen...' : 'Anmelden'}
+                onPress={handleLogin}
+                disabled={loading}
               />
-            </Pressable>
-          </Animated.View>
 
-          <Text style={styles.title}>Willkommen zurück</Text>
-          <Text style={styles.subtitle}>Melde dich an, um fortzufahren</Text>
-
-          <Text style={styles.label}>E-Mail</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="deine@email.com"
-            placeholderTextColor={colors.white + '50'}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-
-          <Text style={styles.label}>Passwort</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={colors.white + '50'}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-          />
-
-          <Pressable onPress={() => router.push('/forgot-password')}>
-            <Text style={styles.forgotLink}>Passwort vergessen?</Text>
-          </Pressable>
-
-          <AnimatedButton
-            title="Anmelden"
-            onPress={handleLogin}
-            disabled={!email || !password}
-          />
-
-          <View style={styles.linkContainer}>
-            <Pressable onPress={() => router.push('/register')}>
-              <Text style={styles.link}>Noch kein Konto? Registrieren</Text>
-            </Pressable>
+              <View style={styles.registerContainer}>
+                <Text style={styles.registerText}>Noch kein Konto? </Text>
+                <Pressable
+                  onPress={() => handlePress(() => router.push('/register'))}
+                >
+                  <Text style={styles.registerLink}>Registrieren</Text>
+                </Pressable>
+              </View>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.black,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 40,
+  },
+  backButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.darkGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  header: {
+    marginBottom: 40,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: colors.white,
+    textAlign: 'left',
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: colors.white,
+    textAlign: 'left',
+    opacity: 0.7,
+  },
+  form: {
+    gap: 24,
+  },
+  inputContainer: {
+    gap: 8,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.white,
+    letterSpacing: 1,
+  },
+  input: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: colors.white,
+  },
+  forgotPassword: {
+    fontSize: 14,
+    color: colors.neonGreen,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  button: {
+    backgroundColor: colors.neonGreen,
+    paddingVertical: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.black,
+    letterSpacing: 0.3,
+  },
+  registerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  registerText: {
+    fontSize: 14,
+    color: colors.white,
+  },
+  registerLink: {
+    fontSize: 14,
+    color: colors.neonGreen,
+    fontWeight: '600',
+  },
+});
