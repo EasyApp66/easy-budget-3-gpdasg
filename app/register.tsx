@@ -19,59 +19,17 @@ import {
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { IconSymbol } from '@/components/IconSymbol';
+import { LoadingScreen } from '@/components/LoadingScreen';
 import { colors } from '@/styles/commonStyles';
 import * as Haptics from 'expo-haptics';
 
 export default function RegisterScreen() {
-  const router = useRouter();
-  const { signUpWithEmail } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const buttonScale = useSharedValue(1);
-
-  const handlePress = (callback: () => void) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    buttonScale.value = withSpring(0.95, {}, () => {
-      buttonScale.value = withSpring(1);
-    });
-    callback();
-  };
-
-  const AnimatedButton = ({ title, onPress, disabled }: {
-    title: string;
-    onPress: () => void;
-    disabled?: boolean;
-  }) => {
-    const scale = useSharedValue(1);
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
-    }));
-
-    return (
-      <Pressable
-        onPressIn={() => {
-          scale.value = withSpring(0.97);
-          if (Platform.OS !== 'web') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1);
-        }}
-        onPress={onPress}
-        disabled={disabled}
-      >
-        <Animated.View style={[styles.button, animatedStyle, disabled && styles.buttonDisabled]}>
-          <Text style={styles.buttonText}>{title}</Text>
-        </Animated.View>
-      </Pressable>
-    );
-  };
+  const router = useRouter();
+  const { signUpWithEmail } = useAuth();
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
@@ -84,21 +42,73 @@ export default function RegisterScreen() {
       return;
     }
 
-    if (password.length < 8) {
-      Alert.alert('Fehler', 'Passwort muss mindestens 8 Zeichen lang sein');
+    if (password.length < 6) {
+      Alert.alert('Fehler', 'Passwort muss mindestens 6 Zeichen lang sein');
       return;
     }
 
-    setLoading(true);
     try {
+      setLoading(true);
       await signUpWithEmail(email, password);
-      router.replace('/(tabs)/(home)');
+      // Redirect to budget screen after successful registration
+      router.replace('/(tabs)/budget');
     } catch (error: any) {
       Alert.alert('Fehler', error.message || 'Registrierung fehlgeschlagen');
-    } finally {
       setLoading(false);
     }
   };
+
+  const handlePress = (callback: () => void) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    callback();
+  };
+
+  const AnimatedButton = ({
+    title,
+    onPress,
+    disabled,
+  }: {
+    title: string;
+    onPress: () => void;
+    disabled?: boolean;
+  }) => {
+    const scale = useSharedValue(1);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
+
+    return (
+      <Pressable
+        onPressIn={() => {
+          scale.value = withSpring(0.95);
+          handlePress(() => {});
+        }}
+        onPressOut={() => {
+          scale.value = withSpring(1);
+        }}
+        onPress={() => handlePress(onPress)}
+        disabled={disabled}
+        style={{ width: '100%' }}
+      >
+        <Animated.View
+          style={[
+            styles.button,
+            disabled && styles.buttonDisabled,
+            animatedStyle,
+          ]}
+        >
+          <Text style={styles.buttonText}>{title}</Text>
+        </Animated.View>
+      </Pressable>
+    );
+  };
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <KeyboardAvoidingView
@@ -110,7 +120,6 @@ export default function RegisterScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Simple Back Button - No Glass Effect */}
         <Pressable
           onPress={() => {
             handlePress(() => router.back());
@@ -118,22 +127,23 @@ export default function RegisterScreen() {
           style={styles.backButton}
         >
           <IconSymbol
-            ios_icon_name="chevron.left"
-            android_material_icon_name="arrow-back"
+            name="chevron.left"
             size={24}
-            color="#FFFFFF"
+            color={colors.lightGray}
           />
         </Pressable>
 
         <View style={styles.content}>
           <Text style={styles.title}>Konto erstellen</Text>
-          <Text style={styles.subtitle}>Registriere dich, um zu beginnen</Text>
+          <Text style={styles.subtitle}>
+            Registriere dich, um zu beginnen
+          </Text>
 
           <View style={styles.form}>
             <TextInput
               style={styles.input}
               placeholder="deine@email.com"
-              placeholderTextColor="#666"
+              placeholderTextColor={colors.lightGray}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -144,7 +154,7 @@ export default function RegisterScreen() {
             <TextInput
               style={styles.input}
               placeholder="Passwort"
-              placeholderTextColor="#666"
+              placeholderTextColor={colors.lightGray}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -154,7 +164,7 @@ export default function RegisterScreen() {
             <TextInput
               style={styles.input}
               placeholder="Passwort bestätigen"
-              placeholderTextColor="#666"
+              placeholderTextColor={colors.lightGray}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
@@ -162,9 +172,9 @@ export default function RegisterScreen() {
             />
 
             <AnimatedButton
-              title={loading ? 'Lädt...' : 'Registrieren'}
+              title="Registrieren"
               onPress={handleRegister}
-              disabled={loading}
+              disabled={!email || !password || !confirmPassword}
             />
 
             <Pressable
@@ -195,10 +205,10 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#232323',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.darkGray,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 32,
@@ -208,30 +218,31 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '800',
+    fontWeight: '900',
     color: colors.white,
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: '#999',
+    color: colors.lightGray,
     marginBottom: 40,
+    fontWeight: '600',
   },
   form: {
     gap: 16,
   },
   input: {
-    backgroundColor: '#232323',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.darkGray,
+    borderRadius: 16,
+    padding: 18,
     fontSize: 16,
     color: colors.white,
     fontWeight: '600',
   },
   button: {
     backgroundColor: colors.neonGreen,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 18,
     alignItems: 'center',
     marginTop: 8,
@@ -242,20 +253,23 @@ const styles = StyleSheet.create({
   buttonText: {
     color: colors.black,
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '900',
     letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   linkContainer: {
     alignItems: 'center',
-    paddingVertical: 8,
+    marginTop: 8,
   },
   link: {
     color: colors.neonGreen,
     fontSize: 14,
     fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   secondaryText: {
-    color: '#999',
+    color: colors.lightGray,
     fontSize: 14,
+    fontWeight: '600',
   },
 });
