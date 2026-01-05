@@ -90,8 +90,14 @@ function CustomTabBar() {
     }
   };
 
-  const TabButton = ({ icon, route, label }: { 
-    icon: string; 
+  const TabButton = ({ 
+    iosIcon, 
+    androidIcon, 
+    route, 
+    label 
+  }: { 
+    iosIcon: string; 
+    androidIcon: string;
     route: string; 
     label: string;
   }) => {
@@ -112,9 +118,10 @@ function CustomTabBar() {
       >
         <Animated.View style={animatedStyle}>
           <IconSymbol
-            name={icon}
+            ios_icon_name={iosIcon}
+            android_material_icon_name={androidIcon}
             size={28}
-            color={active ? colors.neonGreen : '#888'}
+            color={active ? colors.neonGreen : '#FFFFFF'}
           />
         </Animated.View>
       </Pressable>
@@ -132,7 +139,12 @@ function CustomTabBar() {
       }}
     >
       <Animated.View style={[styles.addButton, animatedStyleAdd]}>
-        <IconSymbol name="plus" size={32} color="#000000" />
+        <IconSymbol 
+          ios_icon_name="plus" 
+          android_material_icon_name="add" 
+          size={32} 
+          color="#000000" 
+        />
       </Animated.View>
     </Pressable>
   );
@@ -140,9 +152,24 @@ function CustomTabBar() {
   return (
     <View style={styles.tabBarContainer}>
       <BlurView intensity={30} tint="dark" style={styles.blurView}>
-        <TabButton icon="dollarsign.circle.fill" route="/(tabs)/budget" label="Budget" />
-        <TabButton icon="arrow.triangle.2.circlepath" route="/(tabs)/abos" label="Abos" />
-        <TabButton icon="person.circle.fill" route="/(tabs)/profil" label="Profil" />
+        <TabButton 
+          iosIcon="dollarsign.circle.fill" 
+          androidIcon="attach-money" 
+          route="/(tabs)/budget" 
+          label="Budget" 
+        />
+        <TabButton 
+          iosIcon="arrow.triangle.2.circlepath" 
+          androidIcon="sync" 
+          route="/(tabs)/abos" 
+          label="Abos" 
+        />
+        <TabButton 
+          iosIcon="person.circle.fill" 
+          androidIcon="person" 
+          route="/(tabs)/profil" 
+          label="Profil" 
+        />
         <AddButton />
       </BlurView>
     </View>
