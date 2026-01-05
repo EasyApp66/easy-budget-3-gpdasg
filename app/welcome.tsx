@@ -8,6 +8,7 @@ import {
   Pressable,
   Platform,
   Linking,
+  Image,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -30,12 +31,14 @@ export default function WelcomeScreen() {
     backgroundColor,
     textColor,
     iconName,
+    isGoogle,
   }: {
     title: string;
     onPress: () => void;
     backgroundColor: string;
     textColor: string;
-    iconName: string;
+    iconName?: string;
+    isGoogle?: boolean;
   }) => {
     const scale = useSharedValue(1);
 
@@ -63,7 +66,17 @@ export default function WelcomeScreen() {
             animatedStyle,
           ]}
         >
-          <MaterialIcons name={iconName as any} size={20} color={textColor} style={styles.buttonIcon} />
+          {isGoogle ? (
+            <View style={styles.googleIconContainer}>
+              <Image
+                source={{ uri: 'https://www.google.com/favicon.ico' }}
+                style={styles.googleIcon}
+                resizeMode="contain"
+              />
+            </View>
+          ) : iconName ? (
+            <MaterialIcons name={iconName as any} size={20} color={textColor} style={styles.buttonIcon} />
+          ) : null}
           <Text style={[styles.buttonText, { color: textColor }]}>{title}</Text>
         </Animated.View>
       </Pressable>
@@ -142,7 +155,7 @@ export default function WelcomeScreen() {
               onPress={handleGooglePress}
               backgroundColor={colors.white}
               textColor={colors.black}
-              iconName="g-translate"
+              isGoogle={true}
             />
           </View>
 
@@ -200,7 +213,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 40,
+    fontSize: 43,
     fontWeight: '800',
     color: colors.white,
     textAlign: 'left',
@@ -224,6 +237,17 @@ const styles = StyleSheet.create({
   },
   buttonIcon: {
     marginRight: 12,
+  },
+  googleIconContainer: {
+    marginRight: 12,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  googleIcon: {
+    width: 20,
+    height: 20,
   },
   buttonText: {
     fontSize: 16,
