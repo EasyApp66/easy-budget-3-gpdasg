@@ -1,5 +1,11 @@
 
 import React, { useState } from 'react';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import { Stack, useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -11,59 +17,44 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { authClient } from '@/lib/auth';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+import { colors } from '@/styles/commonStyles';
+import * as Haptics from 'expo-haptics';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const buttonScale = useSharedValue(1);
+
   const handlePress = (callback: () => void) => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    buttonScale.value = withSpring(0.95, {}, () => {
+      buttonScale.value = withSpring(1);
+    });
     callback();
   };
 
-  const AnimatedButton = ({
-    title,
-    onPress,
-    disabled,
-  }: {
+  const AnimatedButton = ({ title, onPress, disabled }: {
     title: string;
     onPress: () => void;
     disabled?: boolean;
   }) => {
     const scale = useSharedValue(1);
-
     const animatedStyle = useAnimatedStyle(() => ({
       transform: [{ scale: scale.value }],
     }));
 
     return (
-      <AnimatedPressable
-        style={[
-          styles.button,
-          disabled && styles.buttonDisabled,
-          animatedStyle,
-        ]}
+      <Pressable
         onPressIn={() => {
-          if (!disabled) {
-            scale.value = withSpring(0.95);
-            if (Platform.OS === 'ios') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
+          scale.value = withSpring(0.97);
+          if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
         }}
         onPressOut={() => {
@@ -72,14 +63,16 @@ export default function ForgotPasswordScreen() {
         onPress={onPress}
         disabled={disabled}
       >
-        <Text style={styles.buttonText}>{title}</Text>
-      </AnimatedPressable>
+        <Animated.View style={[styles.button, animatedStyle, disabled && styles.buttonDisabled]}>
+          <Text style={styles.buttonText}>{title}</Text>
+        </Animated.View>
+      </Pressable>
     );
   };
 
   const handleSendLink = async () => {
     if (!email) {
-      Alert.alert('Fehler', 'Bitte E-Mail-Adresse eingeben');
+      Alert.alert('Fehler', 'Bitte gib deine E-Mail-Adresse ein');
       return;
     }
 
@@ -87,12 +80,11 @@ export default function ForgotPasswordScreen() {
     try {
       await authClient.forgetPassword({
         email,
-        redirectTo: '/reset-password', // User will receive email with reset link
+        redirectTo: '/reset-password',
       });
-      console.log('[ForgotPassword] Password reset email sent to:', email);
       Alert.alert(
         'Link gesendet',
-        'Wir haben dir einen Link zum Zurücksetzen deines Passworts gesendet.',
+        'Wir haben dir einen Link zum Zurücksetzen deines Passworts gesendet. Bitte überprüfe deine E-Mails.',
         [
           {
             text: 'OK',
@@ -100,92 +92,72 @@ export default function ForgotPasswordScreen() {
           },
         ]
       );
-    } catch (error) {
-      console.error('[ForgotPassword] Password reset failed:', error);
-      Alert.alert('Fehler', 'Link konnte nicht gesendet werden. Bitte versuche es erneut.');
+    } catch (error: any) {
+      Alert.alert('Fehler', error.message || 'Link konnte nicht gesendet werden');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: '',
-          headerStyle: {
-            backgroundColor: colors.black,
-          },
-          headerTintColor: colors.white,
-          headerShadowVisible: false,
-          headerLeft: () => (
-            <Pressable
-              onPress={() => {
-                if (Platform.OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                router.back();
-              }}
-              style={styles.backButton}
-            >
-              <IconSymbol
-                ios_icon_name="chevron.left"
-                android_material_icon_name="arrow-back"
-                size={24}
-                color={colors.white}
-              />
-            </Pressable>
-          ),
-        }}
-      />
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
+        {/* Simple Back Button - No Glass Effect */}
+        <Pressable
+          onPress={() => {
+            handlePress(() => router.back());
+          }}
+          style={styles.backButton}
         >
-          <View style={styles.content}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Passwort vergessen</Text>
-              <Text style={styles.subtitle}>
-                Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen
-              </Text>
-            </View>
+          <IconSymbol
+            ios_icon_name="chevron.left"
+            android_material_icon_name="arrow-back"
+            size={24}
+            color="#FFFFFF"
+          />
+        </Pressable>
 
-            <View style={styles.form}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>E-MAIL</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="deine@email.com"
-                  placeholderTextColor={colors.white + '60'}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoCorrect={false}
-                />
-              </View>
+        <View style={styles.content}>
+          <Text style={styles.title}>Passwort vergessen</Text>
+          <Text style={styles.subtitle}>
+            Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen
+          </Text>
 
-              <AnimatedButton
-                title={loading ? 'Wird gesendet...' : 'Link senden'}
-                onPress={handleSendLink}
-                disabled={loading}
-              />
+          <View style={styles.form}>
+            <TextInput
+              style={styles.input}
+              placeholder="deine@email.com"
+              placeholderTextColor="#666"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
 
-              <Pressable
-                onPress={() => handlePress(() => router.back())}
-              >
-                <Text style={styles.backToLogin}>Zurück zur Anmeldung</Text>
-              </Pressable>
-            </View>
+            <AnimatedButton
+              title={loading ? 'Lädt...' : 'Link senden'}
+              onPress={handleSendLink}
+              disabled={loading}
+            />
+
+            <Pressable
+              onPress={() => handlePress(() => router.back())}
+              style={styles.linkContainer}
+            >
+              <Text style={styles.link}>Zurück zur Anmeldung</Text>
+            </Pressable>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -196,81 +168,69 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-  },
-  content: {
-    flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 40,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 40,
   },
   backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.darkGray,
-    alignItems: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#232323',
     justifyContent: 'center',
-    marginLeft: 8,
+    alignItems: 'center',
+    marginBottom: 32,
   },
-  header: {
-    marginBottom: 40,
+  content: {
+    flex: 1,
   },
   title: {
     fontSize: 32,
-    fontWeight: '900',
+    fontWeight: '800',
     color: colors.white,
-    textAlign: 'left',
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.white,
-    textAlign: 'left',
-    opacity: 0.7,
+    color: '#999',
+    marginBottom: 40,
     lineHeight: 24,
   },
   form: {
-    gap: 24,
-  },
-  inputContainer: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: 1,
+    gap: 16,
   },
   input: {
-    backgroundColor: colors.darkGray,
+    backgroundColor: '#232323',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    padding: 16,
     fontSize: 16,
     color: colors.white,
+    fontWeight: '600',
   },
   button: {
     backgroundColor: colors.neonGreen,
-    paddingVertical: 18,
     borderRadius: 12,
+    padding: 18,
     alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 8,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   buttonText: {
-    fontSize: 16,
-    fontWeight: '700',
     color: colors.black,
-    letterSpacing: 0.3,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  backToLogin: {
-    fontSize: 14,
+  linkContainer: {
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  link: {
     color: colors.neonGreen,
-    textAlign: 'center',
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

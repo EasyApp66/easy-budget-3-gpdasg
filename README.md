@@ -1,4 +1,4 @@
-# Budget Dark
+# Easy Budget 2.0
 
 This app was built using [Natively.dev](https://natively.dev) - a platform for creating mobile apps.
 

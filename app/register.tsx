@@ -1,5 +1,11 @@
 
 import React, { useState } from 'react';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import { Stack, useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -11,18 +17,10 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import { colors } from '@/styles/commonStyles';
 import { useAuth } from '@/contexts/AuthContext';
 import { IconSymbol } from '@/components/IconSymbol';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+import { colors } from '@/styles/commonStyles';
+import * as Haptics from 'expo-haptics';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -32,41 +30,34 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const buttonScale = useSharedValue(1);
+
   const handlePress = (callback: () => void) => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    buttonScale.value = withSpring(0.95, {}, () => {
+      buttonScale.value = withSpring(1);
+    });
     callback();
   };
 
-  const AnimatedButton = ({
-    title,
-    onPress,
-    disabled,
-  }: {
+  const AnimatedButton = ({ title, onPress, disabled }: {
     title: string;
     onPress: () => void;
     disabled?: boolean;
   }) => {
     const scale = useSharedValue(1);
-
     const animatedStyle = useAnimatedStyle(() => ({
       transform: [{ scale: scale.value }],
     }));
 
     return (
-      <AnimatedPressable
-        style={[
-          styles.button,
-          disabled && styles.buttonDisabled,
-          animatedStyle,
-        ]}
+      <Pressable
         onPressIn={() => {
-          if (!disabled) {
-            scale.value = withSpring(0.95);
-            if (Platform.OS === 'ios') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
+          scale.value = withSpring(0.97);
+          if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
         }}
         onPressOut={() => {
@@ -75,14 +66,16 @@ export default function RegisterScreen() {
         onPress={onPress}
         disabled={disabled}
       >
-        <Text style={styles.buttonText}>{title}</Text>
-      </AnimatedPressable>
+        <Animated.View style={[styles.button, animatedStyle, disabled && styles.buttonDisabled]}>
+          <Text style={styles.buttonText}>{title}</Text>
+        </Animated.View>
+      </Pressable>
     );
   };
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
-      Alert.alert('Fehler', 'Bitte alle Felder ausfüllen');
+      Alert.alert('Fehler', 'Bitte fülle alle Felder aus');
       return;
     }
 
@@ -100,121 +93,93 @@ export default function RegisterScreen() {
     try {
       await signUpWithEmail(email, password);
       router.replace('/(tabs)/(home)');
-    } catch (error) {
-      console.error('Registration failed:', error);
-      Alert.alert('Fehler', 'Registrierung fehlgeschlagen. Bitte versuche es erneut.');
+    } catch (error: any) {
+      Alert.alert('Fehler', error.message || 'Registrierung fehlgeschlagen');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: '',
-          headerStyle: {
-            backgroundColor: colors.black,
-          },
-          headerTintColor: colors.white,
-          headerShadowVisible: false,
-          headerLeft: () => (
-            <Pressable
-              onPress={() => {
-                if (Platform.OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                router.back();
-              }}
-              style={styles.backButton}
-            >
-              <IconSymbol
-                ios_icon_name="chevron.left"
-                android_material_icon_name="arrow-back"
-                size={24}
-                color={colors.white}
-              />
-            </Pressable>
-          ),
-        }}
-      />
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
+        {/* Simple Back Button - No Glass Effect */}
+        <Pressable
+          onPress={() => {
+            handlePress(() => router.back());
+          }}
+          style={styles.backButton}
         >
-          <View style={styles.content}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Konto erstellen</Text>
-              <Text style={styles.subtitle}>Registriere dich, um zu starten</Text>
-            </View>
+          <IconSymbol
+            ios_icon_name="chevron.left"
+            android_material_icon_name="arrow-back"
+            size={24}
+            color="#FFFFFF"
+          />
+        </Pressable>
 
-            <View style={styles.form}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>E-MAIL</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="deine@email.com"
-                  placeholderTextColor={colors.white + '60'}
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  autoCorrect={false}
-                />
-              </View>
+        <View style={styles.content}>
+          <Text style={styles.title}>Konto erstellen</Text>
+          <Text style={styles.subtitle}>Registriere dich, um zu beginnen</Text>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>PASSWORT</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="••••••••"
-                  placeholderTextColor={colors.white + '60'}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
+          <View style={styles.form}>
+            <TextInput
+              style={styles.input}
+              placeholder="deine@email.com"
+              placeholderTextColor="#666"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>PASSWORT BESTÄTIGEN</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="••••••••"
-                  placeholderTextColor={colors.white + '60'}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Passwort"
+              placeholderTextColor="#666"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
 
-              <AnimatedButton
-                title={loading ? 'Wird geladen...' : 'Registrieren'}
-                onPress={handleRegister}
-                disabled={loading}
-              />
+            <TextInput
+              style={styles.input}
+              placeholder="Passwort bestätigen"
+              placeholderTextColor="#666"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
 
-              <View style={styles.loginContainer}>
-                <Text style={styles.loginText}>Bereits ein Konto? </Text>
-                <Pressable
-                  onPress={() => handlePress(() => router.push('/login'))}
-                >
-                  <Text style={styles.loginLink}>Anmelden</Text>
-                </Pressable>
-              </View>
-            </View>
+            <AnimatedButton
+              title={loading ? 'Lädt...' : 'Registrieren'}
+              onPress={handleRegister}
+              disabled={loading}
+            />
+
+            <Pressable
+              onPress={() => handlePress(() => router.push('/login'))}
+              style={styles.linkContainer}
+            >
+              <Text style={styles.secondaryText}>
+                Bereits ein Konto?{' '}
+                <Text style={styles.link}>Anmelden</Text>
+              </Text>
+            </Pressable>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -225,88 +190,72 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-  },
-  content: {
-    flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 40,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 40,
   },
   backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.darkGray,
-    alignItems: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#232323',
     justifyContent: 'center',
-    marginLeft: 8,
+    alignItems: 'center',
+    marginBottom: 32,
   },
-  header: {
-    marginBottom: 40,
+  content: {
+    flex: 1,
   },
   title: {
     fontSize: 32,
-    fontWeight: '900',
+    fontWeight: '800',
     color: colors.white,
-    textAlign: 'left',
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.white,
-    textAlign: 'left',
-    opacity: 0.7,
+    color: '#999',
+    marginBottom: 40,
   },
   form: {
-    gap: 24,
-  },
-  inputContainer: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: 1,
+    gap: 16,
   },
   input: {
-    backgroundColor: colors.darkGray,
+    backgroundColor: '#232323',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    padding: 16,
     fontSize: 16,
     color: colors.white,
+    fontWeight: '600',
   },
   button: {
     backgroundColor: colors.neonGreen,
-    paddingVertical: 18,
     borderRadius: 12,
+    padding: 18,
     alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 8,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   buttonText: {
-    fontSize: 16,
-    fontWeight: '700',
     color: colors.black,
-    letterSpacing: 0.3,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  loginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  linkContainer: {
     alignItems: 'center',
+    paddingVertical: 8,
   },
-  loginText: {
-    fontSize: 14,
-    color: colors.white,
-  },
-  loginLink: {
-    fontSize: 14,
+  link: {
     color: colors.neonGreen,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  secondaryText: {
+    color: '#999',
+    fontSize: 14,
   },
 });
