@@ -297,7 +297,7 @@ export default function AbosScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Top Pills */}
+          {/* Top Pills - Matching Budget page design */}
           <View style={styles.topPillsContainer}>
             <View style={styles.topPillLarge}>
               <Text style={styles.topPillLabel}>ABO KOSTEN</Text>
@@ -471,12 +471,13 @@ const styles = StyleSheet.create({
   },
   topPillLarge: {
     backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: 120,
+    minHeight: 120,
   },
   topPill: {
     backgroundColor: colors.darkGray,
@@ -489,14 +490,15 @@ const styles = StyleSheet.create({
   },
   topPillLabel: {
     color: colors.white,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
   topPillValue: {
     color: colors.white,
-    fontSize: 48,
+    fontSize: 52,
     fontWeight: '800',
+    letterSpacing: 0,
   },
   subscriptionList: {
     gap: 12,

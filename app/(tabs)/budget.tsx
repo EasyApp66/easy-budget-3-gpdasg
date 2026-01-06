@@ -668,11 +668,13 @@ const styles = StyleSheet.create({
   },
   topPill: {
     backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: 120,
   },
   topPillDouble: {
     backgroundColor: colors.darkGray,
@@ -687,15 +689,15 @@ const styles = StyleSheet.create({
   },
   topPillLabel: {
     color: colors.white,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
   topPillValue: {
     color: colors.white,
-    fontSize: 32,
+    fontSize: 52,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 0,
   },
   monthRow: {
     marginTop: 24,
