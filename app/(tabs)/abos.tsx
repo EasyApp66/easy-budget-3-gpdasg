@@ -1,5 +1,12 @@
 
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 import {
   View,
   Text,
@@ -11,18 +18,11 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  runOnJS,
-} from 'react-native-reanimated';
-import { GestureHandlerRootView, GestureDetector, Gesture } from 'react-native-gesture-handler';
-import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
+import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { usePremium } from '@/hooks/usePremium';
+import * as Haptics from 'expo-haptics';
+import { GestureHandlerRootView, GestureDetector, Gesture } from 'react-native-gesture-handler';
 
 interface Subscription {
   id: string;
@@ -32,45 +32,48 @@ interface Subscription {
 }
 
 export default function AbosScreen() {
-  const { isPremium, showPaywall, setShowPaywall } = usePremium();
+  const { isPremium } = usePremium();
   
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([
-    { id: '1', name: 'NETFLIX', monthlyCost: 15.9, isPinned: false },
-    { id: '2', name: 'SPOTIFY', monthlyCost: 12.9, isPinned: false },
+    { id: '1', name: 'SPOTIFY', monthlyCost: 12.99, isPinned: false },
+    { id: '2', name: 'NETFLIX', monthlyCost: 17.90, isPinned: false },
   ]);
 
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    itemId: string | null;
+  }>({
+    visible: false,
+    itemId: null,
+  });
+
+  const [editModal, setEditModal] = useState<{
+    visible: boolean;
+    type: 'name' | 'amount' | null;
+    itemId: string;
+    value: string;
+  }>({
+    visible: false,
+    type: null,
+    itemId: '',
+    value: '',
+  });
+
+  const [addModal, setAddModal] = useState(false);
   const [newSubName, setNewSubName] = useState('');
   const [newSubAmount, setNewSubAmount] = useState('');
 
-  const [contextMenuVisible, setContextMenuVisible] = useState(false);
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editType, setEditType] = useState<'name' | 'amount'>('name');
-  const [editValue, setEditValue] = useState('');
-  const [editItemId, setEditItemId] = useState<string | null>(null);
-
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
+  const [premiumModal, setPremiumModal] = useState(false);
 
   const formatNumber = (num: number) => {
-    return num.toLocaleString('de-CH', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+    return num.toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const totalMonthlyCost = subscriptions.reduce((sum, sub) => sum + sub.monthlyCost, 0);
-  const totalYearlyCost = totalMonthlyCost * 12;
-
   const handleLongPress = (itemId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setSelectedItemId(itemId);
-    setContextMenuVisible(true);
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setContextMenu({ visible: true, itemId });
   };
 
   const handleDeleteSub = (id: string) => {
@@ -81,284 +84,286 @@ export default function AbosScreen() {
         style: 'destructive',
         onPress: () => {
           setSubscriptions(subscriptions.filter((s) => s.id !== id));
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          setContextMenu({ visible: false, itemId: null });
         },
       },
     ]);
   };
 
   const handlePinToggle = () => {
-    setSubscriptions(
-      subscriptions.map((s) =>
-        s.id === selectedItemId ? { ...s, isPinned: !s.isPinned } : s
-      )
-    );
-    setContextMenuVisible(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const { itemId } = contextMenu;
+    if (itemId) {
+      setSubscriptions(
+        subscriptions.map((s) => (s.id === itemId ? { ...s, isPinned: !s.isPinned } : s))
+      );
+    }
+    setContextMenu({ visible: false, itemId: null });
   };
 
   const handleDuplicate = () => {
-    if (!isPremium) {
-      setContextMenuVisible(false);
-      setShowPaywall(true);
-      return;
+    const { itemId } = contextMenu;
+    if (itemId) {
+      const sub = subscriptions.find((s) => s.id === itemId);
+      if (sub) {
+        const newSub = { ...sub, id: Date.now().toString(), name: sub.name + ' KOPIE' };
+        setSubscriptions([...subscriptions, newSub]);
+      }
     }
-    const subToDuplicate = subscriptions.find((s) => s.id === selectedItemId);
-    if (subToDuplicate) {
-      const newSub: Subscription = {
-        ...subToDuplicate,
-        id: Date.now().toString(),
-        isPinned: false,
-      };
-      setSubscriptions([...subscriptions, newSub]);
-    }
-    setContextMenuVisible(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setContextMenu({ visible: false, itemId: null });
   };
 
   const openEditModal = (type: 'name' | 'amount', itemId: string, currentValue: string) => {
-    setEditType(type);
-    setEditItemId(itemId);
-    setEditValue(currentValue);
-    setEditModalVisible(true);
-    setContextMenuVisible(false);
+    setEditModal({ visible: true, type, itemId, value: currentValue });
+    setContextMenu({ visible: false, itemId: null });
   };
 
   const saveEdit = () => {
-    if (editType === 'name') {
+    const { type, itemId, value } = editModal;
+    if (type === 'name') {
+      setSubscriptions(
+        subscriptions.map((s) => (s.id === itemId ? { ...s, name: value.toUpperCase() } : s))
+      );
+    } else if (type === 'amount') {
       setSubscriptions(
         subscriptions.map((s) =>
-          s.id === editItemId ? { ...s, name: editValue.toUpperCase() } : s
-        )
-      );
-    } else if (editType === 'amount') {
-      const numValue = parseFloat(editValue) || 0;
-      setSubscriptions(
-        subscriptions.map((s) =>
-          s.id === editItemId ? { ...s, monthlyCost: numValue } : s
+          s.id === itemId ? { ...s, monthlyCost: parseFloat(value) || 0 } : s
         )
       );
     }
-    setEditModalVisible(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setEditModal({ visible: false, type: null, itemId: '', value: '' });
   };
 
-  const handleSaveNewSubscription = () => {
-    if (!newSubName.trim() || !newSubAmount.trim()) {
-      Alert.alert('Fehler', 'Bitte fülle alle Felder aus.');
+  const handleAddSubscription = () => {
+    if (!isPremium && subscriptions.length >= 2) {
+      setPremiumModal(true);
       return;
     }
-
-    const amount = parseFloat(newSubAmount);
-    if (isNaN(amount)) {
-      Alert.alert('Fehler', 'Bitte gib einen gültigen Betrag ein.');
-      return;
-    }
-
-    const newSub: Subscription = {
-      id: Date.now().toString(),
-      name: newSubName.toUpperCase(),
-      monthlyCost: amount,
-      isPinned: false,
-    };
-
-    setSubscriptions([...subscriptions, newSub]);
-    setNewSubName('');
-    setNewSubAmount('');
-    setShowAddModal(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setAddModal(true);
   };
 
-  const handleCancelNewSubscription = () => {
-    setNewSubName('');
-    setNewSubAmount('');
-    setShowAddModal(false);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const saveNewSubscription = () => {
+    if (newSubName && newSubAmount) {
+      const newSub: Subscription = {
+        id: Date.now().toString(),
+        name: newSubName.toUpperCase(),
+        monthlyCost: parseFloat(newSubAmount) || 0,
+        isPinned: false,
+      };
+      setSubscriptions([...subscriptions, newSub]);
+      setAddModal(false);
+      setNewSubName('');
+      setNewSubAmount('');
+    }
   };
 
   const handlePremiumPurchase = (type: 'onetime' | 'monthly') => {
-    Alert.alert('Premium', `${type === 'onetime' ? 'Einmaliger' : 'Monatlicher'} Kauf wird verarbeitet...`);
-    setShowPaywall(false);
+    Alert.alert('Premium', `${type === 'onetime' ? 'Einmalzahlung' : 'Monatlich'} ausgewählt`);
+    setPremiumModal(false);
   };
 
   const handlePremiumClose = () => {
-    setShowPaywall(false);
+    setPremiumModal(false);
   };
 
-  const SubscriptionPill = ({ subscription }: { subscription: Subscription }) => (
-    <Animated.View style={animatedStyle}>
-      <Pressable
-        onLongPress={() => handleLongPress(subscription.id)}
-        delayLongPress={600}
-        onPressIn={() => {
-          scale.value = withSpring(0.98);
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1);
-        }}
-      >
-        <View style={styles.subPill}>
-          <Text style={styles.subName}>{subscription.name}</Text>
-          <Text style={styles.subAmount}>CHF {formatNumber(subscription.monthlyCost)}</Text>
-        </View>
-      </Pressable>
-    </Animated.View>
-  );
+  const SubscriptionPill = ({ subscription }: { subscription: Subscription }) => {
+    const scale = useSharedValue(1);
+    const translateX = useSharedValue(0);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }, { translateX: translateX.value }],
+    }));
+
+    const gesture = Gesture.Pan()
+      .onUpdate((e) => {
+        translateX.value = e.translationX;
+      })
+      .onEnd((e) => {
+        if (Math.abs(e.translationX) > 100) {
+          translateX.value = withTiming(e.translationX > 0 ? 500 : -500, { duration: 200 }, () => {
+            runOnJS(handleDeleteSub)(subscription.id);
+          });
+        } else {
+          translateX.value = withSpring(0);
+        }
+      });
+
+    return (
+      <GestureDetector gesture={gesture}>
+        <Pressable
+          onLongPress={() => handleLongPress(subscription.id)}
+          onPress={() => {
+            if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            scale.value = withSpring(0.98, {}, () => {
+              scale.value = withSpring(1);
+            });
+          }}
+        >
+          <Animated.View style={[styles.subPill, animatedStyle]}>
+            <View style={styles.subRow}>
+              <Text style={styles.subName}>{subscription.name}</Text>
+              {subscription.isPinned && <Text style={styles.pinIcon}>📌</Text>}
+            </View>
+            <Text style={styles.subAmount}>{formatNumber(subscription.monthlyCost)}</Text>
+          </Animated.View>
+        </Pressable>
+      </GestureDetector>
+    );
+  };
+
+  const totalMonthlyCost = subscriptions.reduce((sum, s) => sum + s.monthlyCost, 0);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.summaryContainer}>
-          <View style={styles.summaryPill}>
-            <Text style={styles.summaryLabel}>MONATLICH</Text>
-            <Text style={styles.summaryValue}>CHF {formatNumber(totalMonthlyCost)}</Text>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Text style={styles.title}>ABOS</Text>
+
+          <View style={styles.topPill}>
+            <Text style={styles.topPillLabel}>ABO KOSTEN</Text>
+            <Text style={styles.topPillValue}>{formatNumber(totalMonthlyCost)}</Text>
           </View>
-          <View style={styles.summaryPill}>
-            <Text style={styles.summaryLabel}>JÄHRLICH</Text>
-            <Text style={[styles.summaryValue, { color: '#C43C3E' }]}>
-              CHF {formatNumber(totalYearlyCost)}
+
+          <View style={styles.topPill}>
+            <Text style={styles.topPillLabel}>TOTAL</Text>
+            <Text style={[styles.topPillValue, { color: '#BFFE84' }]}>
+              {formatNumber(totalMonthlyCost)}
             </Text>
           </View>
-        </View>
 
-        {subscriptions.map((sub) => (
-          <SubscriptionPill key={sub.id} subscription={sub} />
-        ))}
-      </ScrollView>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>MEINE ABOS</Text>
+            {subscriptions.map((sub) => (
+              <SubscriptionPill key={sub.id} subscription={sub} />
+            ))}
+            <Pressable
+              style={styles.addButton}
+              onPress={() => {
+                if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                handleAddSubscription();
+              }}
+            >
+              <Text style={styles.addButtonText}>+ ABO HINZUFÜGEN</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
 
-      {/* NEW COMPACT ADD SUBSCRIPTION MODAL */}
-      <Modal
-        visible={showAddModal}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCancelNewSubscription}
-      >
-        <Pressable style={styles.modalOverlay} onPress={handleCancelNewSubscription}>
-          <Pressable style={styles.newModalContainer} onPress={() => {}}>
-            <Text style={styles.newModalTitle}>Neues Abo</Text>
-            
-            <TextInput
-              style={styles.newModalInput}
-              placeholder="Name (z.B. NETFLIX)"
-              placeholderTextColor="#666"
-              value={newSubName}
-              onChangeText={setNewSubName}
-              autoCapitalize="characters"
-            />
-            
-            <TextInput
-              style={styles.newModalInput}
-              placeholder="Betrag"
-              placeholderTextColor="#666"
-              value={newSubAmount}
-              onChangeText={setNewSubAmount}
-              keyboardType="decimal-pad"
-            />
-            
-            <View style={styles.newModalButtonRow}>
+        {/* Context Menu Modal */}
+        <Modal visible={contextMenu.visible} transparent animationType="fade">
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => setContextMenu({ visible: false, itemId: null })}
+          >
+            <View style={styles.contextMenu}>
               <Pressable
-                style={styles.newModalCancelButton}
-                onPress={handleCancelNewSubscription}
-                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                style={styles.contextMenuItem}
+                onPress={() => {
+                  const sub = subscriptions.find((s) => s.id === contextMenu.itemId);
+                  if (sub) openEditModal('name', sub.id, sub.name);
+                }}
               >
-                <Text style={styles.newModalCancelText}>Abbrechen</Text>
+                <Text style={styles.contextMenuText}>Bearbeiten</Text>
               </Pressable>
-              
+              <Pressable style={styles.contextMenuItem} onPress={handlePinToggle}>
+                <Text style={styles.contextMenuText}>Anpinnen</Text>
+              </Pressable>
+              <Pressable style={styles.contextMenuItem} onPress={handleDuplicate}>
+                <Text style={styles.contextMenuText}>Duplizieren</Text>
+              </Pressable>
               <Pressable
-                style={styles.newModalAddButton}
-                onPress={handleSaveNewSubscription}
-                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                style={styles.contextMenuItem}
+                onPress={() => {
+                  if (contextMenu.itemId) handleDeleteSub(contextMenu.itemId);
+                }}
               >
-                <Text style={styles.newModalAddText}>Hinzufügen</Text>
+                <Text style={[styles.contextMenuText, { color: '#C43C3E' }]}>Löschen</Text>
               </Pressable>
             </View>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
 
-      {/* Context Menu Modal */}
-      <Modal
-        visible={contextMenuVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setContextMenuVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setContextMenuVisible(false)}>
-          <View style={styles.contextMenu}>
-            <Pressable
-              style={styles.contextMenuItem}
-              onPress={() => {
-                setContextMenuVisible(false);
-                const sub = subscriptions.find((s) => s.id === selectedItemId);
-                if (sub) {
-                  openEditModal('name', sub.id, sub.name);
-                }
-              }}
-            >
-              <Text style={styles.contextMenuText}>Bearbeiten</Text>
-            </Pressable>
-            <Pressable style={styles.contextMenuItem} onPress={handlePinToggle}>
-              <Text style={styles.contextMenuText}>Anpinnen</Text>
-            </Pressable>
-            <Pressable style={styles.contextMenuItem} onPress={handleDuplicate}>
-              <Text style={styles.contextMenuText}>Duplizieren</Text>
-            </Pressable>
-            <Pressable
-              style={styles.contextMenuItem}
-              onPress={() => {
-                setContextMenuVisible(false);
-                if (selectedItemId) {
-                  handleDeleteSub(selectedItemId);
-                }
-              }}
-            >
-              <Text style={[styles.contextMenuText, { color: '#C43C3E' }]}>Löschen</Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal
-        visible={editModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setEditModalVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setEditModalVisible(false)}>
-          <View style={styles.editModal}>
-            <Text style={styles.editModalTitle}>Bearbeiten</Text>
-            <TextInput
-              style={styles.editInput}
-              value={editValue}
-              onChangeText={setEditValue}
-              placeholder="Neuer Wert"
-              placeholderTextColor="#666"
-              keyboardType={editType === 'amount' ? 'decimal-pad' : 'default'}
-              autoCapitalize={editType === 'name' ? 'characters' : 'none'}
-            />
-            <View style={styles.editModalButtons}>
-              <Pressable
-                style={styles.editCancelButton}
-                onPress={() => setEditModalVisible(false)}
-              >
-                <Text style={styles.editCancelText}>Abbrechen</Text>
-              </Pressable>
-              <Pressable style={styles.editSaveButton} onPress={saveEdit}>
-                <Text style={styles.editSaveText}>Speichern</Text>
-              </Pressable>
+        {/* Edit Modal */}
+        <Modal visible={editModal.visible} transparent animationType="fade">
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => setEditModal({ visible: false, type: null, itemId: '', value: '' })}
+          >
+            <View style={styles.editModal}>
+              <Text style={styles.editModalTitle}>Bearbeiten</Text>
+              <TextInput
+                style={styles.editModalInput}
+                value={editModal.value}
+                onChangeText={(text) => setEditModal({ ...editModal, value: text })}
+                placeholder="Wert eingeben"
+                placeholderTextColor="#666"
+                keyboardType={editModal.type === 'amount' ? 'numeric' : 'default'}
+              />
+              <View style={styles.editModalButtons}>
+                <Pressable
+                  style={styles.editModalButton}
+                  onPress={() => setEditModal({ visible: false, type: null, itemId: '', value: '' })}
+                >
+                  <Text style={styles.editModalButtonText}>Abbrechen</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.editModalButton, styles.editModalButtonPrimary]}
+                  onPress={saveEdit}
+                >
+                  <Text style={[styles.editModalButtonText, { color: '#000000' }]}>Speichern</Text>
+                </Pressable>
+              </View>
             </View>
-          </View>
-        </Pressable>
-      </Modal>
+          </Pressable>
+        </Modal>
 
-      <PremiumPaywallModal
-        visible={showPaywall}
-        onClose={handlePremiumClose}
-        onPurchase={handlePremiumPurchase}
-      />
-    </SafeAreaView>
+        {/* Add Subscription Modal */}
+        <Modal visible={addModal} transparent animationType="fade">
+          <Pressable style={styles.modalOverlay} onPress={() => setAddModal(false)}>
+            <View style={styles.addModal}>
+              <Text style={styles.addModalTitle}>Neues Abo</Text>
+              <TextInput
+                style={styles.addModalInput}
+                value={newSubName}
+                onChangeText={setNewSubName}
+                placeholder="Name des Abos"
+                placeholderTextColor="#666"
+              />
+              <TextInput
+                style={styles.addModalInput}
+                value={newSubAmount}
+                onChangeText={setNewSubAmount}
+                placeholder="Betrag (CHF/EUR)"
+                placeholderTextColor="#666"
+                keyboardType="numeric"
+              />
+              <View style={styles.addModalButtons}>
+                <Pressable
+                  style={styles.addModalButton}
+                  onPress={() => {
+                    setAddModal(false);
+                    setNewSubName('');
+                    setNewSubAmount('');
+                  }}
+                >
+                  <Text style={styles.addModalButtonText}>Abbre</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.addModalButton, styles.addModalButtonPrimary]}
+                  onPress={saveNewSubscription}
+                >
+                  <Text style={[styles.addModalButtonText, { color: '#000000' }]}>Speichern</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Pressable>
+        </Modal>
+
+        <PremiumPaywallModal
+          visible={premiumModal}
+          onClose={handlePremiumClose}
+          onPurchase={handlePremiumPurchase}
+        />
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 }
 
@@ -371,50 +376,85 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 100,
   },
-  summaryContainer: {
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
     marginBottom: 20,
+    letterSpacing: 2,
   },
-  summaryPill: {
+  topPill: {
     backgroundColor: '#232323',
     borderRadius: 16,
-    padding: 16,
+    padding: 20,
+    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
   },
-  summaryLabel: {
-    fontSize: 16,
-    fontWeight: '700',
+  topPillLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
     color: '#FFFFFF',
     letterSpacing: 1,
   },
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#BFFE84',
-    letterSpacing: 0.5,
+  topPillValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  section: {
+    marginTop: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    letterSpacing: 1.5,
   },
   subPill: {
     backgroundColor: '#232323',
     borderRadius: 16,
-    padding: 16,
+    padding: 20,
+    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+  },
+  subRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   subName: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#FFFFFF',
     letterSpacing: 1,
   },
+  pinIcon: {
+    fontSize: 16,
+  },
   subAmount: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#FFFFFF',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
+  },
+  addButton: {
+    backgroundColor: '#BFFE84',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#000000',
+    letterSpacing: 1.5,
   },
   modalOverlay: {
     flex: 1,
@@ -422,133 +462,104 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
-  // NEW COMPACT MODAL STYLES
-  newModalContainer: {
-    width: 320,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  newModalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 20,
-    letterSpacing: 0.5,
-  },
-  newModalInput: {
-    backgroundColor: '#000000',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginBottom: 12,
-  },
-  newModalButtonRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  newModalCancelButton: {
-    flex: 1,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  newModalCancelText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
-  },
-  newModalAddButton: {
-    flex: 1,
-    backgroundColor: '#BFFE84',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  newModalAddText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#000000',
-    letterSpacing: 0.3,
-  },
-
   contextMenu: {
     backgroundColor: '#232323',
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 8,
     minWidth: 200,
   },
   contextMenuItem: {
     padding: 16,
-    borderRadius: 8,
   },
   contextMenuText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#FFFFFF',
-    textAlign: 'center',
+    letterSpacing: 1,
   },
   editModal: {
     backgroundColor: '#232323',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 24,
-    width: '80%',
-    maxWidth: 400,
+    width: '92%',
+    maxWidth: 500,
   },
   editModalTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 16,
-    textAlign: 'center',
+    marginBottom: 20,
+    letterSpacing: 1.5,
   },
-  editInput: {
+  editModalInput: {
     backgroundColor: '#000000',
     borderRadius: 12,
-    padding: 14,
+    padding: 16,
     fontSize: 16,
-    fontWeight: '600',
     color: '#FFFFFF',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   editModalButtons: {
     flexDirection: 'row',
     gap: 12,
   },
-  editCancelButton: {
+  editModalButton: {
     flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    backgroundColor: '#000000',
+  },
+  editModalButtonPrimary: {
+    backgroundColor: '#BFFE84',
+  },
+  editModalButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    letterSpacing: 1,
+  },
+  addModal: {
+    backgroundColor: '#232323',
+    borderRadius: 20,
+    padding: 24,
+    width: '92%',
+    maxWidth: 500,
+  },
+  addModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 20,
+    letterSpacing: 1.5,
+  },
+  addModalInput: {
     backgroundColor: '#000000',
     borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-  },
-  editCancelText: {
+    padding: 16,
     fontSize: 16,
-    fontWeight: '700',
     color: '#FFFFFF',
+    marginBottom: 16,
   },
-  editSaveButton: {
+  addModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  addModalButton: {
     flex: 1,
-    backgroundColor: '#BFFE84',
+    padding: 16,
     borderRadius: 12,
-    padding: 14,
     alignItems: 'center',
+    backgroundColor: '#000000',
   },
-  editSaveText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000000',
+  addModalButtonPrimary: {
+    backgroundColor: '#BFFE84',
+  },
+  addModalButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    letterSpacing: 1,
   },
 });
