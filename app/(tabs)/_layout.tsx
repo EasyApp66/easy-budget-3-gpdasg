@@ -145,8 +145,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#232323',
     borderRadius: 20,
     padding: 24,
-    width: '100%',
-    maxWidth: 400,
+    width: '88%',
+    maxWidth: 500,
   },
   modalTitle: {
     fontSize: 24,
