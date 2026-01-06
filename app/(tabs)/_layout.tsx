@@ -139,39 +139,42 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
   },
   modalContent: {
     backgroundColor: '#232323',
     borderRadius: 20,
-    padding: 24,
-    width: '95%',
-    maxWidth: 500,
+    padding: 28,
+    width: '98%',
+    maxWidth: 600,
+    minWidth: 340,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   input: {
     backgroundColor: '#000000',
     borderRadius: 12,
-    padding: 16,
+    padding: 18,
     color: '#FFFFFF',
     fontSize: 16,
     marginBottom: 16,
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
+    gap: 16,
+    marginTop: 12,
   },
   modalButton: {
     flex: 1,
-    padding: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: 'center',
+    minWidth: 140,
   },
   cancelButton: {
     backgroundColor: '#000000',
@@ -180,8 +183,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#BFFE84',
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
+    letterSpacing: 0.3,
   },
   cancelButtonText: {
     color: '#FFFFFF',
@@ -409,7 +413,7 @@ function CustomTabBar() {
               
               <TextInput
                 style={styles.input}
-                placeholder={modalType === 'expense' ? 'Name der Ausgabe' : 'Name des Abos'}
+                placeholder={modalType === 'expense' ? 'Name (z.B. ESSEN)' : 'Name (z.B. NETFLIX)'}
                 placeholderTextColor="#666"
                 value={name}
                 onChangeText={setName}
@@ -417,7 +421,7 @@ function CustomTabBar() {
               
               <TextInput
                 style={styles.input}
-                placeholder="Betrag (CHF/EUR)"
+                placeholder="Betrag"
                 placeholderTextColor="#666"
                 keyboardType="numeric"
                 value={amount}
@@ -439,7 +443,7 @@ function CustomTabBar() {
                   onPress={handleSave}
                 >
                   <Text style={[styles.buttonText, styles.saveButtonText]}>
-                    Speichern
+                    Hinzufügen
                   </Text>
                 </Pressable>
               </View>
