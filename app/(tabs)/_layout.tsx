@@ -144,16 +144,18 @@ const styles = StyleSheet.create({
   modalContent: {
     backgroundColor: '#232323',
     borderRadius: 20,
-    padding: 28,
-    width: '98%',
-    maxWidth: 600,
+    padding: 24,
+    paddingBottom: 20,
+    width: '95%',
+    maxWidth: 440,
     minWidth: 340,
   },
   modalTitle: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    marginBottom: 24,
+    marginBottom: 20,
+    textAlign: 'left',
   },
   input: {
     backgroundColor: '#000000',
@@ -161,12 +163,13 @@ const styles = StyleSheet.create({
     padding: 18,
     color: '#FFFFFF',
     fontSize: 16,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 16,
-    marginTop: 12,
+    gap: 14,
+    marginTop: 10,
+    marginBottom: 0,
   },
   modalButton: {
     flex: 1,
@@ -174,7 +177,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: 'center',
-    minWidth: 140,
+    justifyContent: 'center',
+    minWidth: 155,
   },
   cancelButton: {
     backgroundColor: '#000000',
@@ -185,7 +189,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 17,
     fontWeight: 'bold',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
   cancelButtonText: {
     color: '#FFFFFF',
