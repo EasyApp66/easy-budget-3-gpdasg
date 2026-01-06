@@ -1,12 +1,4 @@
 
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withTiming,
-  runOnJS,
-} from 'react-native-reanimated';
 import {
   View,
   Text,
@@ -19,10 +11,26 @@ import {
   TextInput,
 } from 'react-native';
 import React, { useState } from 'react';
+import { GestureHandlerRootView, GestureDetector, Gesture } from 'react-native-gesture-handler';
+import * as Haptics from 'expo-haptics';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { usePremium } from '@/hooks/usePremium';
-import * as Haptics from 'expo-haptics';
-import { GestureHandlerRootView, GestureDetector, Gesture } from 'react-native-gesture-handler';
+
+const colors = {
+  black: '#000000',
+  white: '#FFFFFF',
+  neonGreen: '#BFFE84',
+  darkGray: '#232323',
+  red: '#C43C3E',
+};
 
 interface Subscription {
   id: string;
@@ -32,333 +40,410 @@ interface Subscription {
 }
 
 export default function AbosScreen() {
-  const { isPremium } = usePremium();
+  const { isPremium, checkLimit } = usePremium();
   
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([
-    { id: '1', name: 'SPOTIFY', monthlyCost: 12.99, isPinned: false },
-    { id: '2', name: 'NETFLIX', monthlyCost: 17.90, isPinned: false },
+    { id: '1', name: 'NETFLIX', monthlyCost: 15, isPinned: true },
+    { id: '2', name: 'APPLE CARE', monthlyCost: 14, isPinned: false },
   ]);
 
-  const [contextMenu, setContextMenu] = useState<{
-    visible: boolean;
-    itemId: string | null;
-  }>({
-    visible: false,
-    itemId: null,
-  });
-
-  const [editModal, setEditModal] = useState<{
-    visible: boolean;
-    type: 'name' | 'amount' | null;
-    itemId: string;
-    value: string;
-  }>({
-    visible: false,
-    type: null,
-    itemId: '',
-    value: '',
-  });
-
-  const [addModal, setAddModal] = useState(false);
+  const [contextMenuVisible, setContextMenuVisible] = useState(false);
+  const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [editType, setEditType] = useState<'name' | 'amount'>('name');
+  const [editValue, setEditValue] = useState('');
   const [newSubName, setNewSubName] = useState('');
   const [newSubAmount, setNewSubAmount] = useState('');
+  const [premiumModalVisible, setPremiumModalVisible] = useState(false);
+  const [pendingSubId, setPendingSubId] = useState<string | null>(null);
 
-  const [premiumModal, setPremiumModal] = useState(false);
+  const totalCost = subscriptions.reduce((sum, sub) => sum + sub.monthlyCost, 0);
+  const totalCount = subscriptions.length;
 
-  const formatNumber = (num: number) => {
-    return num.toLocaleString('de-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Format number with Swiss apostrophe formatting
+  const formatNumber = (num: number): string => {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
   };
 
   const handleLongPress = (itemId: string) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    setContextMenu({ visible: true, itemId });
+    setSelectedSubId(itemId);
+    setContextMenuVisible(true);
   };
 
   const handleDeleteSub = (id: string) => {
-    Alert.alert('Abo löschen', 'Möchtest du dieses Abo wirklich löschen?', [
-      { text: 'Abbrechen', style: 'cancel' },
-      {
-        text: 'Löschen',
-        style: 'destructive',
-        onPress: () => {
-          setSubscriptions(subscriptions.filter((s) => s.id !== id));
-          setContextMenu({ visible: false, itemId: null });
-        },
-      },
-    ]);
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    setSubscriptions(subscriptions.filter((sub) => sub.id !== id));
   };
 
-  const handlePinToggle = () => {
-    const { itemId } = contextMenu;
-    if (itemId) {
-      setSubscriptions(
-        subscriptions.map((s) => (s.id === itemId ? { ...s, isPinned: !s.isPinned } : s))
-      );
+  const handlePinToggle = (id?: string) => {
+    const targetId = id || selectedSubId;
+    if (!targetId) return;
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setContextMenu({ visible: false, itemId: null });
+    setSubscriptions(
+      subscriptions.map((sub) =>
+        sub.id === targetId ? { ...sub, isPinned: !sub.isPinned } : sub
+      )
+    );
+    if (!id) {
+      setContextMenuVisible(false);
+    }
   };
 
   const handleDuplicate = () => {
-    const { itemId } = contextMenu;
-    if (itemId) {
-      const sub = subscriptions.find((s) => s.id === itemId);
-      if (sub) {
-        const newSub = { ...sub, id: Date.now().toString(), name: sub.name + ' KOPIE' };
-        setSubscriptions([...subscriptions, newSub]);
-      }
+    if (!selectedSubId) return;
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setContextMenu({ visible: false, itemId: null });
+    const subToDuplicate = subscriptions.find((sub) => sub.id === selectedSubId);
+    if (subToDuplicate) {
+      const newSub = {
+        ...subToDuplicate,
+        id: Date.now().toString(),
+      };
+      setSubscriptions([...subscriptions, newSub]);
+    }
+    setContextMenuVisible(false);
   };
 
   const openEditModal = (type: 'name' | 'amount', itemId: string, currentValue: string) => {
-    setEditModal({ visible: true, type, itemId, value: currentValue });
-    setContextMenu({ visible: false, itemId: null });
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setEditType(type);
+    setEditValue(currentValue);
+    setSelectedSubId(itemId);
+    setContextMenuVisible(false);
+    setEditModalVisible(true);
   };
 
   const saveEdit = () => {
-    const { type, itemId, value } = editModal;
-    if (type === 'name') {
-      setSubscriptions(
-        subscriptions.map((s) => (s.id === itemId ? { ...s, name: value.toUpperCase() } : s))
-      );
-    } else if (type === 'amount') {
-      setSubscriptions(
-        subscriptions.map((s) =>
-          s.id === itemId ? { ...s, monthlyCost: parseFloat(value) || 0 } : s
-        )
-      );
+    if (!selectedSubId) return;
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    setEditModal({ visible: false, type: null, itemId: '', value: '' });
+    setSubscriptions(
+      subscriptions.map((sub) =>
+        sub.id === selectedSubId
+          ? editType === 'name'
+            ? { ...sub, name: editValue.toUpperCase() }
+            : { ...sub, monthlyCost: parseFloat(editValue) || 0 }
+          : sub
+      )
+    );
+    setEditModalVisible(false);
+    setEditValue('');
   };
 
   const handleAddSubscription = () => {
-    if (!isPremium && subscriptions.length >= 2) {
-      setPremiumModal(true);
-      return;
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    setAddModal(true);
+    setNewSubName('');
+    setNewSubAmount('');
+    setAddModalVisible(true);
   };
 
   const saveNewSubscription = () => {
-    if (newSubName && newSubAmount) {
+    if (!newSubName.trim() || !newSubAmount.trim()) {
+      Alert.alert('Fehler', 'Bitte fülle alle Felder aus.');
+      return;
+    }
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    
+    // Check premium limit
+    if (checkLimit(0, 0, subscriptions.length + 1)) {
+      const newSubId = Date.now().toString();
       const newSub: Subscription = {
-        id: Date.now().toString(),
+        id: newSubId,
         name: newSubName.toUpperCase(),
         monthlyCost: parseFloat(newSubAmount) || 0,
         isPinned: false,
       };
       setSubscriptions([...subscriptions, newSub]);
-      setAddModal(false);
+      setPendingSubId(newSubId);
+      setAddModalVisible(false);
       setNewSubName('');
       setNewSubAmount('');
+      setPremiumModalVisible(true);
+      return;
     }
+    
+    const newSub: Subscription = {
+      id: Date.now().toString(),
+      name: newSubName.toUpperCase(),
+      monthlyCost: parseFloat(newSubAmount) || 0,
+      isPinned: false,
+    };
+    setSubscriptions([...subscriptions, newSub]);
+    setAddModalVisible(false);
+    setNewSubName('');
+    setNewSubAmount('');
   };
 
   const handlePremiumPurchase = (type: 'onetime' | 'monthly') => {
-    Alert.alert('Premium', `${type === 'onetime' ? 'Einmalzahlung' : 'Monatlich'} ausgewählt`);
-    setPremiumModal(false);
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    // TODO: Backend Integration - Process premium purchase via Stripe
+    console.log(`Premium purchase: ${type}`);
+    Alert.alert('Erfolg!', 'Premium wurde aktiviert! (Placeholder - Stripe Integration folgt)');
+    setPremiumModalVisible(false);
+    setPendingSubId(null);
   };
 
   const handlePremiumClose = () => {
-    setPremiumModal(false);
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    // Delete the pending subscription when closing without purchase
+    if (pendingSubId) {
+      setSubscriptions(subscriptions.filter((sub) => sub.id !== pendingSubId));
+      setPendingSubId(null);
+    }
+    setPremiumModalVisible(false);
   };
 
+  // Expose add function globally for tab bar
+  React.useEffect(() => {
+    (global as any).addSubscription = handleAddSubscription;
+    return () => {
+      delete (global as any).addSubscription;
+    };
+  }, []);
+
   const SubscriptionPill = ({ subscription }: { subscription: Subscription }) => {
-    const scale = useSharedValue(1);
     const translateX = useSharedValue(0);
+    const scale = useSharedValue(1);
+    const opacity = useSharedValue(1);
 
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }, { translateX: translateX.value }],
-    }));
-
-    const gesture = Gesture.Pan()
-      .onUpdate((e) => {
-        translateX.value = e.translationX;
+    const panGesture = Gesture.Pan()
+      .onUpdate((event) => {
+        translateX.value = event.translationX;
+        // Fade out when swiping
+        if (Math.abs(event.translationX) > 50) {
+          opacity.value = 1 - Math.abs(event.translationX) / 200;
+        }
       })
-      .onEnd((e) => {
-        if (Math.abs(e.translationX) > 100) {
-          translateX.value = withTiming(e.translationX > 0 ? 500 : -500, { duration: 200 }, () => {
+      .onEnd((event) => {
+        if (event.translationX < -100) {
+          // Swipe left to delete - slide out animation
+          translateX.value = withTiming(-500, { duration: 300 });
+          opacity.value = withTiming(0, { duration: 300 }, () => {
             runOnJS(handleDeleteSub)(subscription.id);
           });
+        } else if (event.translationX > 100) {
+          // Swipe right to pin/unpin - slide animation
+          runOnJS(handlePinToggle)(subscription.id);
+          translateX.value = withSpring(0);
+          opacity.value = withSpring(1);
         } else {
           translateX.value = withSpring(0);
+          opacity.value = withSpring(1);
         }
       });
 
+    const longPressGesture = Gesture.LongPress()
+      .minDuration(600)
+      .onStart(() => {
+        scale.value = withSpring(0.95);
+        runOnJS(handleLongPress)(subscription.id);
+      })
+      .onEnd(() => {
+        scale.value = withSpring(1);
+      });
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ translateX: translateX.value }, { scale: scale.value }],
+      opacity: opacity.value,
+    }));
+
     return (
-      <GestureDetector gesture={gesture}>
-        <Pressable
-          onLongPress={() => handleLongPress(subscription.id)}
-          onPress={() => {
-            if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            scale.value = withSpring(0.98, {}, () => {
-              scale.value = withSpring(1);
-            });
-          }}
+      <GestureDetector gesture={Gesture.Simultaneous(panGesture, longPressGesture)}>
+        <Animated.View
+          style={[
+            styles.subscriptionPill,
+            subscription.isPinned && styles.pinnedPill,
+            animatedStyle,
+          ]}
         >
-          <Animated.View style={[styles.subPill, animatedStyle]}>
-            <View style={styles.subRow}>
-              <Text style={styles.subName}>{subscription.name}</Text>
-              {subscription.isPinned && <Text style={styles.pinIcon}>📌</Text>}
-            </View>
-            <Text style={styles.subAmount}>{formatNumber(subscription.monthlyCost)}</Text>
-          </Animated.View>
-        </Pressable>
+          <Text style={styles.subscriptionName}>{subscription.name}</Text>
+          <Text style={styles.subscriptionAmount}>{subscription.monthlyCost}</Text>
+        </Animated.View>
       </GestureDetector>
     );
   };
 
-  const totalMonthlyCost = subscriptions.reduce((sum, s) => sum + s.monthlyCost, 0);
+  const sortedSubscriptions = [...subscriptions].sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    return 0;
+  });
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container} edges={['top']}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.title}>ABOS</Text>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Top Pills */}
+          <View style={styles.topPillsContainer}>
+            <View style={styles.topPillLarge}>
+              <Text style={styles.topPillLabel}>ABO KOSTEN</Text>
+              <Text style={styles.topPillValue}>{totalCost}</Text>
+            </View>
 
-          <View style={styles.topPill}>
-            <Text style={styles.topPillLabel}>ABO KOSTEN</Text>
-            <Text style={styles.topPillValue}>{formatNumber(totalMonthlyCost)}</Text>
+            <View style={styles.topPill}>
+              <Text style={styles.topPillLabel}>TOTAL</Text>
+              <Text style={styles.topPillValue}>{totalCount}</Text>
+            </View>
           </View>
 
-          <View style={styles.topPill}>
-            <Text style={styles.topPillLabel}>TOTAL</Text>
-            <Text style={[styles.topPillValue, { color: '#BFFE84' }]}>
-              {formatNumber(totalMonthlyCost)}
-            </Text>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>MEINE ABOS</Text>
-            {subscriptions.map((sub) => (
+          {/* Subscription List */}
+          <View style={styles.subscriptionList}>
+            {sortedSubscriptions.map((sub) => (
               <SubscriptionPill key={sub.id} subscription={sub} />
             ))}
-            <Pressable
-              style={styles.addButton}
-              onPress={() => {
-                if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                handleAddSubscription();
-              }}
-            >
-              <Text style={styles.addButtonText}>+ ABO HINZUFÜGEN</Text>
-            </Pressable>
           </View>
+
+          {/* Swipe Hint */}
+          <Text style={styles.swipeHint}>
+            ← Wischen zum Löschen · Wischen zum Fixieren →
+          </Text>
         </ScrollView>
 
         {/* Context Menu Modal */}
-        <Modal visible={contextMenu.visible} transparent animationType="fade">
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() => setContextMenu({ visible: false, itemId: null })}
-          >
+        <Modal
+          visible={contextMenuVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setContextMenuVisible(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setContextMenuVisible(false)}>
             <View style={styles.contextMenu}>
               <Pressable
                 style={styles.contextMenuItem}
                 onPress={() => {
-                  const sub = subscriptions.find((s) => s.id === contextMenu.itemId);
+                  const sub = subscriptions.find((s) => s.id === selectedSubId);
                   if (sub) openEditModal('name', sub.id, sub.name);
                 }}
               >
-                <Text style={styles.contextMenuText}>Bearbeiten</Text>
+                <Text style={styles.contextMenuText}>Namen anpassen</Text>
               </Pressable>
-              <Pressable style={styles.contextMenuItem} onPress={handlePinToggle}>
-                <Text style={styles.contextMenuText}>Anpinnen</Text>
-              </Pressable>
-              <Pressable style={styles.contextMenuItem} onPress={handleDuplicate}>
-                <Text style={styles.contextMenuText}>Duplizieren</Text>
-              </Pressable>
+
               <Pressable
                 style={styles.contextMenuItem}
                 onPress={() => {
-                  if (contextMenu.itemId) handleDeleteSub(contextMenu.itemId);
+                  const sub = subscriptions.find((s) => s.id === selectedSubId);
+                  if (sub) openEditModal('amount', sub.id, sub.monthlyCost.toString());
                 }}
               >
-                <Text style={[styles.contextMenuText, { color: '#C43C3E' }]}>Löschen</Text>
+                <Text style={styles.contextMenuText}>Zahl anpassen</Text>
+              </Pressable>
+
+              <Pressable style={styles.contextMenuItem} onPress={handleDuplicate}>
+                <Text style={styles.contextMenuText}>Duplizieren</Text>
+              </Pressable>
+
+              <Pressable style={styles.contextMenuItem} onPress={() => handlePinToggle()}>
+                <Text style={styles.contextMenuText}>Fixieren</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.contextMenuItem}
+                onPress={() => {
+                  if (selectedSubId) handleDeleteSub(selectedSubId);
+                  setContextMenuVisible(false);
+                }}
+              >
+                <Text style={[styles.contextMenuText, { color: colors.red }]}>Löschen</Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.contextMenuItem, styles.contextMenuItemLast]}
+                onPress={() => setContextMenuVisible(false)}
+              >
+                <Text style={styles.contextMenuText}>Abbrechen</Text>
               </Pressable>
             </View>
           </Pressable>
         </Modal>
 
         {/* Edit Modal */}
-        <Modal visible={editModal.visible} transparent animationType="fade">
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() => setEditModal({ visible: false, type: null, itemId: '', value: '' })}
-          >
+        <Modal
+          visible={editModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setEditModalVisible(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setEditModalVisible(false)}>
             <View style={styles.editModal}>
-              <Text style={styles.editModalTitle}>Bearbeiten</Text>
+              <Text style={styles.editModalTitle}>
+                {editType === 'name' ? 'Namen anpassen' : 'Zahl anpassen'}
+              </Text>
               <TextInput
-                style={styles.editModalInput}
-                value={editModal.value}
-                onChangeText={(text) => setEditModal({ ...editModal, value: text })}
-                placeholder="Wert eingeben"
+                style={styles.editInput}
+                value={editValue}
+                onChangeText={setEditValue}
+                placeholder={editType === 'name' ? 'Name' : 'Betrag'}
                 placeholderTextColor="#666"
-                keyboardType={editModal.type === 'amount' ? 'numeric' : 'default'}
+                keyboardType={editType === 'amount' ? 'numeric' : 'default'}
+                autoFocus
               />
-              <View style={styles.editModalButtons}>
-                <Pressable
-                  style={styles.editModalButton}
-                  onPress={() => setEditModal({ visible: false, type: null, itemId: '', value: '' })}
-                >
-                  <Text style={styles.editModalButtonText}>Abbrechen</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.editModalButton, styles.editModalButtonPrimary]}
-                  onPress={saveEdit}
-                >
-                  <Text style={[styles.editModalButtonText, { color: '#000000' }]}>Speichern</Text>
-                </Pressable>
-              </View>
+              <Pressable style={styles.saveButton} onPress={saveEdit}>
+                <Text style={styles.saveButtonText}>Speichern</Text>
+              </Pressable>
             </View>
           </Pressable>
         </Modal>
 
         {/* Add Subscription Modal */}
-        <Modal visible={addModal} transparent animationType="fade">
-          <Pressable style={styles.modalOverlay} onPress={() => setAddModal(false)}>
-            <View style={styles.addModal}>
-              <Text style={styles.addModalTitle}>Neues Abo</Text>
+        <Modal
+          visible={addModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setAddModalVisible(false)}
+        >
+          <Pressable style={styles.modalOverlay} onPress={() => setAddModalVisible(false)}>
+            <View style={styles.editModal}>
+              <Text style={styles.editModalTitle}>Neues Abo hinzufügen</Text>
               <TextInput
-                style={styles.addModalInput}
+                style={styles.editInput}
                 value={newSubName}
                 onChangeText={setNewSubName}
-                placeholder="Name des Abos"
+                placeholder="Name (z.B. SPOTIFY)"
                 placeholderTextColor="#666"
+                autoFocus
               />
               <TextInput
-                style={styles.addModalInput}
+                style={styles.editInput}
                 value={newSubAmount}
                 onChangeText={setNewSubAmount}
-                placeholder="Betrag (CHF/EUR)"
+                placeholder="Betrag (z.B. 10)"
                 placeholderTextColor="#666"
                 keyboardType="numeric"
               />
-              <View style={styles.addModalButtons}>
-                <Pressable
-                  style={styles.addModalButton}
-                  onPress={() => {
-                    setAddModal(false);
-                    setNewSubName('');
-                    setNewSubAmount('');
-                  }}
-                >
-                  <Text style={styles.addModalButtonText}>Abbre</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.addModalButton, styles.addModalButtonPrimary]}
-                  onPress={saveNewSubscription}
-                >
-                  <Text style={[styles.addModalButtonText, { color: '#000000' }]}>Speichern</Text>
-                </Pressable>
-              </View>
+              <Pressable style={styles.saveButton} onPress={saveNewSubscription}>
+                <Text style={styles.saveButtonText}>Hinzufügen</Text>
+              </Pressable>
             </View>
           </Pressable>
         </Modal>
 
+        {/* Premium Paywall Modal */}
         <PremiumPaywallModal
-          visible={premiumModal}
+          visible={premiumModalVisible}
           onClose={handlePremiumClose}
           onPurchase={handlePremiumPurchase}
         />
@@ -370,91 +455,82 @@ export default function AbosScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: colors.black,
+  },
+  scrollView: {
+    flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 100,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 120,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+  topPillsContainer: {
+    gap: 12,
     marginBottom: 20,
-    letterSpacing: 2,
   },
-  topPill: {
-    backgroundColor: '#232323',
-    borderRadius: 16,
+  topPillLarge: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
     padding: 20,
-    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    height: 120,
+  },
+  topPill: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 80,
   },
   topPillLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: '800',
     letterSpacing: 1,
   },
   topPillValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    letterSpacing: 1,
+    color: colors.white,
+    fontSize: 48,
+    fontWeight: '800',
   },
-  section: {
-    marginTop: 20,
+  subscriptionList: {
+    gap: 12,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 12,
-    letterSpacing: 1.5,
-  },
-  subPill: {
-    backgroundColor: '#232323',
-    borderRadius: 16,
+  subscriptionPill: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
     padding: 20,
-    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    height: 80,
   },
-  subRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  pinnedPill: {
+    borderWidth: 2,
+    borderColor: colors.neonGreen,
   },
-  subName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+  subscriptionName: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: '800',
     letterSpacing: 1,
   },
-  pinIcon: {
-    fontSize: 16,
+  subscriptionAmount: {
+    color: colors.white,
+    fontSize: 24,
+    fontWeight: '800',
   },
-  subAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    letterSpacing: 1,
-  },
-  addButton: {
-    backgroundColor: '#BFFE84',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  addButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#000000',
-    letterSpacing: 1.5,
+  swipeHint: {
+    color: '#666',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 20,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -463,103 +539,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contextMenu: {
-    backgroundColor: '#232323',
-    borderRadius: 12,
-    padding: 8,
-    minWidth: 200,
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
+    width: '80%',
+    maxWidth: 400,
+    overflow: 'hidden',
   },
   contextMenuItem: {
-    padding: 16,
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  contextMenuItemLast: {
+    borderBottomWidth: 0,
   },
   contextMenuText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    letterSpacing: 1,
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   editModal: {
-    backgroundColor: '#232323',
+    backgroundColor: colors.darkGray,
     borderRadius: 20,
-    padding: 24,
-    width: '92%',
-    maxWidth: 500,
+    padding: 30,
+    width: '80%',
+    maxWidth: 400,
   },
   editModalTitle: {
+    color: colors.white,
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: '800',
     marginBottom: 20,
-    letterSpacing: 1.5,
+    textAlign: 'center',
   },
-  editModalInput: {
-    backgroundColor: '#000000',
+  editInput: {
+    backgroundColor: '#333',
     borderRadius: 12,
-    padding: 16,
+    padding: 15,
+    color: colors.white,
     fontSize: 16,
-    color: '#FFFFFF',
-    marginBottom: 20,
+    fontWeight: '700',
+    marginBottom: 15,
   },
-  editModalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  editModalButton: {
-    flex: 1,
-    padding: 16,
+  saveButton: {
+    backgroundColor: colors.neonGreen,
     borderRadius: 12,
-    alignItems: 'center',
-    backgroundColor: '#000000',
+    padding: 15,
+    marginTop: 5,
   },
-  editModalButtonPrimary: {
-    backgroundColor: '#BFFE84',
-  },
-  editModalButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    letterSpacing: 1,
-  },
-  addModal: {
-    backgroundColor: '#232323',
-    borderRadius: 20,
-    padding: 24,
-    width: '92%',
-    maxWidth: 500,
-  },
-  addModalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 20,
-    letterSpacing: 1.5,
-  },
-  addModalInput: {
-    backgroundColor: '#000000',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#FFFFFF',
-    marginBottom: 16,
-  },
-  addModalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  addModalButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    backgroundColor: '#000000',
-  },
-  addModalButtonPrimary: {
-    backgroundColor: '#BFFE84',
-  },
-  addModalButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    letterSpacing: 1,
+  saveButtonText: {
+    color: colors.black,
+    fontSize: 18,
+    fontWeight: '800',
+    textAlign: 'center',
   },
 });
