@@ -1,29 +1,24 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
-  withSequence,
   withTiming,
-  Easing,
 } from 'react-native-reanimated';
-import { colors } from '@/styles/commonStyles';
 
-export function LoadingScreen() {
-  const opacity = useSharedValue(0.5);
+export const LoadingScreen = () => {
+  const opacity = useSharedValue(0.3);
 
-  React.useEffect(() => {
+  useEffect(() => {
     opacity.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.5, { duration: 800, easing: Easing.inOut(Easing.ease) })
-      ),
+      withTiming(1, { duration: 1000 }),
       -1,
-      false
+      true
     );
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array is correct - opacity is a shared value, not a dependency
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -36,20 +31,18 @@ export function LoadingScreen() {
       </Animated.Text>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.black,
+    backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
   },
   text: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: colors.neonGreen,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+    color: '#BFFE84',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
 });
