@@ -401,14 +401,22 @@ export default function AbosScreen() {
                 keyboardType={editType === 'amount' ? 'numeric' : 'default'}
                 autoFocus
               />
-              <Pressable style={styles.saveButton} onPress={saveEdit}>
-                <Text style={styles.saveButtonText}>Speichern</Text>
-              </Pressable>
+              <View style={styles.buttonRow}>
+                <Pressable 
+                  style={styles.cancelButton} 
+                  onPress={() => setEditModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                </Pressable>
+                <Pressable style={styles.saveButton} onPress={saveEdit}>
+                  <Text style={styles.saveButtonText}>Speichern</Text>
+                </Pressable>
+              </View>
             </View>
           </Pressable>
         </Modal>
 
-        {/* Add Subscription Modal */}
+        {/* Add Subscription Modal - NEUES ABO */}
         <Modal
           visible={addModalVisible}
           transparent
@@ -417,7 +425,7 @@ export default function AbosScreen() {
         >
           <Pressable style={styles.modalOverlay} onPress={() => setAddModalVisible(false)}>
             <View style={styles.editModal}>
-              <Text style={styles.editModalTitle}>Neues Abo hinzufügen</Text>
+              <Text style={styles.editModalTitle}>Neues Abo</Text>
               <TextInput
                 style={styles.editInput}
                 value={newSubName}
@@ -430,13 +438,21 @@ export default function AbosScreen() {
                 style={styles.editInput}
                 value={newSubAmount}
                 onChangeText={setNewSubAmount}
-                placeholder="Betrag (z.B. 10)"
+                placeholder="Betrag"
                 placeholderTextColor="#666"
                 keyboardType="numeric"
               />
-              <Pressable style={styles.saveButton} onPress={saveNewSubscription}>
-                <Text style={styles.saveButtonText}>Hinzufügen</Text>
-              </Pressable>
+              <View style={styles.buttonRow}>
+                <Pressable 
+                  style={styles.cancelButton} 
+                  onPress={() => setAddModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                </Pressable>
+                <Pressable style={styles.saveButton} onPress={saveNewSubscription}>
+                  <Text style={styles.saveButtonText}>Hinzufügen</Text>
+                </Pressable>
+              </View>
             </View>
           </Pressable>
         </Modal>
@@ -560,38 +576,67 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   editModal: {
+    width: '95%',
+    maxWidth: 500,
     backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 30,
-    width: '80%',
-    maxWidth: 400,
+    borderRadius: 24,
+    padding: 28,
+    alignItems: 'stretch',
   },
   editModalTitle: {
     color: colors.white,
     fontSize: 20,
     fontWeight: '800',
+    letterSpacing: 1,
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   editInput: {
-    backgroundColor: '#333',
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: '#000000',
+    borderRadius: 16,
+    padding: 18,
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
+    minHeight: 56,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    width: '100%',
+  },
+  cancelButton: {
+    flex: 1,
+    minWidth: 130,
+    backgroundColor: '#000000',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButtonText: {
     color: colors.white,
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 15,
+    letterSpacing: 0.5,
   },
   saveButton: {
+    flex: 1,
+    minWidth: 130,
     backgroundColor: colors.neonGreen,
-    borderRadius: 12,
-    padding: 15,
-    marginTop: 5,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   saveButtonText: {
-    color: colors.black,
-    fontSize: 18,
-    fontWeight: '800',
-    textAlign: 'center',
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });

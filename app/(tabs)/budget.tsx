@@ -606,7 +606,7 @@ export default function BudgetScreen() {
         </Pressable>
       </Modal>
 
-      {/* Edit Modal */}
+      {/* Edit Modal - NEUE AUSGABE */}
       <Modal
         visible={editModal.visible}
         transparent
@@ -618,21 +618,31 @@ export default function BudgetScreen() {
           onPress={() => setEditModal({ visible: false, type: null, value: '', itemId: null })}
         >
           <Pressable style={styles.editModal} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.editModalTitle}>Neue Ausgabe</Text>
             <TextInput
               style={styles.editInput}
               value={editModal.value}
               onChangeText={(text) => setEditModal({ ...editModal, value: text })}
+              placeholder={editModal.type === 'name' ? 'Name (z.B. ESSEN)' : 'Betrag'}
+              placeholderTextColor="#666"
               keyboardType={
                 editModal.type === 'cashValue' || editModal.type === 'amount'
                   ? 'numeric'
                   : 'default'
               }
               autoFocus
-              placeholderTextColor={colors.darkGray}
             />
-            <Pressable style={styles.saveButton} onPress={saveEdit}>
-              <Text style={styles.saveButtonText}>Speichern</Text>
-            </Pressable>
+            <View style={styles.buttonRow}>
+              <Pressable 
+                style={styles.cancelButton} 
+                onPress={() => setEditModal({ visible: false, type: null, value: '', itemId: null })}
+              >
+                <Text style={styles.cancelButtonText}>Abbrechen</Text>
+              </Pressable>
+              <Pressable style={styles.saveButton} onPress={saveEdit}>
+                <Text style={styles.saveButtonText}>Hinzufügen</Text>
+              </Pressable>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -816,31 +826,67 @@ const styles = StyleSheet.create({
     color: colors.red,
   },
   editModal: {
+    width: '95%',
+    maxWidth: 500,
     backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 24,
-    width: '80%',
-    gap: 16,
+    borderRadius: 24,
+    padding: 28,
+    alignItems: 'stretch',
+  },
+  editModalTitle: {
+    color: colors.white,
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginBottom: 20,
+    textAlign: 'left',
   },
   editInput: {
-    backgroundColor: colors.black,
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#000000',
+    borderRadius: 16,
+    padding: 18,
     color: colors.white,
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
+    minHeight: 56,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+    width: '100%',
+  },
+  cancelButton: {
+    flex: 1,
+    minWidth: 130,
+    backgroundColor: '#000000',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButtonText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   saveButton: {
+    flex: 1,
+    minWidth: 130,
     backgroundColor: colors.neonGreen,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   saveButtonText: {
-    color: colors.black,
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 1,
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });
