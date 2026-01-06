@@ -17,119 +17,37 @@ import Animated, {
 } from 'react-native-reanimated';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-const styles = StyleSheet.create({
-  tabBarContainer: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    height: 70,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 16,
-    borderRadius: 35,
-    overflow: 'hidden',
-  },
-  tabButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
-  tabLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 4,
-    letterSpacing: 0.3,
-  },
-  addButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.neonGreen,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 24,
-    width: '85%',
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.white,
-    marginBottom: 20,
-    letterSpacing: 0.5,
-  },
-  input: {
-    backgroundColor: colors.black,
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: colors.white,
-    marginBottom: 16,
-    fontWeight: '600',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    letterSpacing: 0.3,
-  },
-});
-
-function CustomTabBar() {
+const CustomTabBar = () => {
   const [showModal, setShowModal] = useState(false);
-  const [shareText, setShareText] = useState('');
+  const [modalName, setModalName] = useState('');
+  const [modalAmount, setModalAmount] = useState('');
   const router = useRouter();
-  const scaleValue1 = useSharedValue(1);
-  const scaleValue2 = useSharedValue(1);
-  const scaleValue3 = useSharedValue(1);
-  const addButtonScale = useSharedValue(1);
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
 
-  const animatedStyle1 = useAnimatedStyle(() => ({
-    transform: [{ scale: scaleValue1.value }],
+  const budgetScale = useSharedValue(1);
+  const abosScale = useSharedValue(1);
+  const profilScale = useSharedValue(1);
+  const addScale = useSharedValue(1);
+
+  const budgetAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: budgetScale.value }],
   }));
 
-  const animatedStyle2 = useAnimatedStyle(() => ({
-    transform: [{ scale: scaleValue2.value }],
+  const abosAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: abosScale.value }],
   }));
 
-  const animatedStyle3 = useAnimatedStyle(() => ({
-    transform: [{ scale: scaleValue3.value }],
+  const profilAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: profilScale.value }],
   }));
 
-  const addButtonAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: addButtonScale.value }],
+  const addAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: addScale.value }],
   }));
 
   const isActive = (route: string) => {
-    if (route === '/(tabs)/(home)/') {
-      return pathname === '/(tabs)/(home)/' || pathname === '/(tabs)/(home)';
-    }
-    return pathname.includes(route);
+    return pathname === route;
   };
 
   const handleTabPress = (route: string) => {
@@ -139,50 +57,31 @@ function CustomTabBar() {
 
   const handleAddPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    addButtonScale.value = withSpring(0.9, {}, () => {
-      addButtonScale.value = withSpring(1);
-    });
     setShowModal(true);
   };
 
   const handleShare = async () => {
-    if (!shareText.trim()) {
-      Alert.alert('Error', 'Please enter some text to share');
-      return;
-    }
-
-    try {
-      const isAvailable = await Sharing.isAvailableAsync();
-      if (isAvailable) {
-        // Create a temporary text file to share
-        const fileName = 'share.txt';
-        const fileUri = `${Platform.OS === 'ios' ? 'file://' : ''}${fileName}`;
-        
-        await Sharing.shareAsync(fileUri, {
-          mimeType: 'text/plain',
-          dialogTitle: 'Share',
-        });
-      } else {
-        Alert.alert('Error', 'Sharing is not available on this device');
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-      Alert.alert('Error', 'Failed to share');
-    }
-    
-    setShowModal(false);
-    setShareText('');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Share functionality
   };
 
   const handleSave = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    handleShare();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (!modalName.trim() || !modalAmount.trim()) {
+      Alert.alert('Fehler', 'Bitte fülle alle Felder aus');
+      return;
+    }
+    // Save logic here
+    setShowModal(false);
+    setModalName('');
+    setModalAmount('');
   };
 
   const handleCancel = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowModal(false);
-    setShareText('');
+    setModalName('');
+    setModalAmount('');
   };
 
   const TabButton = ({ 
@@ -212,7 +111,7 @@ function CustomTabBar() {
         }}
         style={styles.tabButton}
       >
-        <Animated.View style={animatedStyle}>
+        <Animated.View style={[styles.tabContent, animatedStyle]}>
           <MaterialIcons
             name={androidIcon as any}
             size={24}
@@ -235,13 +134,14 @@ function CustomTabBar() {
     <Pressable
       onPress={handleAddPress}
       onPressIn={() => {
-        addButtonScale.value = withSpring(0.9);
+        addScale.value = withSpring(0.9);
       }}
       onPressOut={() => {
-        addButtonScale.value = withSpring(1);
+        addScale.value = withSpring(1);
       }}
+      style={styles.addButtonContainer}
     >
-      <Animated.View style={[styles.addButton, addButtonAnimatedStyle]}>
+      <Animated.View style={[styles.addButton, addAnimatedStyle]}>
         <MaterialIcons name="add" size={32} color={colors.black} />
       </Animated.View>
     </Pressable>
@@ -249,19 +149,30 @@ function CustomTabBar() {
 
   return (
     <>
-      <View
-        style={[
-          styles.tabBarContainer,
-          {
-            bottom: insets.bottom + 8, // Changed from +30 to +8 for minimal spacing
-          },
-        ]}
-      >
-        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-        <TabButton androidIcon="attach-money" route="/(tabs)/(home)/" label="Budget" scaleValue={scaleValue1} />
-        <TabButton androidIcon="sync" route="/(tabs)/profile" label="Abos" scaleValue={scaleValue2} />
-        <TabButton androidIcon="person" route="/(tabs)/profile" label="Profil" scaleValue={scaleValue3} />
-        <AddButton />
+      <View style={[styles.tabBarContainer, { bottom: insets.bottom + 30 }]}>
+        <BlurView intensity={80} tint="dark" style={styles.blurContainer}>
+          <View style={styles.tabBar}>
+            <TabButton
+              androidIcon="attach-money"
+              route="/budget"
+              label="Budget"
+              scaleValue={budgetScale}
+            />
+            <TabButton
+              androidIcon="sync"
+              route="/abos"
+              label="Abos"
+              scaleValue={abosScale}
+            />
+            <TabButton
+              androidIcon="person"
+              route="/profil"
+              label="Profil"
+              scaleValue={profilScale}
+            />
+            <AddButton />
+          </View>
+        </BlurView>
       </View>
 
       <Modal
@@ -270,42 +181,161 @@ function CustomTabBar() {
         animationType="fade"
         onRequestClose={handleCancel}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Share Text</Text>
+        <Pressable style={styles.modalOverlay} onPress={handleCancel}>
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>
+              {pathname === '/budget' ? 'NEUE AUSGABE' : 'NEUES ABO'}
+            </Text>
+
             <TextInput
               style={styles.input}
-              placeholder="Enter text to share..."
+              placeholder={pathname === '/budget' ? 'Name (z.B. ESSEN)' : 'Name (z.B. NETFLIX)'}
               placeholderTextColor="#666"
-              value={shareText}
-              onChangeText={setShareText}
-              multiline
-              numberOfLines={4}
+              value={modalName}
+              onChangeText={setModalName}
             />
-            <View style={styles.modalButtons}>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Betrag"
+              placeholderTextColor="#666"
+              keyboardType="numeric"
+              value={modalAmount}
+              onChangeText={setModalAmount}
+            />
+
+            <View style={styles.buttonContainer}>
               <Pressable
+                style={[styles.button, styles.cancelButton]}
                 onPress={handleCancel}
-                style={[styles.modalButton, { backgroundColor: colors.black }]}
               >
-                <Text style={[styles.modalButtonText, { color: colors.white }]}>
-                  Cancel
-                </Text>
+                <Text style={styles.cancelButtonText}>Abbrechen</Text>
               </Pressable>
+
               <Pressable
+                style={[styles.button, styles.saveButton]}
                 onPress={handleSave}
-                style={[styles.modalButton, { backgroundColor: colors.neonGreen }]}
               >
-                <Text style={[styles.modalButtonText, { color: colors.black }]}>
-                  Share
-                </Text>
+                <Text style={styles.saveButtonText}>Hinzufügen</Text>
               </Pressable>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  tabBarContainer: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+  },
+  blurContainer: {
+    borderRadius: 30,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  tabBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  tabContent: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  addButtonContainer: {
+    marginLeft: 8,
+  },
+  addButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.neonGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    width: '98%',
+    minWidth: 340,
+    maxWidth: 600,
+    backgroundColor: colors.darkGray,
+    borderRadius: 24,
+    padding: 28,
+  },
+  modalTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: colors.white,
+    marginBottom: 24,
+    letterSpacing: 1,
+  },
+  input: {
+    backgroundColor: '#000000',
+    borderRadius: 14,
+    padding: 18,
+    marginBottom: 14,
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '600',
+    minHeight: 56,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 10,
+    marginBottom: 0,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 140,
+    minHeight: 56,
+  },
+  cancelButton: {
+    backgroundColor: '#000000',
+  },
+  saveButton: {
+    backgroundColor: colors.neonGreen,
+  },
+  cancelButtonText: {
+    color: colors.white,
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  saveButtonText: {
+    color: colors.black,
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+});
 
 export default function TabLayout() {
   return (
@@ -313,13 +343,14 @@ export default function TabLayout() {
       <Tabs
         screenOptions={{
           headerShown: false,
-          animation: 'none',
+          tabBarStyle: { display: 'none' },
         }}
-        tabBar={() => <CustomTabBar />}
       >
-        <Tabs.Screen name="(home)" />
-        <Tabs.Screen name="profile" />
+        <Tabs.Screen name="budget" />
+        <Tabs.Screen name="abos" />
+        <Tabs.Screen name="profil" />
       </Tabs>
+      <CustomTabBar />
     </>
   );
 }
