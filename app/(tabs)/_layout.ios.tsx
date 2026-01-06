@@ -82,11 +82,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 12,
   },
-  addButtonIcon: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#000000',
-    lineHeight: 36,
+  plusIconContainer: {
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  plusVertical: {
+    position: 'absolute',
+    width: 4,
+    height: 28,
+    backgroundColor: '#000000',
+    borderRadius: 3,
+    left: 12,
+    top: 0,
+  },
+  plusHorizontal: {
+    position: 'absolute',
+    width: 28,
+    height: 4,
+    backgroundColor: '#000000',
+    borderRadius: 3,
+    left: 0,
+    top: 12,
   },
   bubbleIndicator: {
     position: 'absolute',
@@ -183,7 +201,7 @@ function CustomTabBar() {
     } else if (pathname.includes('profil')) {
       bubblePosition.value = withSpring(2, { damping: 15, stiffness: 150 });
     }
-  }, [pathname]);
+  }, [pathname, bubblePosition]);
 
   const bubbleStyle = useAnimatedStyle(() => {
     return {
@@ -308,7 +326,10 @@ function CustomTabBar() {
           }}
         >
           <Animated.View style={[styles.addButton, animatedStyle]}>
-            <Text style={styles.addButtonIcon}>+</Text>
+            <View style={styles.plusIconContainer}>
+              <View style={styles.plusVertical} />
+              <View style={styles.plusHorizontal} />
+            </View>
           </Animated.View>
         </Pressable>
       </View>
