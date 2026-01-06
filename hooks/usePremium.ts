@@ -7,6 +7,7 @@ const ADMIN_EMAIL = 'mirosnic.ivan@icloud.com';
 export function usePremium() {
   const { user } = useAuth();
   const [isPremium, setIsPremium] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     // Check if user is admin or has premium
@@ -35,5 +36,7 @@ export function usePremium() {
   return {
     isPremium,
     checkLimit,
+    showPaywall,
+    setShowPaywall,
   };
 }
