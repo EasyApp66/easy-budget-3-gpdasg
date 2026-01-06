@@ -1,5 +1,6 @@
 
-import React, { useState, useCallback } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import {
   View,
   Text,
@@ -12,15 +13,14 @@ import {
   TextInput,
   Dimensions,
 } from 'react-native';
+import { colors } from '@/styles/commonStyles';
+import * as Haptics from 'expo-haptics';
+import React, { useState, useCallback } from 'react';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@/styles/commonStyles';
-import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { usePremium } from '@/hooks/usePremium';
 
 interface Expense {
@@ -39,221 +39,157 @@ interface Month {
 }
 
 export default function BudgetScreen() {
-  const { isPremium, checkLimit } = usePremium();
+  const { isPremium, showPaywall, setShowPaywall } = usePremium();
   
   const [months, setMonths] = useState<Month[]>([
     {
       id: '1',
-      name: 'JHZFJH',
+      name: 'JANUAR',
       isPinned: true,
-      cash: 93838,
+      cash: 2500,
       expenses: [
-        { id: '1', name: 'ESSEN', amount: 250, isPinned: true },
-        { id: '2', name: 'MIETE', amount: 2005, isPinned: false },
-        { id: '3', name: 'PARKPLATZ', amount: 150, isPinned: false },
-        { id: '4', name: 'KLEIDER', amount: 120, isPinned: false },
+        { id: '1', name: 'PARKPLATZ', amount: 150, isPinned: false },
+        { id: '2', name: 'KLEIDER', amount: 200, isPinned: false },
       ],
-    },
-    {
-      id: '2',
-      name: 'KEJNEND',
-      isPinned: false,
-      cash: 0,
-      expenses: [],
     },
   ]);
 
-  const [selectedMonthId, setSelectedMonthId] = useState('1');
-  const [contextMenu, setContextMenu] = useState<{
-    visible: boolean;
-    type: 'month' | 'expense' | null;
-    itemId: string | null;
-  }>({ visible: false, type: null, itemId: null });
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newExpenseName, setNewExpenseName] = useState('');
+  const [newExpenseAmount, setNewExpenseAmount] = useState('');
 
-  const [editModal, setEditModal] = useState<{
-    visible: boolean;
-    type: 'cashLabel' | 'cashValue' | 'name' | 'amount' | null;
-    value: string;
-    itemId: string | null;
-  }>({ visible: false, type: null, value: '', itemId: null });
+  const [contextMenuVisible, setContextMenuVisible] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedItemType, setSelectedItemType] = useState<'month' | 'expense'>('expense');
 
-  const [cashLabel, setCashLabel] = useState('CASH');
-  const [premiumModalVisible, setPremiumModalVisible] = useState(false);
-  const [pendingAction, setPendingAction] = useState<{ type: 'expense' | 'month'; id?: string } | null>(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editType, setEditType] = useState<'cashLabel' | 'cashValue' | 'name' | 'amount'>('name');
+  const [editValue, setEditValue] = useState('');
+  const [editItemId, setEditItemId] = useState<string | null>(null);
 
-  const selectedMonth = months.find((m) => m.id === selectedMonthId);
-  const totalExpenses = selectedMonth?.expenses.reduce((sum, e) => sum + e.amount, 0) || 0;
-  const remaining = (selectedMonth?.cash || 0) - totalExpenses;
+  const scaleMonth = useSharedValue(1);
+  const scaleExpense = useSharedValue(1);
 
-  const sortedMonths = [...months].sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return 0;
-  });
+  const animatedStyleMonth = useAnimatedStyle(() => ({
+    transform: [{ scale: scaleMonth.value }],
+  }));
 
-  const sortedExpenses = [...(selectedMonth?.expenses || [])].sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return 0;
-  });
+  const animatedStyleExpense = useAnimatedStyle(() => ({
+    transform: [{ scale: scaleExpense.value }],
+  }));
 
   const handleLongPress = (type: 'month' | 'expense', itemId: string) => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    setContextMenu({ visible: true, type, itemId });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSelectedItemId(itemId);
+    setSelectedItemType(type);
+    setContextMenuVisible(true);
   };
 
   const handleAddMonth = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    
-    // Check premium limit
-    const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
-    if (checkLimit(totalExpenses, months.length + 1, 0)) {
-      setPendingAction({ type: 'month' });
-      setPremiumModalVisible(true);
+    if (!isPremium) {
+      setShowPaywall(true);
       return;
     }
-    
     const newMonth: Month = {
       id: Date.now().toString(),
-      name: `MONAT ${months.length + 1}`,
+      name: 'NEUER MONAT',
       isPinned: false,
       cash: 0,
       expenses: [],
     };
     setMonths([...months, newMonth]);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  // Fixed: Wrapped handleAddExpense in useCallback to fix exhaustive-deps warning
-  const handleAddExpense = useCallback(() => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    if (!selectedMonth) return;
-
-    // Check premium limit
-    const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
-    if (checkLimit(totalExpenses + 1, months.length, 0)) {
-      setPendingAction({ type: 'expense' });
-      setPremiumModalVisible(true);
-      return;
-    }
-
-    const newExpense: Expense = {
-      id: Date.now().toString(),
-      name: 'NEUE AUSGABE',
-      amount: 0,
-      isPinned: false,
-    };
-
-    setMonths((prevMonths) =>
-      prevMonths.map((m) =>
-        m.id === selectedMonthId
-          ? { ...m, expenses: [...m.expenses, newExpense] }
-          : m
-      )
-    );
-  }, [selectedMonth, selectedMonthId, months, checkLimit]);
-
-  // Expose add function globally for tab bar
-  React.useEffect(() => {
-    (global as any).addExpense = handleAddExpense;
-    return () => {
-      delete (global as any).addExpense;
-    };
-  }, [handleAddExpense]);
-
   const handleDeleteMonth = (monthId: string) => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-    setMonths(months.filter((m) => m.id !== monthId));
-    if (selectedMonthId === monthId && months.length > 1) {
-      setSelectedMonthId(months.find((m) => m.id !== monthId)?.id || '');
-    }
-    setContextMenu({ visible: false, type: null, itemId: null });
+    Alert.alert('Monat löschen', 'Möchtest du diesen Monat wirklich löschen?', [
+      { text: 'Abbrechen', style: 'cancel' },
+      {
+        text: 'Löschen',
+        style: 'destructive',
+        onPress: () => {
+          setMonths(months.filter((m) => m.id !== monthId));
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        },
+      },
+    ]);
   };
 
   const handleDeleteExpense = (expenseId: string) => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }
-    setMonths(
-      months.map((m) =>
-        m.id === selectedMonthId
-          ? { ...m, expenses: m.expenses.filter((e) => e.id !== expenseId) }
-          : m
-      )
-    );
+    Alert.alert('Ausgabe löschen', 'Möchtest du diese Ausgabe wirklich löschen?', [
+      { text: 'Abbrechen', style: 'cancel' },
+      {
+        text: 'Löschen',
+        style: 'destructive',
+        onPress: () => {
+          setMonths(
+            months.map((month) => ({
+              ...month,
+              expenses: month.expenses.filter((e) => e.id !== expenseId),
+            }))
+          );
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        },
+      },
+    ]);
   };
 
   const handlePinToggle = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    const { type, itemId } = contextMenu;
-
-    if (type === 'month' && itemId) {
+    if (selectedItemType === 'month') {
       setMonths(
         months.map((m) =>
-          m.id === itemId ? { ...m, isPinned: !m.isPinned } : m
+          m.id === selectedItemId ? { ...m, isPinned: !m.isPinned } : m
         )
       );
-    } else if (type === 'expense' && itemId) {
+    } else {
       setMonths(
-        months.map((m) =>
-          m.id === selectedMonthId
-            ? {
-                ...m,
-                expenses: m.expenses.map((e) =>
-                  e.id === itemId ? { ...e, isPinned: !e.isPinned } : e
-                ),
-              }
-            : m
-        )
+        months.map((month) => ({
+          ...month,
+          expenses: month.expenses.map((e) =>
+            e.id === selectedItemId ? { ...e, isPinned: !e.isPinned } : e
+          ),
+        }))
       );
     }
-    setContextMenu({ visible: false, type: null, itemId: null });
+    setContextMenuVisible(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const handleDuplicate = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (!isPremium) {
+      setContextMenuVisible(false);
+      setShowPaywall(true);
+      return;
     }
-    const { type, itemId } = contextMenu;
-
-    if (type === 'month' && itemId) {
-      const month = months.find((m) => m.id === itemId);
-      if (month) {
-        const newMonth = {
-          ...month,
+    if (selectedItemType === 'month') {
+      const monthToDuplicate = months.find((m) => m.id === selectedItemId);
+      if (monthToDuplicate) {
+        const newMonth: Month = {
+          ...monthToDuplicate,
           id: Date.now().toString(),
-          name: `${month.name} KOPIE`,
+          name: monthToDuplicate.name + ' (KOPIE)',
           isPinned: false,
         };
         setMonths([...months, newMonth]);
       }
-    } else if (type === 'expense' && itemId) {
-      const expense = selectedMonth?.expenses.find((e) => e.id === itemId);
-      if (expense) {
-        const newExpense = {
-          ...expense,
-          id: Date.now().toString(),
-          isPinned: false,
-        };
-        setMonths(
-          months.map((m) =>
-            m.id === selectedMonthId
-              ? { ...m, expenses: [...m.expenses, newExpense] }
-              : m
-          )
-        );
-      }
+    } else {
+      setMonths(
+        months.map((month) => {
+          const expenseToDuplicate = month.expenses.find((e) => e.id === selectedItemId);
+          if (expenseToDuplicate) {
+            const newExpense: Expense = {
+              ...expenseToDuplicate,
+              id: Date.now().toString(),
+              isPinned: false,
+            };
+            return { ...month, expenses: [...month.expenses, newExpense] };
+          }
+          return month;
+        })
+      );
     }
-    setContextMenu({ visible: false, type: null, itemId: null });
+    setContextMenuVisible(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const openEditModal = (
@@ -261,395 +197,383 @@ export default function BudgetScreen() {
     itemId: string | null,
     currentValue: string
   ) => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setEditModal({ visible: true, type, value: currentValue, itemId });
-    setContextMenu({ visible: false, type: null, itemId: null });
+    setEditType(type);
+    setEditItemId(itemId);
+    setEditValue(currentValue);
+    setEditModalVisible(true);
+    setContextMenuVisible(false);
   };
 
   const saveEdit = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    const { type, value, itemId } = editModal;
-
-    if (type === 'cashLabel') {
-      setCashLabel(value);
-    } else if (type === 'cashValue') {
+    if (editType === 'cashLabel') {
       setMonths(
         months.map((m) =>
-          m.id === selectedMonthId
-            ? { ...m, cash: parseFloat(value.replace(/'/g, '')) || 0 }
-            : m
+          m.id === editItemId ? { ...m, name: editValue.toUpperCase() } : m
         )
       );
-    } else if (type === 'name' && itemId) {
-      if (contextMenu.type === 'month') {
-        setMonths(months.map((m) => (m.id === itemId ? { ...m, name: value } : m)));
-      } else {
-        setMonths(
-          months.map((m) =>
-            m.id === selectedMonthId
-              ? {
-                  ...m,
-                  expenses: m.expenses.map((e) =>
-                    e.id === itemId ? { ...e, name: value } : e
-                  ),
-                }
-              : m
-          )
-        );
-      }
-    } else if (type === 'amount' && itemId) {
+    } else if (editType === 'cashValue') {
+      const numValue = parseFloat(editValue) || 0;
       setMonths(
-        months.map((m) =>
-          m.id === selectedMonthId
-            ? {
-                ...m,
-                expenses: m.expenses.map((e) =>
-                  e.id === itemId ? { ...e, amount: parseFloat(value.replace(/'/g, '')) || 0 } : e
-                ),
-              }
-            : m
-        )
+        months.map((m) => (m.id === editItemId ? { ...m, cash: numValue } : m))
+      );
+    } else if (editType === 'name') {
+      setMonths(
+        months.map((month) => ({
+          ...month,
+          expenses: month.expenses.map((e) =>
+            e.id === editItemId ? { ...e, name: editValue.toUpperCase() } : e
+          ),
+        }))
+      );
+    } else if (editType === 'amount') {
+      const numValue = parseFloat(editValue) || 0;
+      setMonths(
+        months.map((month) => ({
+          ...month,
+          expenses: month.expenses.map((e) =>
+            e.id === editItemId ? { ...e, amount: numValue } : e
+          ),
+        }))
       );
     }
-
-    setEditModal({ visible: false, type: null, value: '', itemId: null });
+    setEditModalVisible(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  const formatNumber = (num: number): string => {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  const formatNumber = (num: number) => {
+    return num.toLocaleString('de-CH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   const handlePremiumPurchase = (type: 'onetime' | 'monthly') => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    // TODO: Backend Integration - Process premium purchase via Stripe
-    console.log(`Premium purchase: ${type}`);
-    Alert.alert('Erfolg!', 'Premium wurde aktiviert! (Placeholder - Stripe Integration folgt)');
-    setPremiumModalVisible(false);
-    setPendingAction(null);
+    Alert.alert('Premium', `${type === 'onetime' ? 'Einmaliger' : 'Monatlicher'} Kauf wird verarbeitet...`);
+    setShowPaywall(false);
   };
 
   const handlePremiumClose = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    // Delete the pending item when closing without purchase
-    if (pendingAction?.type === 'expense' && pendingAction.id) {
-      handleDeleteExpense(pendingAction.id);
-    } else if (pendingAction?.type === 'month' && pendingAction.id) {
-      handleDeleteMonth(pendingAction.id);
-    }
-    setPremiumModalVisible(false);
-    setPendingAction(null);
+    setShowPaywall(false);
   };
 
-  const TopPill = ({ label, value, editable, color, onPressLabel, onPressValue }: any) => {
-    const scale = useSharedValue(1);
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
+  const handleSaveNewExpense = () => {
+    if (!newExpenseName.trim() || !newExpenseAmount.trim()) {
+      Alert.alert('Fehler', 'Bitte fülle alle Felder aus.');
+      return;
+    }
+
+    const amount = parseFloat(newExpenseAmount);
+    if (isNaN(amount)) {
+      Alert.alert('Fehler', 'Bitte gib einen gültigen Betrag ein.');
+      return;
+    }
+
+    const newExpense: Expense = {
+      id: Date.now().toString(),
+      name: newExpenseName.toUpperCase(),
+      amount: amount,
+      isPinned: false,
+    };
+
+    setMonths(
+      months.map((month, index) =>
+        index === 0
+          ? { ...month, expenses: [...month.expenses, newExpense] }
+          : month
+      )
+    );
+
+    setNewExpenseName('');
+    setNewExpenseAmount('');
+    setShowAddModal(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const handleCancelNewExpense = () => {
+    setNewExpenseName('');
+    setNewExpenseAmount('');
+    setShowAddModal(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const TopPill = ({
+    label,
+    value,
+    editable = false,
+    color = colors.white,
+    onPressLabel,
+    onPressValue,
+  }: {
+    label: string;
+    value: string;
+    editable?: boolean;
+    color?: string;
+    onPressLabel?: () => void;
+    onPressValue?: () => void;
+  }) => {
+    const scaleLabel = useSharedValue(1);
+    const scaleValue = useSharedValue(1);
+
+    const animatedStyleLabel = useAnimatedStyle(() => ({
+      transform: [{ scale: scaleLabel.value }],
+    }));
+
+    const animatedStyleValue = useAnimatedStyle(() => ({
+      transform: [{ scale: scaleValue.value }],
     }));
 
     return (
-      <Animated.View style={[styles.topPill, animatedStyle]}>
+      <View style={styles.topPill}>
         <Pressable
-          onPress={() => {
-            if (editable && onPressLabel) {
-              if (Platform.OS === 'ios' || Platform.OS === 'android') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              scale.value = withSpring(0.95, {}, () => {
-                scale.value = withSpring(1);
-              });
-              onPressLabel();
-            }
+          onPressIn={() => {
+            scaleLabel.value = withSpring(0.95);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }}
+          onPressOut={() => {
+            scaleLabel.value = withSpring(1);
+          }}
+          onPress={onPressLabel}
+          disabled={!editable}
         >
-          <Text style={styles.topPillLabel}>{label}</Text>
+          <Animated.View style={animatedStyleLabel}>
+            <Text style={styles.topPillLabel}>{label}</Text>
+          </Animated.View>
         </Pressable>
         <Pressable
-          onPress={() => {
-            if (editable && onPressValue) {
-              if (Platform.OS === 'ios' || Platform.OS === 'android') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              scale.value = withSpring(0.95, {}, () => {
-                scale.value = withSpring(1);
-              });
-              onPressValue();
-            }
+          onPressIn={() => {
+            scaleValue.value = withSpring(0.95);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
+          onPressOut={() => {
+            scaleValue.value = withSpring(1);
+          }}
+          onPress={onPressValue}
+          disabled={!editable}
+        >
+          <Animated.View style={animatedStyleValue}>
+            <Text style={[styles.topPillValue, { color }]}>{value}</Text>
+          </Animated.View>
+        </Pressable>
+      </View>
+    );
+  };
+
+  const MonthPill = ({ month }: { month: Month }) => {
+    const totalExpenses = month.expenses.reduce((sum, e) => sum + e.amount, 0);
+    const remaining = month.cash - totalExpenses;
+
+    return (
+      <Animated.View style={[styles.monthContainer, animatedStyleMonth]}>
+        <Pressable
+          onLongPress={() => handleLongPress('month', month.id)}
+          delayLongPress={600}
+          onPressIn={() => {
+            scaleMonth.value = withSpring(0.98);
+          }}
+          onPressOut={() => {
+            scaleMonth.value = withSpring(1);
           }}
         >
-          <Text style={[styles.topPillValue, color && { color }]}>
-            {typeof value === 'number' ? formatNumber(value) : value}
-          </Text>
+          <View style={styles.monthPill}>
+            <TopPill
+              label={month.name}
+              value={`CHF ${formatNumber(month.cash)}`}
+              editable
+              onPressLabel={() => openEditModal('cashLabel', month.id, month.name)}
+              onPressValue={() => openEditModal('cashValue', month.id, month.cash.toString())}
+            />
+            <TopPill
+              label="TOTAL"
+              value={`CHF ${formatNumber(totalExpenses)}`}
+              color={colors.red}
+            />
+            <TopPill
+              label="BLEIBT"
+              value={`CHF ${formatNumber(remaining)}`}
+              color={remaining >= 0 ? colors.neonGreen : colors.red}
+            />
+            {month.expenses.map((expense) => (
+              <ExpensePill key={expense.id} expense={expense} />
+            ))}
+          </View>
         </Pressable>
       </Animated.View>
     );
   };
 
-  const MonthPill = ({ month }: { month: Month }) => {
-    const scale = useSharedValue(1);
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
-    }));
-
-    const isSelected = month.id === selectedMonthId;
-
-    return (
-      <Pressable
-        onPress={() => {
-          if (Platform.OS === 'ios' || Platform.OS === 'android') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-          scale.value = withSpring(0.95, {}, () => {
-            scale.value = withSpring(1);
-          });
-          setSelectedMonthId(month.id);
-        }}
-        onLongPress={() => handleLongPress('month', month.id)}
-        delayLongPress={600}
-      >
-        <Animated.View
-          style={[
-            styles.monthPill,
-            isSelected && styles.monthPillSelected,
-            month.isPinned && styles.pinnedBorder,
-            animatedStyle,
-          ]}
-        >
-          <Text style={[styles.monthPillText, isSelected && styles.monthPillTextSelected]}>
-            {month.name}
-          </Text>
-          <Pressable
-            onPress={() => handleDeleteMonth(month.id)}
-            hitSlop={10}
-            style={styles.deleteIcon}
-          >
-            <Text style={styles.deleteX}>✕</Text>
-          </Pressable>
-        </Animated.View>
-      </Pressable>
-    );
-  };
-
-  const ExpensePill = ({ expense }: { expense: Expense }) => {
-    const scale = useSharedValue(1);
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
-    }));
-
-    return (
+  const ExpensePill = ({ expense }: { expense: Expense }) => (
+    <Animated.View style={animatedStyleExpense}>
       <Pressable
         onLongPress={() => handleLongPress('expense', expense.id)}
         delayLongPress={600}
-        style={styles.expenseContainer}
+        onPressIn={() => {
+          scaleExpense.value = withSpring(0.98);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }}
+        onPressOut={() => {
+          scaleExpense.value = withSpring(1);
+        }}
       >
-        <Animated.View
-          style={[
-            styles.expensePill,
-            expense.isPinned && styles.pinnedBorder,
-            animatedStyle,
-          ]}
-        >
-          <View style={styles.expenseHeader}>
-            <Text style={styles.expenseName}>{expense.name}</Text>
-            <Pressable
-              onPress={() => {
-                if (Platform.OS === 'ios' || Platform.OS === 'android') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-                handleDeleteExpense(expense.id);
-              }}
-              hitSlop={10}
-            >
-              <Text style={styles.deleteX}>✕</Text>
-            </Pressable>
-          </View>
-          <Text style={styles.expenseAmount}>
-            {formatNumber(expense.amount)}
-          </Text>
-        </Animated.View>
+        <View style={styles.expensePill}>
+          <Text style={styles.expenseName}>{expense.name}</Text>
+          <Text style={styles.expenseAmount}>CHF {formatNumber(expense.amount)}</Text>
+        </View>
       </Pressable>
-    );
-  };
+    </Animated.View>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Top Pills */}
-        <View style={styles.topSection}>
-          <TopPill
-            label={cashLabel}
-            value={selectedMonth?.cash || 0}
-            editable
-            onPressLabel={() =>
-              openEditModal('cashLabel', null, cashLabel)
-            }
-            onPressValue={() =>
-              openEditModal('cashValue', null, selectedMonth?.cash.toString() || '0')
-            }
-          />
-          <View style={styles.topPillDouble}>
-            <View style={styles.topPillRow}>
-              <Text style={styles.topPillLabel}>TOTAL</Text>
-              <Text style={styles.topPillValue}>{formatNumber(totalExpenses)}</Text>
-            </View>
-            <View style={styles.topPillRow}>
-              <Text style={styles.topPillLabel}>BLEIBT</Text>
-              <Text style={[styles.topPillValue, { color: remaining >= 0 ? colors.neonGreen : colors.red }]}>
-                {remaining >= 0 ? formatNumber(remaining) : `-${formatNumber(Math.abs(remaining))}`}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Month Row */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.monthRow}
-          contentContainerStyle={styles.monthRowContent}
-        >
-          <Pressable onPress={handleAddMonth} style={styles.addMonthButton}>
-            <Text style={styles.addMonthText}>+</Text>
-          </Pressable>
-          {sortedMonths.map((month) => (
-            <MonthPill key={month.id} month={month} />
-          ))}
-        </ScrollView>
-
-        {/* Expenses Grid */}
-        <View style={styles.expensesGrid}>
-          {sortedExpenses.map((expense) => (
-            <ExpensePill key={expense.id} expense={expense} />
-          ))}
-        </View>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {months.map((month) => (
+          <MonthPill key={month.id} month={month} />
+        ))}
+        <Pressable onPress={handleAddMonth} style={styles.addMonthButton}>
+          <Text style={styles.addMonthText}>+ MONAT HINZUFÜGEN</Text>
+        </Pressable>
       </ScrollView>
+
+      {/* NEW COMPACT ADD EXPENSE MODAL */}
+      <Modal
+        visible={showAddModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelNewExpense}
+      >
+        <Pressable style={styles.modalOverlay} onPress={handleCancelNewExpense}>
+          <Pressable style={styles.newModalContainer} onPress={() => {}}>
+            <Text style={styles.newModalTitle}>Neue Ausgabe</Text>
+            
+            <TextInput
+              style={styles.newModalInput}
+              placeholder="Name (z.B. ESSEN)"
+              placeholderTextColor="#666"
+              value={newExpenseName}
+              onChangeText={setNewExpenseName}
+              autoCapitalize="characters"
+            />
+            
+            <TextInput
+              style={styles.newModalInput}
+              placeholder="Betrag"
+              placeholderTextColor="#666"
+              value={newExpenseAmount}
+              onChangeText={setNewExpenseAmount}
+              keyboardType="decimal-pad"
+            />
+            
+            <View style={styles.newModalButtonRow}>
+              <Pressable
+                style={styles.newModalCancelButton}
+                onPress={handleCancelNewExpense}
+                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+              >
+                <Text style={styles.newModalCancelText}>Abbrechen</Text>
+              </Pressable>
+              
+              <Pressable
+                style={styles.newModalAddButton}
+                onPress={handleSaveNewExpense}
+                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+              >
+                <Text style={styles.newModalAddText}>Hinzufügen</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Context Menu Modal */}
       <Modal
-        visible={contextMenu.visible}
+        visible={contextMenuVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setContextMenu({ visible: false, type: null, itemId: null })}
+        onRequestClose={() => setContextMenuVisible(false)}
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setContextMenu({ visible: false, type: null, itemId: null })}
-        >
+        <Pressable style={styles.modalOverlay} onPress={() => setContextMenuVisible(false)}>
           <View style={styles.contextMenu}>
             <Pressable
-              style={styles.menuItem}
+              style={styles.contextMenuItem}
               onPress={() => {
-                const item =
-                  contextMenu.type === 'month'
-                    ? months.find((m) => m.id === contextMenu.itemId)
-                    : selectedMonth?.expenses.find((e) => e.id === contextMenu.itemId);
-                openEditModal('name', contextMenu.itemId, item?.name || '');
-              }}
-            >
-              <Text style={styles.menuItemText}>Namen anpassen</Text>
-            </Pressable>
-
-            {contextMenu.type === 'expense' && (
-              <Pressable
-                style={styles.menuItem}
-                onPress={() => {
-                  const expense = selectedMonth?.expenses.find(
-                    (e) => e.id === contextMenu.itemId
-                  );
-                  openEditModal('amount', contextMenu.itemId, expense?.amount.toString() || '0');
-                }}
-              >
-                <Text style={styles.menuItemText}>Zahl anpassen</Text>
-              </Pressable>
-            )}
-
-            <Pressable style={styles.menuItem} onPress={handleDuplicate}>
-              <Text style={styles.menuItemText}>Duplizieren</Text>
-            </Pressable>
-
-            <Pressable style={styles.menuItem} onPress={handlePinToggle}>
-              <Text style={styles.menuItemText}>Fixieren</Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                if (contextMenu.type === 'month' && contextMenu.itemId) {
-                  handleDeleteMonth(contextMenu.itemId);
-                } else if (contextMenu.type === 'expense' && contextMenu.itemId) {
-                  handleDeleteExpense(contextMenu.itemId);
-                  setContextMenu({ visible: false, type: null, itemId: null });
+                setContextMenuVisible(false);
+                if (selectedItemType === 'month') {
+                  const month = months.find((m) => m.id === selectedItemId);
+                  if (month) {
+                    openEditModal('cashLabel', month.id, month.name);
+                  }
+                } else {
+                  const expense = months
+                    .flatMap((m) => m.expenses)
+                    .find((e) => e.id === selectedItemId);
+                  if (expense) {
+                    openEditModal('name', expense.id, expense.name);
+                  }
                 }
               }}
             >
-              <Text style={[styles.menuItemText, styles.menuItemDanger]}>Löschen</Text>
+              <Text style={styles.contextMenuText}>Bearbeiten</Text>
             </Pressable>
-
+            <Pressable style={styles.contextMenuItem} onPress={handlePinToggle}>
+              <Text style={styles.contextMenuText}>Anpinnen</Text>
+            </Pressable>
+            <Pressable style={styles.contextMenuItem} onPress={handleDuplicate}>
+              <Text style={styles.contextMenuText}>Duplizieren</Text>
+            </Pressable>
             <Pressable
-              style={styles.menuItem}
-              onPress={() => setContextMenu({ visible: false, type: null, itemId: null })}
+              style={styles.contextMenuItem}
+              onPress={() => {
+                setContextMenuVisible(false);
+                if (selectedItemType === 'month' && selectedItemId) {
+                  handleDeleteMonth(selectedItemId);
+                } else if (selectedItemId) {
+                  handleDeleteExpense(selectedItemId);
+                }
+              }}
             >
-              <Text style={styles.menuItemText}>Abbrechen</Text>
+              <Text style={[styles.contextMenuText, { color: colors.red }]}>Löschen</Text>
             </Pressable>
           </View>
         </Pressable>
       </Modal>
 
-      {/* Edit Modal - NEUE AUSGABE */}
+      {/* Edit Modal */}
       <Modal
-        visible={editModal.visible}
+        visible={editModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setEditModal({ visible: false, type: null, value: '', itemId: null })}
+        onRequestClose={() => setEditModalVisible(false)}
       >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setEditModal({ visible: false, type: null, value: '', itemId: null })}
-        >
-          <Pressable style={styles.editModal} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.editModalTitle}>Neue Ausgabe</Text>
+        <Pressable style={styles.modalOverlay} onPress={() => setEditModalVisible(false)}>
+          <View style={styles.editModal}>
+            <Text style={styles.editModalTitle}>Bearbeiten</Text>
             <TextInput
               style={styles.editInput}
-              value={editModal.value}
-              onChangeText={(text) => setEditModal({ ...editModal, value: text })}
-              placeholder={editModal.type === 'name' ? 'Name (z.B. ESSEN)' : 'Betrag'}
+              value={editValue}
+              onChangeText={setEditValue}
+              placeholder="Neuer Wert"
               placeholderTextColor="#666"
               keyboardType={
-                editModal.type === 'cashValue' || editModal.type === 'amount'
-                  ? 'numeric'
-                  : 'default'
+                editType === 'cashValue' || editType === 'amount' ? 'decimal-pad' : 'default'
               }
-              autoFocus
+              autoCapitalize={editType === 'name' || editType === 'cashLabel' ? 'characters' : 'none'}
             />
-            <View style={styles.buttonRow}>
-              <Pressable 
-                style={styles.cancelButton} 
-                onPress={() => setEditModal({ visible: false, type: null, value: '', itemId: null })}
+            <View style={styles.editModalButtons}>
+              <Pressable
+                style={styles.editCancelButton}
+                onPress={() => setEditModalVisible(false)}
               >
-                <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                <Text style={styles.editCancelText}>Abbrechen</Text>
               </Pressable>
-              <Pressable style={styles.saveButton} onPress={saveEdit}>
-                <Text style={styles.saveButtonText}>Hinzufügen</Text>
+              <Pressable style={styles.editSaveButton} onPress={saveEdit}>
+                <Text style={styles.editSaveText}>Speichern</Text>
               </Pressable>
             </View>
-          </Pressable>
+          </View>
         </Pressable>
       </Modal>
 
-      {/* Premium Paywall Modal */}
       <PremiumPaywallModal
-        visible={premiumModalVisible}
+        visible={showPaywall}
         onClose={handlePremiumClose}
         onPurchase={handlePremiumPurchase}
       />
@@ -657,146 +581,73 @@ export default function BudgetScreen() {
   );
 }
 
-const { width } = Dimensions.get('window');
-const pillWidth = (width - 48) / 2;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.black,
   },
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: 16,
+  scrollContent: {
+    padding: 20,
     paddingBottom: 100,
   },
-  topSection: {
-    marginTop: 16,
-    gap: 12,
-  },
-  topPill: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  topPillDouble: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 20,
-    gap: 16,
-  },
-  topPillRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  topPillLabel: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  topPillValue: {
-    color: colors.white,
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  monthRow: {
-    marginTop: 24,
-    marginHorizontal: -16,
-  },
-  monthRowContent: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  addMonthButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: colors.neonGreen,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addMonthText: {
-    color: colors.neonGreen,
-    fontSize: 28,
-    fontWeight: '800',
+  monthContainer: {
+    marginBottom: 20,
   },
   monthPill: {
     backgroundColor: colors.darkGray,
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    borderRadius: 16,
+    padding: 16,
+  },
+  topPill: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 12,
+    marginBottom: 12,
   },
-  monthPillSelected: {
-    backgroundColor: colors.darkGray,
-  },
-  monthPillText: {
-    color: colors.white,
+  topPillLabel: {
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
+    color: colors.white,
     letterSpacing: 1,
   },
-  monthPillTextSelected: {
-    color: colors.white,
-  },
-  pinnedBorder: {
-    borderWidth: 2,
-    borderColor: colors.neonGreen,
-  },
-  deleteIcon: {
-    padding: 4,
-  },
-  deleteX: {
-    color: colors.red,
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  expensesGrid: {
-    marginTop: 24,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  expenseContainer: {
-    width: pillWidth,
+  topPillValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   expensePill: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 16,
-    height: pillWidth,
-    justifyContent: 'space-between',
-  },
-  expenseHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: colors.black,
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 8,
   },
   expenseName: {
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.white,
-    fontSize: 16,
-    fontWeight: '800',
     letterSpacing: 1,
-    flex: 1,
   },
   expenseAmount: {
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.white,
-    fontSize: 28,
-    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  addMonthButton: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  addMonthText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.neonGreen,
     letterSpacing: 1,
-    textAlign: 'right',
   },
   modalOverlay: {
     flex: 1,
@@ -804,89 +655,133 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  contextMenu: {
-    backgroundColor: colors.darkGray,
+  
+  // NEW COMPACT MODAL STYLES
+  newModalContainer: {
+    width: 320,
+    backgroundColor: '#1a1a1a',
     borderRadius: 20,
-    width: '80%',
-    overflow: 'hidden',
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  menuItem: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  menuItemText: {
+  newModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
     color: colors.white,
-    fontSize: 18,
-    fontWeight: '800',
     textAlign: 'center',
+    marginBottom: 20,
     letterSpacing: 0.5,
   },
-  menuItemDanger: {
-    color: colors.red,
-  },
-  editModal: {
-    width: '95%',
-    maxWidth: 500,
-    backgroundColor: colors.darkGray,
-    borderRadius: 24,
-    padding: 28,
-    alignItems: 'stretch',
-  },
-  editModalTitle: {
-    color: colors.white,
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 1,
-    marginBottom: 20,
-    textAlign: 'left',
-  },
-  editInput: {
-    backgroundColor: '#000000',
-    borderRadius: 16,
-    padding: 18,
-    color: colors.white,
-    fontSize: 16,
+  newModalInput: {
+    backgroundColor: colors.black,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 15,
     fontWeight: '600',
-    marginBottom: 16,
-    minHeight: 56,
+    color: colors.white,
+    marginBottom: 12,
   },
-  buttonRow: {
+  newModalButtonRow: {
     flexDirection: 'row',
     gap: 12,
     marginTop: 8,
-    width: '100%',
   },
-  cancelButton: {
+  newModalCancelButton: {
     flex: 1,
-    minWidth: 130,
-    backgroundColor: '#000000',
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 12,
+    paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  cancelButtonText: {
+  newModalCancelText: {
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.white,
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
-  saveButton: {
+  newModalAddButton: {
     flex: 1,
-    minWidth: 130,
     backgroundColor: colors.neonGreen,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    borderRadius: 12,
+    paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  saveButtonText: {
-    color: '#000000',
+  newModalAddText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.black,
+    letterSpacing: 0.3,
+  },
+
+  contextMenu: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 16,
+    padding: 8,
+    minWidth: 200,
+  },
+  contextMenuItem: {
+    padding: 16,
+    borderRadius: 8,
+  },
+  contextMenuText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.white,
+    textAlign: 'center',
+  },
+  editModal: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 16,
+    padding: 24,
+    width: '80%',
+    maxWidth: 400,
+  },
+  editModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.white,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  editInput: {
+    backgroundColor: colors.black,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.white,
+    marginBottom: 16,
+  },
+  editModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  editCancelButton: {
+    flex: 1,
+    backgroundColor: colors.black,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+  },
+  editCancelText: {
     fontSize: 16,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    color: colors.white,
+  },
+  editSaveButton: {
+    flex: 1,
+    backgroundColor: colors.neonGreen,
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+  },
+  editSaveText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.black,
   },
 });
