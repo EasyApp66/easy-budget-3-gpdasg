@@ -512,20 +512,25 @@ export default function BudgetScreen() {
           </View>
         </View>
 
-        {/* Month Row */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.monthRow}
-          contentContainerStyle={styles.monthRowContent}
-        >
+        {/* Month Row with Sticky Add Button */}
+        <View style={styles.monthRowContainer}>
+          {/* Sticky Add Month Button */}
           <Pressable onPress={handleAddMonth} style={styles.addMonthButton}>
             <Text style={styles.addMonthText}>+</Text>
           </Pressable>
-          {sortedMonths.map((month) => (
-            <MonthPill key={month.id} month={month} />
-          ))}
-        </ScrollView>
+
+          {/* Scrollable Month Pills */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.monthScrollView}
+            contentContainerStyle={styles.monthScrollContent}
+          >
+            {sortedMonths.map((month) => (
+              <MonthPill key={month.id} month={month} />
+            ))}
+          </ScrollView>
+        </View>
 
         {/* Expenses Grid */}
         <View style={styles.expensesGrid}>
@@ -697,49 +702,56 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
-  monthRow: {
+  monthRowContainer: {
     marginTop: 24,
-    marginHorizontal: -16,
-  },
-  monthRowContent: {
-    paddingHorizontal: 16,
-    gap: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
   },
   addMonthButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: colors.neonGreen,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: colors.neonGreen,
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 12,
   },
   addMonthText: {
-    color: colors.neonGreen,
-    fontSize: 28,
+    color: colors.black,
+    fontSize: 24,
     fontWeight: '800',
+    lineHeight: 24,
+  },
+  monthScrollView: {
+    flex: 1,
+  },
+  monthScrollContent: {
+    paddingRight: 16,
+    gap: 12,
+    alignItems: 'center',
   },
   monthPill: {
     backgroundColor: colors.darkGray,
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    justifyContent: 'center',
   },
   monthPillSelected: {
-    backgroundColor: colors.darkGray,
+    backgroundColor: colors.neonGreen,
   },
   monthPillText: {
     color: colors.white,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '800',
     letterSpacing: 1,
   },
   monthPillTextSelected: {
-    color: colors.white,
+    color: colors.black,
   },
   pinnedBorder: {
     borderWidth: 2,
@@ -750,7 +762,7 @@ const styles = StyleSheet.create({
   },
   deleteX: {
     color: colors.red,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
   },
   expensesGrid: {
