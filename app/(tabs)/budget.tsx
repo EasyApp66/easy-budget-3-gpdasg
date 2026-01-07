@@ -106,7 +106,7 @@ export default function BudgetScreen() {
 
   const handleAddMonth = () => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     
     // Check premium limit
@@ -478,62 +478,90 @@ export default function BudgetScreen() {
     );
   };
 
+  // Animated Add Month Button Component
+  const AddMonthButton = () => {
+    const scale = useSharedValue(1);
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
+
+    return (
+      <Pressable
+        onPress={() => {
+          scale.value = withSpring(0.9, {}, () => {
+            scale.value = withSpring(1);
+          });
+          handleAddMonth();
+        }}
+        style={styles.stickyAddMonthButton}
+      >
+        <Animated.View style={[styles.addMonthButtonInner, animatedStyle]}>
+          <Text style={styles.addMonthButtonText}>+</Text>
+        </Animated.View>
+      </Pressable>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Top Pills */}
-        <View style={styles.topSection}>
-          <TopPill
-            label={cashLabel}
-            value={selectedMonth?.cash || 0}
-            editable
-            onPressLabel={() =>
-              openEditModal('cashLabel', null, cashLabel)
-            }
-            onPressValue={() =>
-              openEditModal('cashValue', null, selectedMonth?.cash.toString() || '0')
-            }
-          />
-          <View style={styles.topPillDouble}>
-            <View style={styles.topPillRow}>
-              <Text style={styles.topPillLabel}>TOTAL</Text>
-              <Text style={styles.topPillValue}>{formatNumber(totalExpenses)}</Text>
-            </View>
-            <View style={styles.topPillRow}>
-              <Text style={styles.topPillLabel}>BLEIBT</Text>
-              <Text style={[styles.topPillValue, { color: remaining >= 0 ? colors.neonGreen : colors.red }]}>
-                {remaining >= 0 ? formatNumber(remaining) : `-${formatNumber(Math.abs(remaining))}`}
-              </Text>
+      <View style={styles.mainContainer}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Top Pills */}
+          <View style={styles.topSection}>
+            <TopPill
+              label={cashLabel}
+              value={selectedMonth?.cash || 0}
+              editable
+              onPressLabel={() =>
+                openEditModal('cashLabel', null, cashLabel)
+              }
+              onPressValue={() =>
+                openEditModal('cashValue', null, selectedMonth?.cash.toString() || '0')
+              }
+            />
+            <View style={styles.topPillDouble}>
+              <View style={styles.topPillRow}>
+                <Text style={styles.topPillLabel}>TOTAL</Text>
+                <Text style={styles.topPillValue}>{formatNumber(totalExpenses)}</Text>
+              </View>
+              <View style={styles.topPillRow}>
+                <Text style={styles.topPillLabel}>BLEIBT</Text>
+                <Text style={[styles.topPillValue, { color: remaining >= 0 ? colors.neonGreen : colors.red }]}>
+                  {remaining >= 0 ? formatNumber(remaining) : `-${formatNumber(Math.abs(remaining))}`}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Month Row */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.monthRow}
-          contentContainerStyle={styles.monthRowContent}
-        >
-          <Pressable onPress={handleAddMonth} style={styles.addMonthButton}>
-            <Text style={styles.addMonthText}>+</Text>
-          </Pressable>
-          {sortedMonths.map((month) => (
-            <MonthPill key={month.id} month={month} />
-          ))}
+          {/* Month Row with Sticky Add Button */}
+          <View style={styles.monthRowContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.monthRow}
+              contentContainerStyle={styles.monthRowContent}
+            >
+              {sortedMonths.map((month) => (
+                <MonthPill key={month.id} month={month} />
+              ))}
+            </ScrollView>
+            
+            {/* Sticky Add Month Button */}
+            <AddMonthButton />
+          </View>
+
+          {/* Expenses Grid */}
+          <View style={styles.expensesGrid}>
+            {sortedExpenses.map((expense) => (
+              <ExpensePill key={expense.id} expense={expense} />
+            ))}
+          </View>
         </ScrollView>
-
-        {/* Expenses Grid */}
-        <View style={styles.expensesGrid}>
-          {sortedExpenses.map((expense) => (
-            <ExpensePill key={expense.id} expense={expense} />
-          ))}
-        </View>
-      </ScrollView>
+      </View>
 
       {/* Context Menu Modal */}
       <Modal
@@ -655,6 +683,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.black,
   },
+  mainContainer: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
   },
@@ -697,28 +728,43 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
   },
-  monthRow: {
+  monthRowContainer: {
     marginTop: 24,
+    position: 'relative',
+  },
+  monthRow: {
     marginHorizontal: -16,
   },
   monthRowContent: {
     paddingHorizontal: 16,
+    paddingRight: 80, // Space for sticky button
     gap: 12,
   },
-  addMonthButton: {
+  // Sticky Add Month Button - Matches main green button design
+  stickyAddMonthButton: {
+    position: 'absolute',
+    right: 16,
+    top: 0,
+    zIndex: 999,
+  },
+  addMonthButtonInner: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: colors.neonGreen,
+    backgroundColor: colors.neonGreen, // #BFFE84
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  addMonthText: {
-    color: colors.neonGreen,
-    fontSize: 28,
+  addMonthButtonText: {
+    color: colors.black, // Black text on green background
+    fontSize: 32,
     fontWeight: '800',
+    lineHeight: 32,
   },
   monthPill: {
     backgroundColor: colors.darkGray,
