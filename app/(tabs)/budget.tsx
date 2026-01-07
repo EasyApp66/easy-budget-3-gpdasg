@@ -705,7 +705,7 @@ const styles = StyleSheet.create({
   },
   topPillValue: {
     color: colors.white,
-    fontSize: 44,
+    fontSize: 32,
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -718,7 +718,7 @@ const styles = StyleSheet.create({
   addMonthButton: {
     width: 44,
     height: 44,
-    borderRadius: 18,
+    borderRadius: 12,
     backgroundColor: colors.neonGreen,
     justifyContent: 'center',
     alignItems: 'center',
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
   },
   monthPill: {
     backgroundColor: colors.darkGray,
-    borderRadius: 18,
+    borderRadius: 12,
     paddingHorizontal: 16,
     height: 44,
     flexDirection: 'row',
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
   },
   expenseAmount: {
     color: colors.white,
-    fontSize: 44,
+    fontSize: 28,
     fontWeight: '800',
     letterSpacing: 1,
     textAlign: 'right',
