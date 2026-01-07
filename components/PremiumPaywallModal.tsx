@@ -1,7 +1,4 @@
 
-import React from 'react';
-import { IconSymbol } from '@/components/IconSymbol';
-import * as Haptics from 'expo-haptics';
 import {
   View,
   Text,
@@ -10,11 +7,14 @@ import {
   Pressable,
   Platform,
 } from 'react-native';
+import { IconSymbol } from '@/components/IconSymbol';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import React from 'react';
 
 interface PremiumPaywallModalProps {
   visible: boolean;
@@ -22,7 +22,11 @@ interface PremiumPaywallModalProps {
   onPurchase: (type: 'onetime' | 'monthly') => void;
 }
 
-export function PremiumPaywallModal({ visible, onClose, onPurchase }: PremiumPaywallModalProps) {
+export function PremiumPaywallModal({
+  visible,
+  onClose,
+  onPurchase,
+}: PremiumPaywallModalProps) {
   const onetimeScale = useSharedValue(1);
   const monthlyScale = useSharedValue(1);
   const closeScale = useSharedValue(1);
@@ -39,14 +43,18 @@ export function PremiumPaywallModal({ visible, onClose, onPurchase }: PremiumPay
     transform: [{ scale: closeScale.value }],
   }));
 
-  const handlePress = (callback: () => void, scaleValue: Animated.SharedValue<number>) => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+  const handlePress = (
+    callback: () => void,
+    scaleValue: Animated.SharedValue<number>
+  ) => {
+    if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    scaleValue.value = withSpring(0.92, { damping: 10, stiffness: 400 }, () => {
+    scaleValue.value = withSpring(0.92, { damping: 10, stiffness: 400 });
+    setTimeout(() => {
       scaleValue.value = withSpring(1, { damping: 10, stiffness: 400 });
-    });
-    callback();
+      callback();
+    }, 100);
   };
 
   return (
@@ -59,25 +67,35 @@ export function PremiumPaywallModal({ visible, onClose, onPurchase }: PremiumPay
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
           {/* Close Button */}
-          <Animated.View style={[styles.closeButton, closeAnimatedStyle]}>
-            <Pressable onPress={() => handlePress(onClose, closeScale)}>
-              <IconSymbol name="xmark" size={22} color="#000" />
+          <Animated.View style={[styles.closeButtonContainer, closeAnimatedStyle]}>
+            <Pressable
+              onPress={() => handlePress(onClose, closeScale)}
+              style={styles.closeButton}
+            >
+              <IconSymbol
+                ios_icon_name="xmark"
+                android_material_icon_name="close"
+                size={18}
+                color="#000000"
+              />
             </Pressable>
           </Animated.View>
 
           {/* Star Icon */}
-          <View style={styles.starIcon}>
-            <IconSymbol name="star.fill" size={42} color="#BFFE84" />
+          <View style={styles.starContainer}>
+            <IconSymbol ios_icon_name="star.fill" android_material_icon_name="star" size={36} color="#BFFE84" />
           </View>
 
           {/* Title */}
           <Text style={styles.title}>Premium Kaufen</Text>
 
           {/* Subtitle */}
-          <Text style={styles.subtitle}>Erhalte unbegrenzte App-{'\n'}Funktionen:</Text>
+          <Text style={styles.subtitle}>
+            Erhalte unbegrenzte App-Funktionen:
+          </Text>
 
           {/* Features List */}
-          <View style={styles.featuresList}>
+          <View style={styles.featureList}>
             <View style={styles.featureItem}>
               <View style={styles.bullet} />
               <Text style={styles.featureText}>Unbegrenzte Abo Counter</Text>
@@ -92,34 +110,38 @@ export function PremiumPaywallModal({ visible, onClose, onPurchase }: PremiumPay
             </View>
           </View>
 
-          {/* One-time Payment */}
-          <Animated.View style={[styles.paymentCard, onetimeAnimatedStyle]}>
-            <Text style={styles.paymentTitle}>Einmalige Zahlung</Text>
-            <Text style={styles.paymentPrice}>CHF 10.00</Text>
+          {/* One-time Payment Card */}
+          <Animated.View style={onetimeAnimatedStyle}>
             <Pressable
-              style={styles.paymentButton}
               onPress={() => handlePress(() => onPurchase('onetime'), onetimeScale)}
+              style={styles.paymentCard}
             >
-              <Text style={styles.paymentButtonText}>Bezahlen</Text>
+              <View style={styles.paymentInfo}>
+                <Text style={styles.paymentTitle}>Einmalige Zahlung</Text>
+                <Text style={styles.paymentPrice}>CHF 10.00</Text>
+              </View>
+              <View style={styles.payButton}>
+                <Text style={styles.payButtonText}>Bezahlen</Text>
+              </View>
             </Pressable>
           </Animated.View>
 
           {/* Divider */}
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ODER</Text>
-            <View style={styles.dividerLine} />
-          </View>
+          <Text style={styles.divider}>ODER</Text>
 
-          {/* Monthly Subscription */}
-          <Animated.View style={[styles.paymentCard, monthlyAnimatedStyle]}>
-            <Text style={styles.paymentTitle}>Monatliches Abo</Text>
-            <Text style={styles.paymentPrice}>CHF 1.00/Monat</Text>
+          {/* Monthly Payment Card */}
+          <Animated.View style={monthlyAnimatedStyle}>
             <Pressable
-              style={styles.paymentButton}
               onPress={() => handlePress(() => onPurchase('monthly'), monthlyScale)}
+              style={styles.paymentCard}
             >
-              <Text style={styles.paymentButtonText}>Bezahlen</Text>
+              <View style={styles.paymentInfo}>
+                <Text style={styles.paymentTitle}>Monatliches Abo</Text>
+                <Text style={styles.paymentPrice}>CHF 1.00/Monat</Text>
+              </View>
+              <View style={styles.payButton}>
+                <Text style={styles.payButtonText}>Bezahlen</Text>
+              </View>
             </Pressable>
           </Animated.View>
         </View>
@@ -134,62 +156,63 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
   },
   modalContainer: {
-    backgroundColor: '#232323',
-    borderRadius: 20,
     width: '88%',
     maxWidth: 380,
+    backgroundColor: '#232323',
+    borderRadius: 24,
     paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 20,
+    paddingTop: 10,
+    paddingBottom: 18,
     position: 'relative',
   },
-  closeButton: {
+  closeButtonContainer: {
     position: 'absolute',
-    top: 14,
-    right: 14,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    top: 10,
+    right: 10,
+    zIndex: 10,
+  },
+  closeButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 10,
   },
-  starIcon: {
-    alignSelf: 'center',
+  starContainer: {
+    alignItems: 'center',
     marginTop: 6,
-    marginBottom: 12,
+    marginBottom: 6,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '800',
+    fontSize: 23,
+    fontWeight: '700',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 5,
     letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '400',
-    color: '#AAAAAA',
+    color: '#CCCCCC',
     textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 21,
+    marginBottom: 12,
+    lineHeight: 18,
   },
-  featuresList: {
+  featureList: {
     backgroundColor: '#1A1A1A',
     borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    marginBottom: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginVertical: 4,
   },
   bullet: {
     width: 5,
@@ -199,61 +222,54 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   featureText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: '#FFFFFF',
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
   paymentCard: {
-    backgroundColor: '#000000',
+    backgroundColor: '#1A1A1A',
     borderRadius: 14,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: '#BFFE84',
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    marginBottom: 14,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    marginBottom: 9,
+  },
+  paymentInfo: {
+    marginBottom: 9,
   },
   paymentTitle: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 5,
-    letterSpacing: 0.3,
+    marginBottom: 3,
+    letterSpacing: 0.4,
   },
   paymentPrice: {
     fontSize: 19,
-    fontWeight: '800',
+    fontWeight: '700',
     color: '#BFFE84',
-    marginBottom: 10,
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
-  paymentButton: {
+  payButton: {
     backgroundColor: '#BFFE84',
     borderRadius: 11,
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: 'center',
   },
-  paymentButtonText: {
-    fontSize: 15,
+  payButtonText: {
+    fontSize: 14,
     fontWeight: '700',
     color: '#000000',
     letterSpacing: 0.4,
   },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#444444',
-  },
-  dividerText: {
+  divider: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#888888',
-    marginHorizontal: 10,
+    color: '#666666',
+    textAlign: 'center',
+    marginVertical: 7,
     letterSpacing: 1,
   },
 });
