@@ -718,7 +718,7 @@ const styles = StyleSheet.create({
   addMonthButton: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 18,
     backgroundColor: colors.neonGreen,
     justifyContent: 'center',
     alignItems: 'center',
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
   },
   monthPill: {
     backgroundColor: colors.darkGray,
-    borderRadius: 12,
+    borderRadius: 18,
     paddingHorizontal: 16,
     height: 44,
     flexDirection: 'row',
