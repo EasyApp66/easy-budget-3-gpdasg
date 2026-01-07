@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { IconSymbol } from '@/components/IconSymbol';
+import * as Haptics from 'expo-haptics';
 import {
   View,
   Text,
@@ -13,16 +15,6 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { IconSymbol } from '@/components/IconSymbol';
-
-const colors = {
-  black: '#000000',
-  white: '#FFFFFF',
-  neonGreen: '#BFFE84',
-  darkGray: '#232323',
-  red: '#C43C3E',
-};
 
 interface PremiumPaywallModalProps {
   visible: boolean;
@@ -30,11 +22,7 @@ interface PremiumPaywallModalProps {
   onPurchase: (type: 'onetime' | 'monthly') => void;
 }
 
-export function PremiumPaywallModal({
-  visible,
-  onClose,
-  onPurchase,
-}: PremiumPaywallModalProps) {
+export function PremiumPaywallModal({ visible, onClose, onPurchase }: PremiumPaywallModalProps) {
   const onetimeScale = useSharedValue(1);
   const monthlyScale = useSharedValue(1);
   const closeScale = useSharedValue(1);
@@ -52,14 +40,13 @@ export function PremiumPaywallModal({
   }));
 
   const handlePress = (callback: () => void, scaleValue: Animated.SharedValue<number>) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    scaleValue.value = withSpring(0.95, { damping: 10, stiffness: 400 });
-    setTimeout(() => {
+    scaleValue.value = withSpring(0.92, { damping: 10, stiffness: 400 }, () => {
       scaleValue.value = withSpring(1, { damping: 10, stiffness: 400 });
-      callback();
-    }, 100);
+    });
+    callback();
   };
 
   return (
@@ -72,40 +59,25 @@ export function PremiumPaywallModal({
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
           {/* Close Button */}
-          <Pressable
-            onPress={() => handlePress(onClose, closeScale)}
-            style={styles.closeButton}
-          >
-            <Animated.View style={closeAnimatedStyle}>
-              <IconSymbol
-                ios_icon_name="xmark"
-                android_material_icon_name="close"
-                size={24}
-                color="#FFFFFF"
-              />
-            </Animated.View>
-          </Pressable>
+          <Animated.View style={[styles.closeButton, closeAnimatedStyle]}>
+            <Pressable onPress={() => handlePress(onClose, closeScale)}>
+              <IconSymbol name="xmark" size={22} color="#000" />
+            </Pressable>
+          </Animated.View>
 
           {/* Star Icon */}
-          <View style={styles.iconContainer}>
-            <IconSymbol
-              ios_icon_name="star.fill"
-              android_material_icon_name="star"
-              size={60}
-              color="#BFFE84"
-            />
+          <View style={styles.starIcon}>
+            <IconSymbol name="star.fill" size={42} color="#BFFE84" />
           </View>
 
           {/* Title */}
           <Text style={styles.title}>Premium Kaufen</Text>
 
           {/* Subtitle */}
-          <Text style={styles.subtitle}>
-            Erhalte unbegrenzte App-Funktionen:
-          </Text>
+          <Text style={styles.subtitle}>Erhalte unbegrenzte App-{'\n'}Funktionen:</Text>
 
           {/* Features List */}
-          <View style={styles.featuresContainer}>
+          <View style={styles.featuresList}>
             <View style={styles.featureItem}>
               <View style={styles.bullet} />
               <Text style={styles.featureText}>Unbegrenzte Abo Counter</Text>
@@ -121,33 +93,35 @@ export function PremiumPaywallModal({
           </View>
 
           {/* One-time Payment */}
-          <View style={styles.paymentOption}>
-            <Text style={styles.paymentLabel}>Einmalige Zahlung</Text>
+          <Animated.View style={[styles.paymentCard, onetimeAnimatedStyle]}>
+            <Text style={styles.paymentTitle}>Einmalige Zahlung</Text>
             <Text style={styles.paymentPrice}>CHF 10.00</Text>
             <Pressable
+              style={styles.paymentButton}
               onPress={() => handlePress(() => onPurchase('onetime'), onetimeScale)}
             >
-              <Animated.View style={[styles.payButton, onetimeAnimatedStyle]}>
-                <Text style={styles.payButtonText}>Bezahlen</Text>
-              </Animated.View>
+              <Text style={styles.paymentButtonText}>Bezahlen</Text>
             </Pressable>
-          </View>
+          </Animated.View>
 
-          {/* OR Divider */}
-          <Text style={styles.orText}>ODER</Text>
+          {/* Divider */}
+          <View style={styles.dividerContainer}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>ODER</Text>
+            <View style={styles.dividerLine} />
+          </View>
 
           {/* Monthly Subscription */}
-          <View style={styles.paymentOption}>
-            <Text style={styles.paymentLabel}>Monatliches Abo</Text>
+          <Animated.View style={[styles.paymentCard, monthlyAnimatedStyle]}>
+            <Text style={styles.paymentTitle}>Monatliches Abo</Text>
             <Text style={styles.paymentPrice}>CHF 1.00/Monat</Text>
             <Pressable
+              style={styles.paymentButton}
               onPress={() => handlePress(() => onPurchase('monthly'), monthlyScale)}
             >
-              <Animated.View style={[styles.payButton, monthlyAnimatedStyle]}>
-                <Text style={styles.payButtonText}>Bezahlen</Text>
-              </Animated.View>
+              <Text style={styles.paymentButtonText}>Bezahlen</Text>
             </Pressable>
-          </View>
+          </Animated.View>
         </View>
       </View>
     </Modal>
@@ -160,102 +134,126 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 24,
   },
   modalContainer: {
     backgroundColor: '#232323',
-    borderRadius: 24,
-    padding: 32,
-    width: '100%',
-    maxWidth: 400,
+    borderRadius: 20,
+    width: '88%',
+    maxWidth: 380,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 20,
     position: 'relative',
   },
   closeButton: {
     position: 'absolute',
-    top: 20,
-    right: 20,
-    zIndex: 10,
-    padding: 8,
-  },
-  iconContainer: {
+    top: 14,
+    right: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    zIndex: 10,
+  },
+  starIcon: {
+    alignSelf: 'center',
+    marginTop: 6,
+    marginBottom: 12,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: 10,
     letterSpacing: 0.5,
   },
   subtitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#CCCCCC',
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#AAAAAA',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
+    lineHeight: 21,
   },
-  featuresContainer: {
+  featuresList: {
     backgroundColor: '#1A1A1A',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginBottom: 16,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   bullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: '#BFFE84',
-    marginRight: 12,
+    marginRight: 10,
   },
   featureText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     color: '#FFFFFF',
+    letterSpacing: 0.2,
   },
-  paymentOption: {
+  paymentCard: {
     backgroundColor: '#000000',
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 2,
     borderColor: '#BFFE84',
-    padding: 20,
-    marginBottom: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginBottom: 14,
   },
-  paymentLabel: {
-    fontSize: 18,
+  paymentTitle: {
+    fontSize: 17,
     fontWeight: '700',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 5,
+    letterSpacing: 0.3,
   },
   paymentPrice: {
-    fontSize: 24,
+    fontSize: 19,
     fontWeight: '800',
     color: '#BFFE84',
-    marginBottom: 16,
+    marginBottom: 10,
+    letterSpacing: 0.4,
   },
-  payButton: {
+  paymentButton: {
     backgroundColor: '#BFFE84',
-    borderRadius: 12,
-    paddingVertical: 16,
+    borderRadius: 11,
+    paddingVertical: 12,
     alignItems: 'center',
   },
-  payButtonText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#000000',
-    letterSpacing: 0.5,
-  },
-  orText: {
-    fontSize: 14,
+  paymentButtonText: {
+    fontSize: 15,
     fontWeight: '700',
-    color: '#666666',
-    textAlign: 'center',
-    marginVertical: 8,
+    color: '#000000',
+    letterSpacing: 0.4,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#444444',
+  },
+  dividerText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#888888',
+    marginHorizontal: 10,
+    letterSpacing: 1,
   },
 });
