@@ -289,6 +289,37 @@ export default function AbosScreen() {
     return 0;
   });
 
+  const AboBalanceCard = () => {
+    const scale = useSharedValue(1);
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scale.value }],
+    }));
+
+    return (
+      <Animated.View style={[styles.aboBalanceCard, animatedStyle]}>
+        {/* Two-column layout: Left column for labels, Right column for main cost */}
+        <View style={styles.aboBalanceContent}>
+          {/* Left Column - Stacked Labels */}
+          <View style={styles.aboBalanceLeft}>
+            <Text style={styles.aboBalanceTitle}>ABO KOSTEN</Text>
+            
+            <View style={styles.aboBalanceSubInfo}>
+              <Text style={styles.aboBalanceSubLabel}>TOTAL</Text>
+              <Text style={styles.aboBalanceSubValue}>{totalCount}</Text>
+            </View>
+          </View>
+
+          {/* Right Column - Main Cost Number (Bottom Right) */}
+          <View style={styles.aboBalanceRight}>
+            <Text style={styles.aboBalanceMainValue}>
+              {formatNumber(totalCost)}
+            </Text>
+          </View>
+        </View>
+      </Animated.View>
+    );
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -297,18 +328,8 @@ export default function AbosScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Top Pills */}
-          <View style={styles.topPillsContainer}>
-            <View style={styles.topPillLarge}>
-              <Text style={styles.topPillLabel}>ABO KOSTEN</Text>
-              <Text style={styles.topPillValue}>{totalCost}</Text>
-            </View>
-
-            <View style={styles.topPill}>
-              <Text style={styles.topPillLabel}>TOTAL</Text>
-              <Text style={styles.topPillValue}>{totalCount}</Text>
-            </View>
-          </View>
+          {/* Abo Balance Card - New Robust Design */}
+          <AboBalanceCard />
 
           {/* Subscription List */}
           <View style={styles.subscriptionList}>
@@ -465,39 +486,66 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 120,
   },
-  topPillsContainer: {
-    gap: 12,
+  
+  // NEW: Robust Abo Balance Card Design
+  aboBalanceCard: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 24,
+    padding: 28,
     marginBottom: 20,
+    minHeight: 200,
   },
-  topPillLarge: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 20,
+  aboBalanceContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    height: 120,
+    alignItems: 'flex-end',
+    flex: 1,
   },
-  topPill: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    height: 80,
+  aboBalanceLeft: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    gap: 12,
+    paddingRight: 16,
   },
-  topPillLabel: {
+  aboBalanceTitle: {
     color: colors.white,
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  aboBalanceSubInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
+  },
+  aboBalanceSubLabel: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1,
+    opacity: 0.8,
+  },
+  aboBalanceSubValue: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  aboBalanceRight: {
+    alignSelf: 'flex-end',
+    marginBottom: 0,
+    marginRight: 0,
+  },
+  aboBalanceMainValue: {
+    color: colors.white,
+    fontSize: 56,
     fontWeight: '800',
     letterSpacing: 1,
+    textAlign: 'right',
   },
-  topPillValue: {
-    color: colors.white,
-    fontSize: 48,
-    fontWeight: '800',
-  },
+  
   subscriptionList: {
     gap: 12,
   },

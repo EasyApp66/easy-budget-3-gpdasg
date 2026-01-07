@@ -348,46 +348,66 @@ export default function BudgetScreen() {
     setPendingAction(null);
   };
 
-  const TopPill = ({ label, value, editable, color, onPressLabel, onPressValue }: any) => {
+  const CashBalanceCard = () => {
     const scale = useSharedValue(1);
     const animatedStyle = useAnimatedStyle(() => ({
       transform: [{ scale: scale.value }],
     }));
 
     return (
-      <Animated.View style={[styles.topPill, animatedStyle]}>
-        <Pressable
-          onPress={() => {
-            if (editable && onPressLabel) {
+      <Animated.View style={[styles.cashBalanceCard, animatedStyle]}>
+        {/* Two-column layout: Left column for labels, Right column for main balance */}
+        <View style={styles.cashBalanceContent}>
+          {/* Left Column - Stacked Labels */}
+          <View style={styles.cashBalanceLeft}>
+            <Pressable
+              onPress={() => {
+                if (Platform.OS === 'ios' || Platform.OS === 'android') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+                scale.value = withSpring(0.98, {}, () => {
+                  scale.value = withSpring(1);
+                });
+                openEditModal('cashLabel', null, cashLabel);
+              }}
+            >
+              <Text style={styles.cashBalanceTitle}>{cashLabel}</Text>
+            </Pressable>
+            
+            <View style={styles.cashBalanceSubInfo}>
+              <Text style={styles.cashBalanceSubLabel}>TOTAL</Text>
+              <Text style={styles.cashBalanceSubValue}>{formatNumber(totalExpenses)}</Text>
+            </View>
+            
+            <View style={styles.cashBalanceSubInfo}>
+              <Text style={styles.cashBalanceSubLabel}>BLEIBT</Text>
+              <Text style={[
+                styles.cashBalanceSubValue,
+                { color: remaining >= 0 ? colors.neonGreen : colors.red }
+              ]}>
+                {formatNumber(Math.abs(remaining))}
+              </Text>
+            </View>
+          </View>
+
+          {/* Right Column - Main Balance Number (Bottom Right) */}
+          <Pressable
+            style={styles.cashBalanceRight}
+            onPress={() => {
               if (Platform.OS === 'ios' || Platform.OS === 'android') {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
-              scale.value = withSpring(0.95, {}, () => {
+              scale.value = withSpring(0.98, {}, () => {
                 scale.value = withSpring(1);
               });
-              onPressLabel();
-            }
-          }}
-        >
-          <Text style={styles.topPillLabel}>{label}</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            if (editable && onPressValue) {
-              if (Platform.OS === 'ios' || Platform.OS === 'android') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              scale.value = withSpring(0.95, {}, () => {
-                scale.value = withSpring(1);
-              });
-              onPressValue();
-            }
-          }}
-        >
-          <Text style={[styles.topPillValue, color && { color }]}>
-            {typeof value === 'number' ? formatNumber(value) : value}
-          </Text>
-        </Pressable>
+              openEditModal('cashValue', null, selectedMonth?.cash.toString() || '0');
+            }}
+          >
+            <Text style={styles.cashBalanceMainValue}>
+              {formatNumber(selectedMonth?.cash || 0)}
+            </Text>
+          </Pressable>
+        </View>
       </Animated.View>
     );
   };
@@ -485,32 +505,8 @@ export default function BudgetScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Pills */}
-        <View style={styles.topSection}>
-          <TopPill
-            label={cashLabel}
-            value={selectedMonth?.cash || 0}
-            editable
-            onPressLabel={() =>
-              openEditModal('cashLabel', null, cashLabel)
-            }
-            onPressValue={() =>
-              openEditModal('cashValue', null, selectedMonth?.cash.toString() || '0')
-            }
-          />
-          <View style={styles.topPillDouble}>
-            <View style={styles.topPillRow}>
-              <Text style={styles.topPillLabel}>TOTAL</Text>
-              <Text style={styles.topPillValue}>{formatNumber(totalExpenses)}</Text>
-            </View>
-            <View style={styles.topPillRow}>
-              <Text style={styles.topPillLabel}>BLEIBT</Text>
-              <Text style={[styles.topPillValue, { color: remaining >= 0 ? colors.neonGreen : colors.red }]}>
-                {remaining >= 0 ? formatNumber(remaining) : `-${formatNumber(Math.abs(remaining))}`}
-              </Text>
-            </View>
-          </View>
-        </View>
+        {/* Cash Balance Card - New Robust Design */}
+        <CashBalanceCard />
 
         {/* Month Row */}
         <ScrollView
@@ -662,41 +658,66 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 100,
   },
-  topSection: {
+  
+  // NEW: Robust Cash Balance Card Design
+  cashBalanceCard: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 24,
+    padding: 28,
     marginTop: 16,
+    minHeight: 200,
+  },
+  cashBalanceContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    flex: 1,
+  },
+  cashBalanceLeft: {
+    flex: 1,
+    justifyContent: 'flex-start',
     gap: 12,
+    paddingRight: 16,
   },
-  topPill: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 20,
+  cashBalanceTitle: {
+    color: colors.white,
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  cashBalanceSubInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
-  topPillDouble: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 20,
-    gap: 16,
-  },
-  topPillRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  topPillLabel: {
+  cashBalanceSubLabel: {
     color: colors.white,
-    fontSize: 18,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1,
+    opacity: 0.8,
+  },
+  cashBalanceSubValue: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  cashBalanceRight: {
+    alignSelf: 'flex-end',
+    marginBottom: 0,
+    marginRight: 0,
+  },
+  cashBalanceMainValue: {
+    color: colors.white,
+    fontSize: 56,
     fontWeight: '800',
     letterSpacing: 1,
+    textAlign: 'right',
   },
-  topPillValue: {
-    color: colors.white,
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
+  
   monthRow: {
     marginTop: 24,
     marginHorizontal: -16,
