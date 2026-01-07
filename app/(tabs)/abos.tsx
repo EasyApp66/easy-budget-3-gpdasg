@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
   },
   topPillValue: {
     color: colors.white,
-    fontSize: 48,
+    fontSize: 42,
     fontWeight: '800',
   },
   subscriptionList: {
@@ -547,7 +547,7 @@ const styles = StyleSheet.create({
   },
   subscriptionAmount: {
     color: colors.white,
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800',
   },
   swipeHint: {
