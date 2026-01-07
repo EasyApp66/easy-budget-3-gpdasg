@@ -10,7 +10,7 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { GestureHandlerRootView, GestureDetector, Gesture } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -67,7 +67,7 @@ export default function AbosScreen() {
   };
 
   const handleLongPress = (itemId: string) => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     setSelectedSubId(itemId);
@@ -75,7 +75,7 @@ export default function AbosScreen() {
   };
 
   const handleDeleteSub = (id: string) => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     setSubscriptions(subscriptions.filter((sub) => sub.id !== id));
@@ -84,7 +84,7 @@ export default function AbosScreen() {
   const handlePinToggle = (id?: string) => {
     const targetId = id || selectedSubId;
     if (!targetId) return;
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSubscriptions(
@@ -99,7 +99,7 @@ export default function AbosScreen() {
 
   const handleDuplicate = () => {
     if (!selectedSubId) return;
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     const subToDuplicate = subscriptions.find((sub) => sub.id === selectedSubId);
@@ -114,7 +114,7 @@ export default function AbosScreen() {
   };
 
   const openEditModal = (type: 'name' | 'amount', itemId: string, currentValue: string) => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setEditType(type);
@@ -126,7 +126,7 @@ export default function AbosScreen() {
 
   const saveEdit = () => {
     if (!selectedSubId) return;
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     setSubscriptions(
@@ -143,7 +143,7 @@ export default function AbosScreen() {
   };
 
   const handleAddSubscription = () => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     setNewSubName('');
@@ -156,7 +156,7 @@ export default function AbosScreen() {
       Alert.alert('Fehler', 'Bitte fülle alle Felder aus.');
       return;
     }
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     
@@ -190,8 +190,41 @@ export default function AbosScreen() {
     setNewSubAmount('');
   };
 
+  // Function to add subscription from the tab bar modal
+  const addSubscriptionFromModal = useCallback((name: string, amount: number) => {
+    // Check premium limit
+    if (checkLimit(0, 0, subscriptions.length + 1)) {
+      setPremiumModalVisible(true);
+      return;
+    }
+
+    const newSub: Subscription = {
+      id: Date.now().toString(),
+      name: name,
+      monthlyCost: amount,
+      isPinned: false,
+    };
+
+    console.log('Adding subscription:', newSub);
+
+    setSubscriptions((prevSubs) => [...prevSubs, newSub]);
+
+    // Haptic feedback
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [subscriptions, checkLimit]);
+
+  // Expose add function globally for tab bar
+  React.useEffect(() => {
+    (global as any).addSubscriptionFromModal = addSubscriptionFromModal;
+    return () => {
+      delete (global as any).addSubscriptionFromModal;
+    };
+  }, [addSubscriptionFromModal]);
+
   const handlePremiumPurchase = (type: 'onetime' | 'monthly') => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     // TODO: Backend Integration - Process premium purchase via Stripe
@@ -202,7 +235,7 @@ export default function AbosScreen() {
   };
 
   const handlePremiumClose = () => {
-    if (Platform.OS === 'ios') {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     // Delete the pending subscription when closing without purchase
@@ -212,14 +245,6 @@ export default function AbosScreen() {
     }
     setPremiumModalVisible(false);
   };
-
-  // Expose add function globally for tab bar
-  React.useEffect(() => {
-    (global as any).addSubscription = handleAddSubscription;
-    return () => {
-      delete (global as any).addSubscription;
-    };
-  }, []);
 
   const SubscriptionPill = ({ subscription }: { subscription: Subscription }) => {
     const translateX = useSharedValue(0);

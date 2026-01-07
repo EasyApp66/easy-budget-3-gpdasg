@@ -127,12 +127,12 @@ export default function BudgetScreen() {
     setMonths([...months, newMonth]);
   };
 
-  // Fixed: Wrapped handleAddExpense in useCallback to fix exhaustive-deps warning
-  const handleAddExpense = useCallback(() => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  // Function to add expense from the tab bar modal
+  const addExpenseFromModal = useCallback((name: string, amount: number) => {
+    if (!selectedMonth) {
+      console.log('No selected month');
+      return;
     }
-    if (!selectedMonth) return;
 
     // Check premium limit
     const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
@@ -144,10 +144,12 @@ export default function BudgetScreen() {
 
     const newExpense: Expense = {
       id: Date.now().toString(),
-      name: 'NEUE AUSGABE',
-      amount: 0,
+      name: name,
+      amount: amount,
       isPinned: false,
     };
+
+    console.log('Adding expense:', newExpense);
 
     setMonths((prevMonths) =>
       prevMonths.map((m) =>
@@ -156,15 +158,20 @@ export default function BudgetScreen() {
           : m
       )
     );
+
+    // Haptic feedback
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
   }, [selectedMonth, selectedMonthId, months, checkLimit]);
 
   // Expose add function globally for tab bar
   React.useEffect(() => {
-    (global as any).addExpense = handleAddExpense;
+    (global as any).addExpenseFromModal = addExpenseFromModal;
     return () => {
-      delete (global as any).addExpense;
+      delete (global as any).addExpenseFromModal;
     };
-  }, [handleAddExpense]);
+  }, [addExpenseFromModal]);
 
   const handleDeleteMonth = (monthId: string) => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {

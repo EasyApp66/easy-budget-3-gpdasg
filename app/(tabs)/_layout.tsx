@@ -275,11 +275,33 @@ function CustomTabBar() {
 
   const handleSave = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // TODO: Backend Integration - Save expense/subscription data to backend API
-    Alert.alert(
-      'Gespeichert',
-      `${modalType === 'expense' ? 'Ausgabe' : 'Abo'} "${name}" mit Betrag ${amount} wurde gespeichert.`
-    );
+    
+    // Validate input
+    if (!name.trim()) {
+      Alert.alert('Fehler', 'Bitte geben Sie einen Namen ein.');
+      return;
+    }
+    
+    const numericAmount = parseFloat(amount.replace(/'/g, ''));
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      Alert.alert('Fehler', 'Bitte geben Sie einen gültigen Betrag ein.');
+      return;
+    }
+    
+    // Call the appropriate global function to add the item
+    if (modalType === 'expense') {
+      // Call the budget screen's add function
+      if ((global as any).addExpenseFromModal) {
+        (global as any).addExpenseFromModal(name.toUpperCase(), numericAmount);
+      }
+    } else if (modalType === 'subscription') {
+      // Call the abos screen's add function
+      if ((global as any).addSubscriptionFromModal) {
+        (global as any).addSubscriptionFromModal(name.toUpperCase(), numericAmount);
+      }
+    }
+    
+    // Close modal and reset
     setModalVisible(false);
     setName('');
     setAmount('');
@@ -418,6 +440,7 @@ function CustomTabBar() {
                 placeholderTextColor="#666"
                 value={name}
                 onChangeText={setName}
+                autoCapitalize="characters"
               />
               
               <TextInput
