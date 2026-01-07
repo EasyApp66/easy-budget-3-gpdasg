@@ -705,7 +705,7 @@ const styles = StyleSheet.create({
   },
   topPillValue: {
     color: colors.white,
-    fontSize: 26,
+    fontSize: 44,
     fontWeight: '800',
     letterSpacing: 1,
   },
@@ -802,7 +802,7 @@ const styles = StyleSheet.create({
   },
   expenseAmount: {
     color: colors.white,
-    fontSize: 26,
+    fontSize: 44,
     fontWeight: '800',
     letterSpacing: 1,
     textAlign: 'right',
