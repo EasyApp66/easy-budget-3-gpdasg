@@ -485,7 +485,7 @@ export default function BudgetScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Pills - REDESIGNED with flexible layout */}
+        {/* Top Pills */}
         <View style={styles.topSection}>
           <TopPill
             label={cashLabel}
@@ -666,14 +666,13 @@ const styles = StyleSheet.create({
     marginTop: 16,
     gap: 12,
   },
-  // REDESIGNED: Larger, flexible layout with space-between
   topPill: {
     backgroundColor: colors.darkGray,
-    borderRadius: 24,
-    padding: 28,
-    minHeight: 200,
+    borderRadius: 20,
+    padding: 20,
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   topPillDouble: {
     backgroundColor: colors.darkGray,
@@ -686,21 +685,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  // Title stays top-left, smaller size
   topPillLabel: {
     color: colors.white,
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    alignSelf: 'flex-start',
-  },
-  // Amount goes bottom-right, large and bold
-  topPillValue: {
-    color: colors.white,
-    fontSize: 56,
+    fontSize: 18,
     fontWeight: '800',
     letterSpacing: 1,
-    alignSelf: 'flex-end',
+  },
+  topPillValue: {
+    color: colors.white,
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   monthRow: {
     marginTop: 24,
