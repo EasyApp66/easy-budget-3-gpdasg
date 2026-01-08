@@ -1,46 +1,35 @@
 
-import { useNetworkState } from "expo-network";
+import "react-native-reanimated";
 import React, { useEffect } from "react";
+import { useFonts } from "expo-font";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { SystemBars } from "react-native-edge-to-edge";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import "react-native-reanimated";
-import { useFonts } from "expo-font";
+import { useColorScheme, Alert } from "react-native";
+import { useNetworkState } from "expo-network";
 import {
   DarkTheme,
   DefaultTheme,
   Theme,
   ThemeProvider,
 } from "@react-navigation/native";
+import { StatusBar } from "expo-status-bar";
 import { WidgetProvider } from "@/contexts/WidgetContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { Stack, router } from "expo-router";
-import { useColorScheme, Alert, View, StyleSheet } from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { BACKEND_URL } from "@/utils/api";
 import { SnowAnimation } from "@/components/SnowAnimation";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-// Custom dark theme for EASY BUDGET 3.0
-const EasyBudgetTheme: Theme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: '#BFFE84',
-    background: '#000000',
-    card: '#232323',
-    text: '#FFFFFF',
-    border: '#232323',
-    notification: '#BFFE84',
-  },
+export const unstable_settings = {
+  initialRouteName: "(tabs)",
 };
 
 export default function RootLayout() {
-  const { isConnected } = useNetworkState();
   const colorScheme = useColorScheme();
+  const networkState = useNetworkState();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -48,59 +37,94 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
-      // Log backend URL for debugging
-      console.log("[App] Backend URL configured:", BACKEND_URL);
     }
   }, [loaded]);
+
+  React.useEffect(() => {
+    if (
+      !networkState.isConnected &&
+      networkState.isInternetReachable === false
+    ) {
+      Alert.alert(
+        "🔌 You are offline",
+        "You can keep using the app! Your changes will be saved locally and synced when you are back online."
+      );
+    }
+  }, [networkState.isConnected, networkState.isInternetReachable]);
 
   if (!loaded) {
     return null;
   }
 
+  const CustomDefaultTheme: Theme = {
+    ...DefaultTheme,
+    dark: false,
+    colors: {
+      primary: "rgb(0, 122, 255)",
+      background: "rgb(242, 242, 247)",
+      card: "rgb(255, 255, 255)",
+      text: "rgb(0, 0, 0)",
+      border: "rgb(216, 216, 220)",
+      notification: "rgb(255, 59, 48)",
+    },
+  };
+
+  const CustomDarkTheme: Theme = {
+    ...DarkTheme,
+    colors: {
+      primary: "rgb(10, 132, 255)",
+      background: "rgb(1, 1, 1)",
+      card: "rgb(28, 28, 30)",
+      text: "rgb(255, 255, 255)",
+      border: "rgb(44, 44, 46)",
+      notification: "rgb(255, 69, 58)",
+    },
+  };
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={EasyBudgetTheme}>
-        <LanguageProvider>
-          <AuthProvider>
+    <>
+      <StatusBar style="auto" animated />
+      <ThemeProvider
+        value={colorScheme === "dark" ? CustomDarkTheme : CustomDefaultTheme}
+      >
+        <AuthProvider>
+          <LanguageProvider>
             <WidgetProvider>
-              <View style={styles.container}>
-                {/* Snow Animation in Background */}
+              <GestureHandlerRootView style={{ flex: 1 }}>
                 <SnowAnimation />
-                
-                {/* Main Content */}
-                <View style={styles.content}>
-                  <SystemBars style="light" />
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                      animation: 'none', // No page transitions as per requirements
+                <Stack>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="modal"
+                    options={{
+                      presentation: "modal",
+                      title: "Standard Modal",
                     }}
-                  >
-                    <Stack.Screen name="welcome" options={{ headerShown: false }} />
-                    <Stack.Screen name="login" options={{ headerShown: false }} />
-                    <Stack.Screen name="register" options={{ headerShown: false }} />
-                    <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
-                    <Stack.Screen name="auth-popup" options={{ headerShown: false }} />
-                    <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  </Stack>
-                  <StatusBar style="light" />
-                </View>
-              </View>
+                  />
+                  <Stack.Screen
+                    name="formsheet"
+                    options={{
+                      presentation: "formSheet",
+                      title: "Form Sheet Modal",
+                      sheetGrabberVisible: true,
+                      sheetAllowedDetents: [0.5, 0.8, 1.0],
+                      sheetCornerRadius: 20,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="transparent-modal"
+                    options={{
+                      presentation: "transparentModal",
+                      headerShown: false,
+                    }}
+                  />
+                </Stack>
+                <SystemBars style={"auto"} />
+              </GestureHandlerRootView>
             </WidgetProvider>
-          </AuthProvider>
-        </LanguageProvider>
+          </LanguageProvider>
+        </AuthProvider>
       </ThemeProvider>
-    </GestureHandlerRootView>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    zIndex: 1,
-  },
-});

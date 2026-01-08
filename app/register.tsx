@@ -18,7 +18,6 @@ import {
   Alert,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { IconSymbol } from '@/components/IconSymbol';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { colors } from '@/styles/commonStyles';
@@ -31,21 +30,20 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { signUpWithEmail } = useAuth();
-  const { t } = useLanguage();
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
-      Alert.alert(t.common.error, t.register.errorAllFields);
+      Alert.alert('Fehler', 'Bitte fülle alle Felder aus');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert(t.common.error, t.register.errorPasswordMatch);
+      Alert.alert('Fehler', 'Passwörter stimmen nicht überein');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert(t.common.error, t.register.errorPasswordLength);
+      Alert.alert('Fehler', 'Passwort muss mindestens 6 Zeichen lang sein');
       return;
     }
 
@@ -55,7 +53,7 @@ export default function RegisterScreen() {
       // Redirect to budget screen after successful registration
       router.replace('/(tabs)/budget');
     } catch (error: any) {
-      Alert.alert(t.common.error, error.message || t.register.errorRegistration);
+      Alert.alert('Fehler', error.message || 'Registrierung fehlgeschlagen');
       setLoading(false);
     }
   };
@@ -137,13 +135,15 @@ export default function RegisterScreen() {
         </Pressable>
 
         <View style={styles.content}>
-          <Text style={styles.title}>{t.register.title}</Text>
-          <Text style={styles.subtitle}>{t.register.subtitle}</Text>
+          <Text style={styles.title}>Konto erstellen</Text>
+          <Text style={styles.subtitle}>
+            Registriere dich, um zu beginnen
+          </Text>
 
           <View style={styles.form}>
             <TextInput
               style={styles.input}
-              placeholder={t.register.emailPlaceholder}
+              placeholder="deine@email.com"
               placeholderTextColor={colors.lightGray}
               value={email}
               onChangeText={setEmail}
@@ -154,7 +154,7 @@ export default function RegisterScreen() {
 
             <TextInput
               style={styles.input}
-              placeholder={t.register.passwordPlaceholder}
+              placeholder="Passwort"
               placeholderTextColor={colors.lightGray}
               value={password}
               onChangeText={setPassword}
@@ -164,7 +164,7 @@ export default function RegisterScreen() {
 
             <TextInput
               style={styles.input}
-              placeholder={t.register.confirmPasswordPlaceholder}
+              placeholder="Passwort bestätigen"
               placeholderTextColor={colors.lightGray}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
@@ -173,7 +173,7 @@ export default function RegisterScreen() {
             />
 
             <AnimatedButton
-              title={t.register.registerButton}
+              title="Registrieren"
               onPress={handleRegister}
               disabled={!email || !password || !confirmPassword}
             />
@@ -183,7 +183,8 @@ export default function RegisterScreen() {
               style={styles.linkContainer}
             >
               <Text style={styles.secondaryText}>
-                {t.register.haveAccount}
+                Bereits ein Konto?{' '}
+                <Text style={styles.link}>Anmelden</Text>
               </Text>
             </Pressable>
           </View>

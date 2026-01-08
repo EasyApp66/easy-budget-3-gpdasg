@@ -18,7 +18,6 @@ import {
   Alert,
 } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { authClient } from '@/lib/auth';
 import { colors } from '@/styles/commonStyles';
 import * as Haptics from 'expo-haptics';
@@ -27,7 +26,6 @@ export default function ForgotPasswordScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const { t } = useLanguage();
 
   const buttonScale = useSharedValue(1);
 
@@ -74,7 +72,7 @@ export default function ForgotPasswordScreen() {
 
   const handleSendLink = async () => {
     if (!email) {
-      Alert.alert(t.common.error, t.forgotPassword.errorEmail);
+      Alert.alert('Fehler', 'Bitte gib deine E-Mail-Adresse ein');
       return;
     }
 
@@ -85,17 +83,17 @@ export default function ForgotPasswordScreen() {
         redirectTo: '/reset-password',
       });
       Alert.alert(
-        t.forgotPassword.successTitle,
-        t.forgotPassword.successMessage,
+        'Link gesendet',
+        'Wir haben dir einen Link zum Zurücksetzen deines Passworts gesendet. Bitte überprüfe deine E-Mails.',
         [
           {
-            text: t.common.ok,
+            text: 'OK',
             onPress: () => router.back(),
           },
         ]
       );
     } catch (error: any) {
-      Alert.alert(t.common.error, error.message || t.forgotPassword.errorSend);
+      Alert.alert('Fehler', error.message || 'Link konnte nicht gesendet werden');
     } finally {
       setLoading(false);
     }
@@ -127,13 +125,15 @@ export default function ForgotPasswordScreen() {
         </Pressable>
 
         <View style={styles.content}>
-          <Text style={styles.title}>{t.forgotPassword.title}</Text>
-          <Text style={styles.subtitle}>{t.forgotPassword.subtitle}</Text>
+          <Text style={styles.title}>Passwort vergessen</Text>
+          <Text style={styles.subtitle}>
+            Gib deine E-Mail-Adresse ein und wir senden dir einen Link zum Zurücksetzen
+          </Text>
 
           <View style={styles.form}>
             <TextInput
               style={styles.input}
-              placeholder={t.forgotPassword.emailPlaceholder}
+              placeholder="deine@email.com"
               placeholderTextColor="#666"
               value={email}
               onChangeText={setEmail}
@@ -143,7 +143,7 @@ export default function ForgotPasswordScreen() {
             />
 
             <AnimatedButton
-              title={loading ? t.forgotPassword.loading : t.forgotPassword.sendButton}
+              title={loading ? 'Lädt...' : 'Link senden'}
               onPress={handleSendLink}
               disabled={loading}
             />
@@ -152,7 +152,7 @@ export default function ForgotPasswordScreen() {
               onPress={() => handlePress(() => router.back())}
               style={styles.linkContainer}
             >
-              <Text style={styles.link}>{t.forgotPassword.backToLogin}</Text>
+              <Text style={styles.link}>Zurück zur Anmeldung</Text>
             </Pressable>
           </View>
         </View>
