@@ -15,9 +15,10 @@ import {
 import { WidgetProvider } from "@/contexts/WidgetContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Stack, router } from "expo-router";
-import { useColorScheme, Alert } from "react-native";
+import { useColorScheme, Alert, View, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { BACKEND_URL } from "@/utils/api";
+import { SnowAnimation } from "@/components/SnowAnimation";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -60,25 +61,43 @@ export default function RootLayout() {
       <ThemeProvider value={EasyBudgetTheme}>
         <AuthProvider>
           <WidgetProvider>
-            <SystemBars style="light" />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: 'none', // No page transitions as per requirements
-              }}
-            >
-              <Stack.Screen name="welcome" options={{ headerShown: false }} />
-              <Stack.Screen name="login" options={{ headerShown: false }} />
-              <Stack.Screen name="register" options={{ headerShown: false }} />
-              <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
-              <Stack.Screen name="auth-popup" options={{ headerShown: false }} />
-              <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
-            <StatusBar style="light" />
+            <View style={styles.container}>
+              {/* Snow Animation in Background */}
+              <SnowAnimation />
+              
+              {/* Main Content */}
+              <View style={styles.content}>
+                <SystemBars style="light" />
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    animation: 'none', // No page transitions as per requirements
+                  }}
+                >
+                  <Stack.Screen name="welcome" options={{ headerShown: false }} />
+                  <Stack.Screen name="login" options={{ headerShown: false }} />
+                  <Stack.Screen name="register" options={{ headerShown: false }} />
+                  <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+                  <Stack.Screen name="auth-popup" options={{ headerShown: false }} />
+                  <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                </Stack>
+                <StatusBar style="light" />
+              </View>
+            </View>
           </WidgetProvider>
         </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    zIndex: 1,
+  },
+});
