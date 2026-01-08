@@ -24,6 +24,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import * as MailComposer from 'expo-mail-composer';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { usePremium } from '@/hooks/usePremium';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const colors = {
   black: '#000000',
@@ -85,14 +86,15 @@ export default function ProfilScreen() {
   const router = useRouter();
   const { signOut, user } = useAuth();
   const { isPremium } = usePremium();
+  const { language, setLanguage, t } = useLanguage();
   const [username, setUsername] = useState('mirosnic.ivan');
-  const [language, setLanguage] = useState<'Deutsch' | 'English'>('Deutsch');
   
   // Modal states
   const [bugModalVisible, setBugModalVisible] = useState(false);
   const [donateModalVisible, setDonateModalVisible] = useState(false);
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [editNameModalVisible, setEditNameModalVisible] = useState(false);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
   
   // Form states
   const [bugDescription, setBugDescription] = useState('');
@@ -104,10 +106,10 @@ export default function ProfilScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    Alert.alert('Ausloggen', 'Möchtest du dich wirklich ausloggen?', [
-      { text: 'Abbrechen', style: 'cancel' },
+    Alert.alert(t.profile.logout, t.profile.logoutConfirm, [
+      { text: t.profile.no, style: 'cancel' },
       {
-        text: 'Ausloggen',
+        text: t.profile.yes,
         style: 'destructive',
         onPress: async () => {
           await signOut();
@@ -117,16 +119,16 @@ export default function ProfilScreen() {
     ]);
   };
 
-  const handleLanguageChange = () => {
+  const handleLanguageChange = async (newLang: 'DE' | 'EN') => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    const newLang = language === 'Deutsch' ? 'English' : 'Deutsch';
-    setLanguage(newLang);
-    Alert.alert(
-      'Sprache geändert',
-      `Die App-Sprache wurde zu ${newLang} geändert. Diese Funktion wird in einer zukünftigen Version vollständig implementiert.`
-    );
+    try {
+      await setLanguage(newLang);
+      setLanguageModalVisible(false);
+    } catch (error) {
+      Alert.alert(t.common.error, 'Failed to change language');
+    }
   };
 
   const handleBuyPremium = () => {
@@ -142,7 +144,7 @@ export default function ProfilScreen() {
     }
     // TODO: Backend Integration - Process premium purchase via Stripe
     console.log(`Premium purchase: ${type}`);
-    Alert.alert('Erfolg!', 'Premium wurde aktiviert! (Placeholder - Stripe Integration folgt)');
+    Alert.alert(t.common.success, 'Premium activated! (Placeholder - Stripe Integration coming)');
     setPremiumModalVisible(false);
   };
 
@@ -191,7 +193,7 @@ export default function ProfilScreen() {
     }
     
     if (!bugDescription.trim()) {
-      Alert.alert('Fehler', 'Bitte beschreibe den Fehler.');
+      Alert.alert(t.common.error, 'Please describe the bug.');
       return;
     }
 
@@ -200,15 +202,15 @@ export default function ProfilScreen() {
       if (isAvailable) {
         await MailComposer.composeAsync({
           recipients: ['support@easybudget.app'],
-          subject: 'Bug Report - EASY BUDGET',
-          body: `Bug Beschreibung:\n\n${bugDescription}\n\n---\nUser: ${username}\nVersion: 1.0.0\nPlatform: ${Platform.OS}`,
+          subject: `Bug Report - EASY BUDGET`,
+          body: `Bug Description:\n\n${bugDescription}\n\n---\nUser: ${username}\nVersion: 1.0.0\nPlatform: ${Platform.OS}`,
         });
       } else {
-        Alert.alert('Fehler', 'E-Mail ist auf diesem Gerät nicht verfügbar.');
+        Alert.alert(t.common.error, 'Email is not available on this device.');
       }
     } catch (error) {
       console.error('Error sending bug report:', error);
-      Alert.alert('Fehler', 'Fehler beim Senden des Bug Reports.');
+      Alert.alert(t.common.error, 'Error sending bug report.');
     }
     
     setBugModalVisible(false);
@@ -220,9 +222,9 @@ export default function ProfilScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     const amount = customDonation || selectedDonation.toString();
-    Alert.alert('Danke!', `Deine Spende von CHF ${amount}.00 wird verarbeitet.`, [
+    Alert.alert('Thank you!', `Your donation of CHF ${amount}.00 is being processed.`, [
       {
-        text: 'OK',
+        text: t.common.ok,
         onPress: () => {
           // TODO: Backend Integration - Process donation payment
           console.log(`Process donation: CHF ${amount}`);
@@ -243,11 +245,11 @@ export default function ProfilScreen() {
       if (isAvailable) {
         await MailComposer.composeAsync({
           recipients: ['support@easybudget.app'],
-          subject: 'Support Anfrage - EASY BUDGET',
-          body: `Hallo Support Team,\n\n`,
+          subject: `Support Request - EASY BUDGET`,
+          body: `Hello Support Team,\n\n`,
         });
       } else {
-        Alert.alert('Fehler', 'E-Mail ist auf diesem Gerät nicht verfügbar.');
+        Alert.alert(t.common.error, 'Email is not available on this device.');
       }
     } catch (error) {
       console.error('Error opening mail composer:', error);
@@ -263,11 +265,11 @@ export default function ProfilScreen() {
       if (isAvailable) {
         await MailComposer.composeAsync({
           recipients: ['feedback@easybudget.app'],
-          subject: 'Vorschlag - EASY BUDGET',
-          body: `Mein Vorschlag:\n\n`,
+          subject: `Suggestion - EASY BUDGET`,
+          body: `My suggestion:\n\n`,
         });
       } else {
-        Alert.alert('Fehler', 'E-Mail ist auf diesem Gerät nicht verfügbar.');
+        Alert.alert(t.common.error, 'Email is not available on this device.');
       }
     } catch (error) {
       console.error('Error opening mail composer:', error);
@@ -288,21 +290,21 @@ export default function ProfilScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* User Profile Card */}
+        {/* User Profile Card with BLACK icon in GREEN circle */}
         <View style={styles.profileCard}>
           <View style={styles.userIconContainer}>
             <IconSymbol 
               ios_icon_name="person.fill" 
               android_material_icon_name="person"
               size={60} 
-              color={colors.white} 
+              color={colors.black}
             />
           </View>
           <Pressable onPress={handleEditName}>
             <Text style={styles.username}>{username}</Text>
-            <Text style={styles.usernameHint}>Tippe um Namen zu ändern</Text>
+            <Text style={styles.usernameHint}>{t.profile.editName}</Text>
           </Pressable>
-          <Text style={styles.premiumStatus}>Premium: {isPremium ? 'Ja' : 'Nein'}</Text>
+          <Text style={styles.premiumStatus}>Premium: {isPremium ? t.profile.yes : t.profile.no}</Text>
         </View>
 
         {/* Settings Items */}
@@ -311,77 +313,77 @@ export default function ProfilScreen() {
             iosIcon="arrow.right.square"
             androidIcon="exit-to-app"
             iconColor={colors.neonGreen}
-            title="Ausloggen"
+            title={t.profile.logout}
             onPress={handleLogout}
           />
           <SettingsItem
             iosIcon="globe"
             androidIcon="language"
             iconColor={colors.neonGreen}
-            title={`Sprache ändern: ${language}`}
-            onPress={handleLanguageChange}
+            title={`${t.profile.language}: ${language}`}
+            onPress={() => setLanguageModalVisible(true)}
           />
           <SettingsItem
             iosIcon="star.fill"
             androidIcon="star"
             iconColor={colors.neonGreen}
-            title="Premium Kaufen"
+            title={t.profile.premium}
             onPress={handleBuyPremium}
           />
           <SettingsItem
             iosIcon="doc.text"
             androidIcon="description"
             iconColor={colors.white}
-            title="AGB"
-            onPress={() => handleTextPage('AGB', 'Allgemeine Geschäftsbedingungen\n\nHier stehen die AGBs...')}
+            title={t.profile.agb}
+            onPress={() => handleTextPage(t.legal.agbTitle, t.legal.agbContent)}
           />
           <SettingsItem
             iosIcon="shield"
             androidIcon="shield"
             iconColor={colors.white}
-            title="Nutzungsbedingungen"
-            onPress={() => handleTextPage('Nutzungsbedingungen', 'Nutzungsbedingungen\n\nHier stehen die Nutzungsbedingungen...')}
+            title={t.profile.terms}
+            onPress={() => handleTextPage(t.legal.termsTitle, t.legal.termsContent)}
           />
           <SettingsItem
             iosIcon="lock.shield"
             androidIcon="lock"
             iconColor={colors.white}
-            title="Datenschutz"
-            onPress={() => handleTextPage('Datenschutz', 'Datenschutzerklärung\n\nHier steht die Datenschutzerklärung...')}
+            title={t.profile.privacy}
+            onPress={() => handleTextPage(t.legal.privacyTitle, t.legal.privacyContent)}
           />
           <SettingsItem
             iosIcon="info.circle"
             androidIcon="info"
             iconColor={colors.white}
-            title="Impressum"
-            onPress={() => handleTextPage('Impressum', 'Impressum\n\nEASY BUDGET 3.0\nVersion 1.0.0')}
+            title={t.profile.impressum}
+            onPress={() => handleTextPage(t.legal.impressumTitle, t.legal.impressumContent)}
           />
           <SettingsItem
             iosIcon="envelope"
             androidIcon="email"
             iconColor={colors.white}
-            title="Support"
+            title={t.profile.support}
             onPress={handleSupport}
           />
           <SettingsItem
             iosIcon="lightbulb"
             androidIcon="lightbulb-outline"
             iconColor={colors.white}
-            title="Vorschlag"
+            title={t.profile.suggestion}
             onPress={handleSuggestion}
           />
           <SettingsItem
             iosIcon="ant"
             androidIcon="bug-report"
             iconColor={colors.neonGreen}
-            title="Bug Melden"
+            title={t.profile.bugReport}
             onPress={handleBugReport}
           />
           <SettingsItem
             iosIcon="heart.fill"
             androidIcon="favorite"
             iconColor={colors.red}
-            title="Donation"
+            title={t.profile.donation}
             onPress={handleDonation}
           />
         </View>
@@ -395,6 +397,45 @@ export default function ProfilScreen() {
         </View>
       </ScrollView>
 
+      {/* Language Selection Modal */}
+      <Modal
+        visible={languageModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLanguageModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setLanguageModalVisible(false)}>
+          <View style={styles.languageModal}>
+            <Text style={styles.modalTitle}>{t.profile.language}</Text>
+            
+            <Pressable
+              style={[styles.languageOption, language === 'DE' && styles.languageOptionSelected]}
+              onPress={() => handleLanguageChange('DE')}
+            >
+              <Text style={[styles.languageText, language === 'DE' && styles.languageTextSelected]}>
+                DE
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.languageOption, language === 'EN' && styles.languageOptionSelected]}
+              onPress={() => handleLanguageChange('EN')}
+            >
+              <Text style={[styles.languageText, language === 'EN' && styles.languageTextSelected]}>
+                EN
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.closeModalButton}
+              onPress={() => setLanguageModalVisible(false)}
+            >
+              <Text style={styles.closeModalButtonText}>{t.common.close}</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
       {/* Edit Name Modal */}
       <Modal
         visible={editNameModalVisible}
@@ -404,17 +445,17 @@ export default function ProfilScreen() {
       >
         <Pressable style={styles.modalOverlay} onPress={() => setEditNameModalVisible(false)}>
           <View style={styles.editModal}>
-            <Text style={styles.modalTitle}>Namen ändern</Text>
+            <Text style={styles.modalTitle}>{t.profile.editName}</Text>
             <TextInput
               style={styles.input}
               value={newUsername}
               onChangeText={setNewUsername}
-              placeholder="Neuer Name"
+              placeholder={t.profile.username}
               placeholderTextColor="#666"
               autoFocus
             />
             <Pressable style={styles.primaryButton} onPress={saveNewUsername}>
-              <Text style={styles.primaryButtonText}>Speichern</Text>
+              <Text style={styles.primaryButtonText}>{t.common.save}</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -447,13 +488,13 @@ export default function ProfilScreen() {
               />
             </View>
 
-            <Text style={styles.modalTitle}>Bug Melden</Text>
+            <Text style={styles.modalTitle}>{t.profile.bugReport}</Text>
 
             <TextInput
               style={styles.bugInput}
               value={bugDescription}
               onChangeText={setBugDescription}
-              placeholder="Beschreibe den Fehler..."
+              placeholder="Describe the bug..."
               placeholderTextColor="#666"
               multiline
               numberOfLines={4}
@@ -467,7 +508,7 @@ export default function ProfilScreen() {
                 size={20} 
                 color={colors.black} 
               />
-              <Text style={styles.sendButtonText}>Senden</Text>
+              <Text style={styles.sendButtonText}>Send</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -495,7 +536,7 @@ export default function ProfilScreen() {
               <Text style={styles.heartIcon}>❤️</Text>
             </View>
 
-            <Text style={styles.modalTitle}>Donate</Text>
+            <Text style={styles.modalTitle}>{t.profile.donation}</Text>
             <Text style={styles.donateSubtitle}>Support the development of the app</Text>
 
             <View style={styles.donationAmounts}>
@@ -651,6 +692,45 @@ const styles = StyleSheet.create({
     width: '85%',
     maxWidth: 400,
   },
+  languageModal: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
+    padding: 30,
+    width: '85%',
+    maxWidth: 400,
+    gap: 16,
+  },
+  languageOption: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center',
+  },
+  languageOptionSelected: {
+    borderColor: colors.neonGreen,
+    backgroundColor: 'rgba(191, 254, 132, 0.1)',
+  },
+  languageText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.white,
+  },
+  languageTextSelected: {
+    color: colors.neonGreen,
+  },
+  closeModalButton: {
+    marginTop: 8,
+    padding: 16,
+    backgroundColor: colors.black,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  closeModalButtonText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '800',
+  },
   bugModal: {
     backgroundColor: colors.darkGray,
     borderRadius: 20,
@@ -659,13 +739,6 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   donateModal: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 30,
-    width: '85%',
-    maxWidth: 400,
-  },
-  premiumModal: {
     backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 30,
@@ -698,16 +771,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 20,
   },
-  starIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#2a2a20',
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
   heartIcon: {
     fontSize: 40,
   },
@@ -723,12 +786,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 20,
-  },
-  premiumSubtitle: {
-    color: '#999',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 25,
   },
   input: {
     backgroundColor: '#333',
