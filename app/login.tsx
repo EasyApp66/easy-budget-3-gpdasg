@@ -18,6 +18,7 @@ import {
   Alert,
 } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { IconSymbol } from '@/components/IconSymbol';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { colors } from '@/styles/commonStyles';
@@ -29,10 +30,11 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { signInWithEmail } = useAuth();
+  const { t } = useLanguage();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Fehler', 'Bitte fülle alle Felder aus');
+      Alert.alert(t.common.error, t.register.errorAllFields);
       return;
     }
 
@@ -42,7 +44,7 @@ export default function LoginScreen() {
       // Redirect to budget screen after successful login
       router.replace('/(tabs)/budget');
     } catch (error: any) {
-      Alert.alert('Fehler', error.message || 'Anmeldung fehlgeschlagen');
+      Alert.alert(t.common.error, error.message || t.register.errorRegistration);
       setLoading(false);
     }
   };
@@ -124,13 +126,13 @@ export default function LoginScreen() {
         </Pressable>
 
         <View style={styles.content}>
-          <Text style={styles.title}>Willkommen zurück</Text>
-          <Text style={styles.subtitle}>Melde dich an, um fortzufahren</Text>
+          <Text style={styles.title}>{t.login.title}</Text>
+          <Text style={styles.subtitle}>{t.login.subtitle}</Text>
 
           <View style={styles.form}>
             <TextInput
               style={styles.input}
-              placeholder="deine@email.com"
+              placeholder={t.login.emailPlaceholder}
               placeholderTextColor={colors.lightGray}
               value={email}
               onChangeText={setEmail}
@@ -141,7 +143,7 @@ export default function LoginScreen() {
 
             <TextInput
               style={styles.input}
-              placeholder="Passwort"
+              placeholder={t.login.passwordPlaceholder}
               placeholderTextColor={colors.lightGray}
               value={password}
               onChangeText={setPassword}
@@ -150,7 +152,7 @@ export default function LoginScreen() {
             />
 
             <AnimatedButton
-              title="Anmelden"
+              title={t.login.loginButton}
               onPress={handleLogin}
               disabled={!email || !password}
             />
@@ -159,7 +161,7 @@ export default function LoginScreen() {
               onPress={() => handlePress(() => router.push('/forgot-password'))}
               style={styles.linkContainer}
             >
-              <Text style={styles.link}>Passwort vergessen?</Text>
+              <Text style={styles.link}>{t.login.forgotPassword}</Text>
             </Pressable>
 
             <Pressable
@@ -167,8 +169,7 @@ export default function LoginScreen() {
               style={styles.linkContainer}
             >
               <Text style={styles.secondaryText}>
-                Noch kein Konto?{' '}
-                <Text style={styles.link}>Registrieren</Text>
+                {t.login.noAccount}
               </Text>
             </Pressable>
           </View>

@@ -19,11 +19,13 @@ import Animated, {
 import React from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { signInWithGoogle, signInWithApple } = useAuth();
+  const { t } = useLanguage();
 
   const AnimatedButton = ({
     title,
@@ -125,33 +127,33 @@ export default function WelcomeScreen() {
         <View style={styles.content}>
           <View style={styles.textBlock}>
             <Text style={styles.title}>
-              Hallo! Ich bin <Text style={styles.highlight}>EASY BUDGET</Text>
+              {t.welcome.greeting} <Text style={styles.highlight}>{t.welcome.appName}</Text>
             </Text>
             <Text style={styles.subtitle}>
-              Tracke dein <Text style={styles.highlight}>BUDGET</Text>
+              {t.welcome.trackBudget} <Text style={styles.highlight}>{t.welcome.budget}</Text>
             </Text>
             <Text style={styles.subtitle}>
-              Und deine <Text style={styles.highlight}>ABOS</Text>
+              {t.welcome.trackSubs} <Text style={styles.highlight}>{t.welcome.subs}</Text>
             </Text>
           </View>
 
           <View style={styles.buttonContainer}>
             <AnimatedButton
-              title="Mit E-Mail fortfahren"
+              title={t.welcome.continueEmail}
               onPress={handleEmailPress}
               backgroundColor={colors.neonGreen}
               textColor={colors.black}
               iconName="email"
             />
             <AnimatedButton
-              title="Mit Apple fortfahren"
+              title={t.welcome.continueApple}
               onPress={handleApplePress}
               backgroundColor={colors.white}
               textColor={colors.black}
               iconName="apple"
             />
             <AnimatedButton
-              title="Mit Google anmelden"
+              title={t.welcome.continueGoogle}
               onPress={handleGooglePress}
               backgroundColor={colors.white}
               textColor={colors.black}
@@ -160,26 +162,26 @@ export default function WelcomeScreen() {
           </View>
 
           <Text style={styles.footer}>
-            Indem du fortfährst, bestätigst du, dass du die{' '}
+            {t.welcome.footer.split('Nutzungsbedingungen')[0]}
             <Text
               style={styles.link}
               onPress={() => openLink('https://example.com/terms')}
             >
-              Nutzungsbedingungen
+              {t.welcome.terms}
             </Text>
             {' '}und die{' '}
             <Text
               style={styles.link}
               onPress={() => openLink('https://example.com/privacy')}
             >
-              Datenschutzerklärung
+              {t.welcome.privacy}
             </Text>
             {' '}und die{' '}
             <Text
               style={styles.link}
               onPress={() => openLink('https://example.com/agb')}
             >
-              AGBs
+              {t.welcome.agb}
             </Text>
             {' '}gelesen hast.
           </Text>
