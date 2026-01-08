@@ -11,38 +11,18 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SNOWFLAKE_COUNT = 50;
 
-interface Snowflake {
-  id: number;
-  startX: number;
+interface SnowflakeProps {
   delay: number;
   duration: number;
+  startX: number;
   size: number;
 }
 
-const SnowAnimation = () => {
-  const snowflakes: Snowflake[] = Array.from({ length: SNOWFLAKE_COUNT }, (_, i) => ({
-    id: i,
-    startX: Math.random() * SCREEN_WIDTH,
-    delay: Math.random() * 5000,
-    duration: 8000 + Math.random() * 4000,
-    size: 3 + Math.random() * 4,
-  }));
-
-  return (
-    <View style={styles.container} pointerEvents="none">
-      {snowflakes.map((flake) => (
-        <Snowflake key={flake.id} {...flake} />
-      ))}
-    </View>
-  );
-};
-
-const Snowflake = ({ startX, delay, duration, size }: Omit<Snowflake, 'id'>) => {
+const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) => {
   const translateY = useSharedValue(-20);
   const translateX = useSharedValue(0);
-  const opacity = useSharedValue(0.7);
+  const opacity = useSharedValue(0);
 
   useEffect(() => {
     translateY.value = withDelay(
@@ -60,8 +40,20 @@ const Snowflake = ({ startX, delay, duration, size }: Omit<Snowflake, 'id'>) => 
     translateX.value = withDelay(
       delay,
       withRepeat(
-        withTiming(Math.random() * 40 - 20, {
-          duration: 3000,
+        withTiming(30, {
+          duration: duration / 2,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        -1,
+        true
+      )
+    );
+
+    opacity.value = withDelay(
+      delay,
+      withRepeat(
+        withTiming(0.7, {
+          duration: 1000,
           easing: Easing.inOut(Easing.ease),
         }),
         -1,
@@ -93,20 +85,39 @@ const Snowflake = ({ startX, delay, duration, size }: Omit<Snowflake, 'id'>) => 
   );
 };
 
+export const SnowAnimation: React.FC = () => {
+  const snowflakes = Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    delay: Math.random() * 5000,
+    duration: 8000 + Math.random() * 7000,
+    startX: Math.random() * SCREEN_WIDTH,
+    size: 3 + Math.random() * 5,
+  }));
+
+  return (
+    <View style={styles.container} pointerEvents="none">
+      {snowflakes.map((flake) => (
+        <Snowflake
+          key={flake.id}
+          delay={flake.delay}
+          duration={flake.duration}
+          startX={flake.startX}
+          size={flake.size}
+        />
+      ))}
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
     zIndex: 0,
   },
   snowflake: {
     position: 'absolute',
     backgroundColor: '#FFFFFF',
     borderRadius: 50,
+    opacity: 0.6,
   },
 });
-
-export default SnowAnimation;
