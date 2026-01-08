@@ -1,11 +1,12 @@
+
 {
   "expo": {
-    "name": "EASY BUDGET 3.0",
-    "slug": "easy-budget-3",
+    "name": "EASY BUDGET",
+    "slug": "easy-budget",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/natively-dark.png",
@@ -18,8 +19,9 @@
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "This app uses the camera to scan receipts and documents.",
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to save and share budget reports."
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select images.",
+        "NSCameraUsageDescription": "This app needs access to your camera to take photos.",
+        "NSMicrophoneUsageDescription": "This app needs access to your microphone for audio features."
       }
     },
     "android": {
@@ -28,8 +30,7 @@
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.easybudget.app",
-      "versionCode": 1
+      "package": "com.easybudget.app"
     },
     "web": {
       "favicon": "./assets/images/final_quest_240x240.png",
@@ -38,8 +39,20 @@
     "plugins": [
       "expo-font",
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "newArchEnabled": true
+          },
+          "android": {
+            "newArchEnabled": true
+          }
+        }
+      ]
     ],
+    "scheme": "easybudget",
     "experiments": {
       "typedRoutes": true
     },
@@ -49,8 +62,7 @@
       },
       "eas": {
         "projectId": "your-project-id"
-      },
-      "backendUrl": "https://wu7kwypubgksy89mk4h6tatrg56ateqy.app.specular.dev"
+      }
     }
   }
 }

@@ -54,12 +54,12 @@ const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) 
     // Fade in and maintain visibility
     opacity.value = withDelay(
       delay,
-      withTiming(0.9, {
+      withTiming(0.8, {
         duration: 500,
         easing: Easing.inOut(Easing.ease),
       })
     );
-  }, []);
+  }, [delay, duration]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -86,12 +86,12 @@ const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) 
 
 export const SnowAnimation: React.FC = () => {
   // Increase number of snowflakes and make them more visible
-  const snowflakes = Array.from({ length: 50 }, (_, i) => ({
+  const snowflakes = Array.from({ length: 60 }, (_, i) => ({
     id: i,
     delay: Math.random() * 5000,
     duration: 10000 + Math.random() * 8000, // Slower falling
     startX: Math.random() * SCREEN_WIDTH,
-    size: 4 + Math.random() * 6, // Larger snowflakes
+    size: 5 + Math.random() * 7, // Larger snowflakes (5-12px)
   }));
 
   return (
@@ -113,15 +113,18 @@ const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 0,
+    backgroundColor: 'transparent',
   },
   snowflake: {
     position: 'absolute',
     backgroundColor: '#FFFFFF',
     borderRadius: 50,
-    opacity: 0.9, // More visible
     shadowColor: '#FFFFFF',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
+    shadowOpacity: 0.9,
+    shadowRadius: 4,
+    elevation: 5, // For Android
   },
 });
+
+export default SnowAnimation;

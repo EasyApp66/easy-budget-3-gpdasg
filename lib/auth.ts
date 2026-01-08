@@ -1,8 +1,8 @@
+
 import { createAuthClient } from "better-auth/react";
 import { expoClient } from "@better-auth/expo/client";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
-import Constants from "expo-constants";
 
 const API_URL = "https://wu7kwypubgksy89mk4h6tatrg56ateqy.app.specular.dev";
 
@@ -11,9 +11,28 @@ const BEARER_TOKEN_KEY = "easybudget_bearer_token";
 // Platform-specific storage: localStorage for web, SecureStore for native
 const storage = Platform.OS === "web"
   ? {
-      getItem: (key: string) => localStorage.getItem(key),
-      setItem: (key: string, value: string) => localStorage.setItem(key, value),
-      deleteItem: (key: string) => localStorage.removeItem(key),
+      getItem: (key: string) => {
+        try {
+          return localStorage.getItem(key);
+        } catch (error) {
+          console.warn("localStorage.getItem failed:", error);
+          return null;
+        }
+      },
+      setItem: (key: string, value: string) => {
+        try {
+          localStorage.setItem(key, value);
+        } catch (error) {
+          console.warn("localStorage.setItem failed:", error);
+        }
+      },
+      deleteItem: (key: string) => {
+        try {
+          localStorage.removeItem(key);
+        } catch (error) {
+          console.warn("localStorage.removeItem failed:", error);
+        }
+      },
     }
   : SecureStore;
 
@@ -31,7 +50,14 @@ export const authClient = createAuthClient({
     fetchOptions: {
       auth: {
         type: "Bearer" as const,
-        token: () => localStorage.getItem(BEARER_TOKEN_KEY) || "",
+        token: () => {
+          try {
+            return localStorage.getItem(BEARER_TOKEN_KEY) || "";
+          } catch (error) {
+            console.warn("Failed to get bearer token:", error);
+            return "";
+          }
+        },
       },
     },
   }),
@@ -39,13 +65,21 @@ export const authClient = createAuthClient({
 
 export function storeWebBearerToken(token: string) {
   if (Platform.OS === "web") {
-    localStorage.setItem(BEARER_TOKEN_KEY, token);
+    try {
+      localStorage.setItem(BEARER_TOKEN_KEY, token);
+    } catch (error) {
+      console.warn("Failed to store bearer token:", error);
+    }
   }
 }
 
 export function clearAuthTokens() {
   if (Platform.OS === "web") {
-    localStorage.removeItem(BEARER_TOKEN_KEY);
+    try {
+      localStorage.removeItem(BEARER_TOKEN_KEY);
+    } catch (error) {
+      console.warn("Failed to clear bearer token:", error);
+    }
   }
 }
 
