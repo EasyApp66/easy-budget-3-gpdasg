@@ -14,6 +14,7 @@ import React, { useState, useCallback } from 'react';
 import { GestureHandlerRootView, GestureDetector, Gesture } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -40,6 +41,7 @@ interface Subscription {
 }
 
 export default function AbosScreen() {
+  const router = useRouter();
   const { isPremium, checkLimit } = usePremium();
   
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([
@@ -246,6 +248,20 @@ export default function AbosScreen() {
     setPremiumModalVisible(false);
   };
 
+  // Get the pin status of the selected subscription
+  const getSelectedSubPinStatus = () => {
+    if (!selectedSubId) return false;
+    const sub = subscriptions.find((s) => s.id === selectedSubId);
+    return sub?.isPinned || false;
+  };
+
+  const handleNavigateToBudget = () => {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    router.push('/(tabs)/budget');
+  };
+
   const SubscriptionPill = ({ subscription }: { subscription: Subscription }) => {
     const translateX = useSharedValue(0);
     const scale = useSharedValue(1);
@@ -346,6 +362,11 @@ export default function AbosScreen() {
           <Text style={styles.swipeHint}>
             ← Wischen zum Löschen · Wischen zum Fixieren →
           </Text>
+
+          {/* Navigate to Budget Button */}
+          <Pressable style={styles.restoreButton} onPress={handleNavigateToBudget}>
+            <Text style={styles.restoreButtonText}>Ausgaben Ansicht</Text>
+          </Pressable>
         </ScrollView>
 
         {/* Context Menu Modal */}
@@ -382,7 +403,9 @@ export default function AbosScreen() {
               </Pressable>
 
               <Pressable style={styles.contextMenuItem} onPress={() => handlePinToggle()}>
-                <Text style={styles.contextMenuText}>Fixieren</Text>
+                <Text style={styles.contextMenuText}>
+                  {getSelectedSubPinStatus() ? 'Lösen' : 'Fixieren'}
+                </Text>
               </Pressable>
 
               <Pressable
@@ -558,6 +581,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     fontWeight: '600',
+  },
+  restoreButton: {
+    backgroundColor: colors.neonGreen,
+    borderRadius: 16,
+    padding: 18,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  restoreButtonText: {
+    color: colors.black,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   modalOverlay: {
     flex: 1,

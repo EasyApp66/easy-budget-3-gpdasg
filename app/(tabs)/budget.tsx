@@ -1,5 +1,4 @@
 
-import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,16 +11,17 @@ import {
   TextInput,
   Dimensions,
 } from 'react-native';
+import { colors } from '@/styles/commonStyles';
+import React, { useState, useCallback } from 'react';
+import { usePremium } from '@/hooks/usePremium';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@/styles/commonStyles';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
-import { usePremium } from '@/hooks/usePremium';
+import * as Haptics from 'expo-haptics';
 
 interface Expense {
   id: string;
@@ -355,6 +355,19 @@ export default function BudgetScreen() {
     setPendingAction(null);
   };
 
+  // Get the pin status of the selected item
+  const getItemPinStatus = () => {
+    const { type, itemId } = contextMenu;
+    if (type === 'month' && itemId) {
+      const month = months.find((m) => m.id === itemId);
+      return month?.isPinned || false;
+    } else if (type === 'expense' && itemId) {
+      const expense = selectedMonth?.expenses.find((e) => e.id === itemId);
+      return expense?.isPinned || false;
+    }
+    return false;
+  };
+
   const TopPill = ({ label, value, editable, color, onPressLabel, onPressValue }: any) => {
     const scale = useSharedValue(1);
     const animatedStyle = useAnimatedStyle(() => ({
@@ -591,7 +604,9 @@ export default function BudgetScreen() {
             </Pressable>
 
             <Pressable style={styles.menuItem} onPress={handlePinToggle}>
-              <Text style={styles.menuItemText}>Fixieren</Text>
+              <Text style={styles.menuItemText}>
+                {getItemPinStatus() ? 'Lösen' : 'Fixieren'}
+              </Text>
             </Pressable>
 
             <Pressable
