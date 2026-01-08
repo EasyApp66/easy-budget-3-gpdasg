@@ -25,6 +25,7 @@ const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) 
   const opacity = useSharedValue(0);
 
   useEffect(() => {
+    // Start from top and fall to bottom
     translateY.value = withDelay(
       delay,
       withRepeat(
@@ -37,10 +38,11 @@ const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) 
       )
     );
 
+    // Gentle horizontal sway
     translateX.value = withDelay(
       delay,
       withRepeat(
-        withTiming(30, {
+        withTiming(40, {
           duration: duration / 2,
           easing: Easing.inOut(Easing.ease),
         }),
@@ -49,16 +51,13 @@ const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) 
       )
     );
 
+    // Fade in and maintain visibility
     opacity.value = withDelay(
       delay,
-      withRepeat(
-        withTiming(0.7, {
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        -1,
-        true
-      )
+      withTiming(0.9, {
+        duration: 500,
+        easing: Easing.inOut(Easing.ease),
+      })
     );
   }, []);
 
@@ -86,12 +85,13 @@ const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) 
 };
 
 export const SnowAnimation: React.FC = () => {
-  const snowflakes = Array.from({ length: 30 }, (_, i) => ({
+  // Increase number of snowflakes and make them more visible
+  const snowflakes = Array.from({ length: 50 }, (_, i) => ({
     id: i,
     delay: Math.random() * 5000,
-    duration: 8000 + Math.random() * 7000,
+    duration: 10000 + Math.random() * 8000, // Slower falling
     startX: Math.random() * SCREEN_WIDTH,
-    size: 3 + Math.random() * 5,
+    size: 4 + Math.random() * 6, // Larger snowflakes
   }));
 
   return (
@@ -118,6 +118,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     backgroundColor: '#FFFFFF',
     borderRadius: 50,
-    opacity: 0.6,
+    opacity: 0.9, // More visible
+    shadowColor: '#FFFFFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 3,
   },
 });

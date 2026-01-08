@@ -14,6 +14,7 @@ import {
 } from "@react-navigation/native";
 import { WidgetProvider } from "@/contexts/WidgetContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { Stack, router } from "expo-router";
 import { useColorScheme, Alert, View, StyleSheet } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -59,34 +60,36 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={EasyBudgetTheme}>
-        <AuthProvider>
-          <WidgetProvider>
-            <View style={styles.container}>
-              {/* Snow Animation in Background */}
-              <SnowAnimation />
-              
-              {/* Main Content */}
-              <View style={styles.content}>
-                <SystemBars style="light" />
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    animation: 'none', // No page transitions as per requirements
-                  }}
-                >
-                  <Stack.Screen name="welcome" options={{ headerShown: false }} />
-                  <Stack.Screen name="login" options={{ headerShown: false }} />
-                  <Stack.Screen name="register" options={{ headerShown: false }} />
-                  <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
-                  <Stack.Screen name="auth-popup" options={{ headerShown: false }} />
-                  <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                </Stack>
-                <StatusBar style="light" />
+        <LanguageProvider>
+          <AuthProvider>
+            <WidgetProvider>
+              <View style={styles.container}>
+                {/* Snow Animation in Background */}
+                <SnowAnimation />
+                
+                {/* Main Content */}
+                <View style={styles.content}>
+                  <SystemBars style="light" />
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      animation: 'none', // No page transitions as per requirements
+                    }}
+                  >
+                    <Stack.Screen name="welcome" options={{ headerShown: false }} />
+                    <Stack.Screen name="login" options={{ headerShown: false }} />
+                    <Stack.Screen name="register" options={{ headerShown: false }} />
+                    <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
+                    <Stack.Screen name="auth-popup" options={{ headerShown: false }} />
+                    <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  </Stack>
+                  <StatusBar style="light" />
+                </View>
               </View>
-            </View>
-          </WidgetProvider>
-        </AuthProvider>
+            </WidgetProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );
