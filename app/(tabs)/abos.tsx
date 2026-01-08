@@ -520,8 +520,9 @@ const styles = StyleSheet.create({
   },
   topPillValue: {
     color: colors.white,
-    fontSize: 42,
+    fontSize: 26,
     fontWeight: '800',
+    textAlign: 'right',
   },
   subscriptionList: {
     gap: 12,
@@ -549,6 +550,7 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 26,
     fontWeight: '800',
+    textAlign: 'right',
   },
   swipeHint: {
     color: '#666',
