@@ -1,97 +1,37 @@
 
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Platform, Alert, TextInput } from "react-native";
+import React, { useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Platform, Pressable, Modal, TextInput, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import * as Haptics from "expo-haptics";
-import { colors } from "@/styles/commonStyles";
-import { useAuth } from "@/contexts/AuthContext";
 import { IconSymbol } from "@/components/IconSymbol";
-import { authenticatedGet, authenticatedPatch } from "@/utils/api";
+import { GlassView } from "expo-glass-effect";
+import { useTheme } from "@react-navigation/native";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Language } from "@/i18n/translations";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-interface UserProfile {
-  id: string;
-  email: string;
-  name: string;
-  premiumStatus: boolean;
-  emailVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import * as Haptics from 'expo-haptics';
 
 export default function ProfileScreen() {
-  const router = useRouter();
-  const { user, signOut, fetchUser } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [editingName, setEditingName] = useState(false);
-  const [newName, setNewName] = useState("");
+  const theme = useTheme();
+  const { language, setLanguage, t } = useLanguage();
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
 
-  // Fetch user profile on mount
-  useEffect(() => {
-    if (user) {
-      loadProfile();
-    }
-  }, [user]);
-
-  const loadProfile = async () => {
+  const handleLanguageChange = async (newLanguage: Language) => {
     try {
-      setLoading(true);
-      console.log("[Profile] Fetching user profile from backend...");
-      const data = await authenticatedGet<UserProfile>("/api/user/profile");
-      console.log("[Profile] Successfully loaded user profile:", data);
-      setProfile(data);
-      setNewName(data.name || "");
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      }
+      await setLanguage(newLanguage);
+      setShowLanguageModal(false);
     } catch (error) {
-      console.error("[Profile] Failed to load profile:", error);
-      Alert.alert("Fehler", "Profil konnte nicht geladen werden");
-    } finally {
-      setLoading(false);
+      Alert.alert(t.common.error, 'Failed to change language');
     }
   };
 
-  const handleUpdateName = async () => {
-    if (!newName.trim()) {
-      Alert.alert("Fehler", "Name darf nicht leer sein");
-      return;
-    }
-
-    try {
-      console.log("[Profile] Updating profile name to:", newName.trim());
-      const updatedProfile = await authenticatedPatch<UserProfile>("/api/user/profile", {
-        name: newName.trim(),
-      });
-      console.log("[Profile] Successfully updated profile:", updatedProfile);
-      setProfile(updatedProfile);
-      setEditingName(false);
-      // Refresh auth context user
-      await fetchUser();
-      if (Platform.OS === 'ios') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      }
-      Alert.alert("Erfolg", "Name wurde aktualisiert");
-    } catch (error) {
-      console.error("[Profile] Failed to update name:", error);
-      if (Platform.OS === 'ios') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      }
-      Alert.alert("Fehler", "Name konnte nicht aktualisiert werden");
-    }
-  };
-
-  const MenuItem = ({
-    icon,
-    title,
-    onPress,
-    color = colors.neonGreen,
-  }: {
+  const MenuItem = ({ icon, title, onPress, color }: {
     icon: string;
     title: string;
     onPress: () => void;
@@ -103,344 +43,250 @@ export default function ProfileScreen() {
       transform: [{ scale: scale.value }],
     }));
 
+    const handlePress = () => {
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+      scale.value = withSpring(0.95, {}, () => {
+        scale.value = withSpring(1);
+      });
+      onPress();
+    };
+
     return (
-      <AnimatedPressable
-        style={[styles.menuItem, animatedStyle]}
-        onPressIn={() => {
-          scale.value = withSpring(0.95);
-          if (Platform.OS === 'ios') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1);
-        }}
-        onPress={onPress}
-      >
-        <View style={styles.menuItemLeft}>
+      <Pressable onPress={handlePress}>
+        <Animated.View style={[styles.menuItem, animatedStyle]}>
           <IconSymbol
             ios_icon_name={icon}
             android_material_icon_name={icon}
             size={24}
-            color={color}
+            color={color || theme.colors.text}
           />
-          <Text style={styles.menuItemText}>{title}</Text>
-        </View>
-        <IconSymbol
-          ios_icon_name="chevron.right"
-          android_material_icon_name="arrow-forward"
-          size={20}
-          color={colors.white}
-        />
-      </AnimatedPressable>
+          <Text style={[styles.menuText, { color: color || theme.colors.text }]}>
+            {title}
+          </Text>
+        </Animated.View>
+      </Pressable>
     );
   };
-
-  const handleLogout = async () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    try {
-      await signOut();
-      router.replace('/welcome');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Lädt...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+        style={styles.container}
+        contentContainerStyle={[
+          styles.contentContainer,
+          Platform.OS !== 'ios' && styles.contentContainerWithTabBar
+        ]}
       >
-        <View style={styles.header}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <IconSymbol
-                ios_icon_name="person.fill"
-                android_material_icon_name="person"
-                size={48}
-                color={colors.black}
-              />
-            </View>
+        {/* Profile Header with BLACK icon in GREEN circle */}
+        <GlassView style={[
+          styles.profileHeader,
+          Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+        ]} glassEffectStyle="regular">
+          <View style={styles.iconCircle}>
+            <IconSymbol 
+              ios_icon_name="person.fill" 
+              android_material_icon_name="person" 
+              size={50} 
+              color="#000000"
+            />
           </View>
-          
-          {editingName ? (
-            <View style={styles.nameEditContainer}>
-              <TextInput
-                style={styles.nameInput}
-                value={newName}
-                onChangeText={setNewName}
-                placeholder="Name eingeben"
-                placeholderTextColor={colors.white + '60'}
-                autoFocus
-              />
-              <View style={styles.nameEditButtons}>
-                <Pressable
-                  style={[styles.nameEditButton, styles.nameEditButtonCancel]}
-                  onPress={() => {
-                    setEditingName(false);
-                    setNewName(profile?.name || "");
-                  }}
-                >
-                  <Text style={styles.nameEditButtonText}>Abbrechen</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.nameEditButton, styles.nameEditButtonSave]}
-                  onPress={handleUpdateName}
-                >
-                  <Text style={[styles.nameEditButtonText, { color: colors.black }]}>Speichern</Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : (
-            <>
-              <Text style={styles.username}>{profile?.name || profile?.email || 'Benutzer'}</Text>
-              <Pressable onPress={() => setEditingName(true)}>
-                <Text style={styles.subtitle}>Tippe um Namen zu ändern</Text>
-              </Pressable>
-            </>
-          )}
-          
-          <Text style={styles.email}>{profile?.email}</Text>
-          <Text style={styles.premium}>
-            Premium: {profile?.premiumStatus ? 'Ja' : 'Nein'}
-          </Text>
-          {profile?.emailVerified && (
-            <View style={styles.verifiedBadge}>
-              <IconSymbol
-                ios_icon_name="checkmark.circle.fill"
-                android_material_icon_name="verified"
-                size={16}
-                color={colors.neonGreen}
-              />
-              <Text style={styles.verifiedText}>E-Mail verifiziert</Text>
-            </View>
-          )}
-        </View>
+          <Text style={[styles.name, { color: theme.colors.text }]}>John Doe</Text>
+          <Text style={[styles.email, { color: theme.dark ? '#98989D' : '#666' }]}>john.doe@example.com</Text>
+        </GlassView>
 
-        <View style={styles.menuContainer}>
-          <MenuItem
-            icon="logout"
-            title="Ausloggen"
-            onPress={handleLogout}
-            color={colors.neonGreen}
-          />
+        {/* Settings Section */}
+        <GlassView style={[
+          styles.section,
+          Platform.OS !== 'ios' && { backgroundColor: theme.dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+        ]} glassEffectStyle="regular">
           <MenuItem
             icon="language"
-            title="Sprache ändern: English"
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              console.log('Change language');
-            }}
-            color={colors.neonGreen}
-          />
-          <MenuItem
-            icon="refresh"
-            title="Premium Wiederherstellen"
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              console.log('Restore premium');
-            }}
-            color={colors.neonGreen}
+            title={`${t.profile.language}: ${language}`}
+            onPress={() => setShowLanguageModal(true)}
           />
           <MenuItem
             icon="star"
-            title="Premium Kaufen"
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              console.log('Buy premium');
-            }}
-            color={colors.neonGreen}
+            title={t.profile.premium}
+            onPress={() => {}}
           />
           <MenuItem
-            icon="description"
-            title="AGB"
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              console.log('Terms');
-            }}
-            color={colors.neonGreen}
+            icon="support"
+            title={t.profile.support}
+            onPress={() => {}}
           />
           <MenuItem
-            icon="security"
-            title="Nutzungsbedingungen"
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              console.log('Terms of use');
-            }}
-            color={colors.neonGreen}
+            icon="bug-report"
+            title={t.profile.bugReport}
+            onPress={() => {}}
           />
           <MenuItem
-            icon="lock"
-            title="Datenschutz"
-            onPress={() => {
-              if (Platform.OS === 'ios') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-              console.log('Privacy');
-            }}
-            color={colors.neonGreen}
+            icon="logout"
+            title={t.profile.logout}
+            onPress={() => {}}
+            color="#C43C3E"
           />
-        </View>
+        </GlassView>
       </ScrollView>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={showLanguageModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLanguageModal(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay}
+          onPress={() => setShowLanguageModal(false)}
+        >
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.card }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+              {t.profile.language}
+            </Text>
+            
+            <Pressable
+              style={[
+                styles.languageOption,
+                language === 'DE' && styles.languageOptionSelected
+              ]}
+              onPress={() => handleLanguageChange('DE')}
+            >
+              <Text style={[
+                styles.languageText,
+                { color: theme.colors.text },
+                language === 'DE' && styles.languageTextSelected
+              ]}>
+                DE
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.languageOption,
+                language === 'EN' && styles.languageOptionSelected
+              ]}
+              onPress={() => handleLanguageChange('EN')}
+            >
+              <Text style={[
+                styles.languageText,
+                { color: theme.colors.text },
+                language === 'EN' && styles.languageTextSelected
+              ]}>
+                EN
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.closeButton}
+              onPress={() => setShowLanguageModal(false)}
+            >
+              <Text style={styles.closeButtonText}>{t.common.close}</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: colors.black,
   },
-  loadingContainer: {
-    flex: 1,
+  contentContainer: {
+    padding: 20,
+  },
+  contentContainerWithTabBar: {
+    paddingBottom: 100,
+  },
+  profileHeader: {
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: colors.white,
-    opacity: 0.7,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 120,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  avatarContainer: {
+    borderRadius: 12,
+    padding: 32,
     marginBottom: 16,
+    gap: 12,
   },
-  avatar: {
+  iconCircle: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: colors.neonGreen,
+    backgroundColor: '#BFFE84',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  username: {
+  name: {
     fontSize: 24,
-    fontWeight: '900',
-    color: colors.white,
-    marginBottom: 4,
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.neonGreen,
-    opacity: 0.8,
-    marginBottom: 8,
-    textDecorationLine: 'underline',
+    fontWeight: 'bold',
   },
   email: {
-    fontSize: 14,
-    color: colors.white,
-    opacity: 0.6,
-    marginBottom: 8,
-  },
-  premium: {
     fontSize: 16,
-    fontWeight: '700',
-    color: colors.white,
-    marginBottom: 8,
   },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.darkGray,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  section: {
     borderRadius: 12,
-  },
-  verifiedText: {
-    fontSize: 12,
-    color: colors.neonGreen,
-    fontWeight: '600',
-  },
-  nameEditContainer: {
-    width: '100%',
-    gap: 12,
-    marginBottom: 16,
-  },
-  nameInput: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 18,
-    color: colors.white,
-    textAlign: 'center',
-    fontWeight: '700',
-  },
-  nameEditButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'center',
-  },
-  nameEditButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    minWidth: 100,
-    alignItems: 'center',
-  },
-  nameEditButtonCancel: {
-    backgroundColor: colors.darkGray,
-  },
-  nameEditButtonSave: {
-    backgroundColor: colors.neonGreen,
-  },
-  nameEditButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  menuContainer: {
+    padding: 20,
     gap: 12,
   },
   menuItem: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 16,
-    padding: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 12,
   },
-  menuItemLeft: {
-    flexDirection: 'row',
+  menuText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalContent: {
+    width: '80%',
+    borderRadius: 12,
+    padding: 24,
     gap: 16,
   },
-  menuItemText: {
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  languageOption: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center',
+  },
+  languageOptionSelected: {
+    borderColor: '#BFFE84',
+    backgroundColor: 'rgba(191, 254, 132, 0.1)',
+  },
+  languageText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  languageTextSelected: {
+    color: '#BFFE84',
+  },
+  closeButton: {
+    marginTop: 8,
+    padding: 16,
+    backgroundColor: '#232323',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
-    color: colors.white,
+    fontWeight: 'bold',
   },
 });

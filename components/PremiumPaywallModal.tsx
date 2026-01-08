@@ -8,7 +8,6 @@ import {
   Platform,
 } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
-import { useLanguage } from '@/contexts/LanguageContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -28,7 +27,6 @@ export function PremiumPaywallModal({
   onClose,
   onPurchase,
 }: PremiumPaywallModalProps) {
-  const { t } = useLanguage();
   const onetimeScale = useSharedValue(1);
   const monthlyScale = useSharedValue(1);
   const closeScale = useSharedValue(1);
@@ -89,19 +87,27 @@ export function PremiumPaywallModal({
           </View>
 
           {/* Title */}
-          <Text style={styles.title}>{t.premium.title}</Text>
+          <Text style={styles.title}>Premium Kaufen</Text>
 
           {/* Subtitle */}
-          <Text style={styles.subtitle}>{t.premium.subtitle}</Text>
+          <Text style={styles.subtitle}>
+            Erhalte unbegrenzte App-Funktionen:
+          </Text>
 
           {/* Features List */}
           <View style={styles.featureList}>
-            {t.premium.features.map((feature, index) => (
-              <View key={index} style={styles.featureItem}>
-                <View style={styles.bullet} />
-                <Text style={styles.featureText}>{feature}</Text>
-              </View>
-            ))}
+            <View style={styles.featureItem}>
+              <View style={styles.bullet} />
+              <Text style={styles.featureText}>Unbegrenzte Abo Counter</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <View style={styles.bullet} />
+              <Text style={styles.featureText}>Unbegrenzte Ausgabenliste</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <View style={styles.bullet} />
+              <Text style={styles.featureText}>Unbegrenzte Monate</Text>
+            </View>
           </View>
 
           {/* One-time Payment Card */}
@@ -111,17 +117,17 @@ export function PremiumPaywallModal({
               style={styles.paymentCard}
             >
               <View style={styles.paymentInfo}>
-                <Text style={styles.paymentTitle}>{t.premium.oneTime}</Text>
-                <Text style={styles.paymentPrice}>{t.premium.oneTimePrice}</Text>
+                <Text style={styles.paymentTitle}>Einmalige Zahlung</Text>
+                <Text style={styles.paymentPrice}>CHF 10.00</Text>
               </View>
               <View style={styles.payButton}>
-                <Text style={styles.payButtonText}>{t.premium.pay}</Text>
+                <Text style={styles.payButtonText}>Bezahlen</Text>
               </View>
             </Pressable>
           </Animated.View>
 
           {/* Divider */}
-          <Text style={styles.divider}>{t.premium.or}</Text>
+          <Text style={styles.divider}>ODER</Text>
 
           {/* Monthly Payment Card */}
           <Animated.View style={monthlyAnimatedStyle}>
@@ -130,11 +136,11 @@ export function PremiumPaywallModal({
               style={styles.paymentCard}
             >
               <View style={styles.paymentInfo}>
-                <Text style={styles.paymentTitle}>{t.premium.monthly}</Text>
-                <Text style={styles.paymentPrice}>{t.premium.monthlyPrice}</Text>
+                <Text style={styles.paymentTitle}>Monatliches Abo</Text>
+                <Text style={styles.paymentPrice}>CHF 1.00/Monat</Text>
               </View>
               <View style={styles.payButton}>
-                <Text style={styles.payButtonText}>{t.premium.pay}</Text>
+                <Text style={styles.payButtonText}>Bezahlen</Text>
               </View>
             </Pressable>
           </Animated.View>

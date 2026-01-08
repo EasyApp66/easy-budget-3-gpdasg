@@ -11,21 +11,40 @@ import Animated, {
 } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const SNOWFLAKE_COUNT = 50;
 
-interface SnowflakeProps {
+interface Snowflake {
+  id: number;
+  startX: number;
   delay: number;
   duration: number;
-  startX: number;
   size: number;
 }
 
-const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) => {
+const SnowAnimation = () => {
+  const snowflakes: Snowflake[] = Array.from({ length: SNOWFLAKE_COUNT }, (_, i) => ({
+    id: i,
+    startX: Math.random() * SCREEN_WIDTH,
+    delay: Math.random() * 5000,
+    duration: 8000 + Math.random() * 4000,
+    size: 3 + Math.random() * 4,
+  }));
+
+  return (
+    <View style={styles.container} pointerEvents="none">
+      {snowflakes.map((flake) => (
+        <Snowflake key={flake.id} {...flake} />
+      ))}
+    </View>
+  );
+};
+
+const Snowflake = ({ startX, delay, duration, size }: Omit<Snowflake, 'id'>) => {
   const translateY = useSharedValue(-20);
   const translateX = useSharedValue(0);
-  const opacity = useSharedValue(0);
+  const opacity = useSharedValue(0.7);
 
   useEffect(() => {
-    // Start from top and fall to bottom
     translateY.value = withDelay(
       delay,
       withRepeat(
@@ -38,26 +57,16 @@ const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) 
       )
     );
 
-    // Gentle horizontal sway
     translateX.value = withDelay(
       delay,
       withRepeat(
-        withTiming(40, {
-          duration: duration / 2,
+        withTiming(Math.random() * 40 - 20, {
+          duration: 3000,
           easing: Easing.inOut(Easing.ease),
         }),
         -1,
         true
       )
-    );
-
-    // Fade in and maintain visibility
-    opacity.value = withDelay(
-      delay,
-      withTiming(0.9, {
-        duration: 500,
-        easing: Easing.inOut(Easing.ease),
-      })
     );
   }, []);
 
@@ -84,44 +93,20 @@ const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) 
   );
 };
 
-export const SnowAnimation: React.FC = () => {
-  // Increase number of snowflakes and make them more visible
-  const snowflakes = Array.from({ length: 50 }, (_, i) => ({
-    id: i,
-    delay: Math.random() * 5000,
-    duration: 10000 + Math.random() * 8000, // Slower falling
-    startX: Math.random() * SCREEN_WIDTH,
-    size: 4 + Math.random() * 6, // Larger snowflakes
-  }));
-
-  return (
-    <View style={styles.container} pointerEvents="none">
-      {snowflakes.map((flake) => (
-        <Snowflake
-          key={flake.id}
-          delay={flake.delay}
-          duration={flake.duration}
-          startX={flake.startX}
-          size={flake.size}
-        />
-      ))}
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     zIndex: 0,
   },
   snowflake: {
     position: 'absolute',
     backgroundColor: '#FFFFFF',
     borderRadius: 50,
-    opacity: 0.9, // More visible
-    shadowColor: '#FFFFFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
   },
 });
+
+export default SnowAnimation;
