@@ -21,10 +21,10 @@ import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import * as MailComposer from 'expo-mail-composer';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { usePremium } from '@/hooks/usePremium';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 const colors = {
   black: '#000000',
@@ -94,7 +94,6 @@ export default function ProfilScreen() {
   const [donateModalVisible, setDonateModalVisible] = useState(false);
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [editNameModalVisible, setEditNameModalVisible] = useState(false);
-  const [languageModalVisible, setLanguageModalVisible] = useState(false);
   
   // Form states
   const [bugDescription, setBugDescription] = useState('');
@@ -106,29 +105,29 @@ export default function ProfilScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    Alert.alert(t.profile.logout, t.profile.logoutConfirm, [
-      { text: t.profile.no, style: 'cancel' },
-      {
-        text: t.profile.yes,
-        style: 'destructive',
-        onPress: async () => {
-          await signOut();
-          router.replace('/welcome');
+    Alert.alert(
+      t.profile.logout,
+      t.profile.logoutConfirm,
+      [
+        { text: t.common.cancel, style: 'cancel' },
+        {
+          text: t.profile.logout,
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+            router.replace('/welcome');
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
-  const handleLanguageChange = async (newLang: 'DE' | 'EN') => {
+  const handleLanguageChange = async () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    try {
-      await setLanguage(newLang);
-      setLanguageModalVisible(false);
-    } catch (error) {
-      Alert.alert(t.common.error, 'Failed to change language');
-    }
+    const newLang = language === 'DE' ? 'EN' : 'DE';
+    await setLanguage(newLang);
   };
 
   const handleBuyPremium = () => {
@@ -193,7 +192,7 @@ export default function ProfilScreen() {
     }
     
     if (!bugDescription.trim()) {
-      Alert.alert(t.common.error, 'Please describe the bug.');
+      Alert.alert(t.common.error, language === 'DE' ? 'Bitte beschreibe den Fehler.' : 'Please describe the bug.');
       return;
     }
 
@@ -206,11 +205,11 @@ export default function ProfilScreen() {
           body: `Bug Description:\n\n${bugDescription}\n\n---\nUser: ${username}\nVersion: 1.0.0\nPlatform: ${Platform.OS}`,
         });
       } else {
-        Alert.alert(t.common.error, 'Email is not available on this device.');
+        Alert.alert(t.common.error, language === 'DE' ? 'E-Mail ist auf diesem Gerät nicht verfügbar.' : 'Email is not available on this device.');
       }
     } catch (error) {
       console.error('Error sending bug report:', error);
-      Alert.alert(t.common.error, 'Error sending bug report.');
+      Alert.alert(t.common.error, language === 'DE' ? 'Fehler beim Senden des Bug Reports.' : 'Error sending bug report.');
     }
     
     setBugModalVisible(false);
@@ -222,18 +221,22 @@ export default function ProfilScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     const amount = customDonation || selectedDonation.toString();
-    Alert.alert('Thank you!', `Your donation of CHF ${amount}.00 is being processed.`, [
-      {
-        text: t.common.ok,
-        onPress: () => {
-          // TODO: Backend Integration - Process donation payment
-          console.log(`Process donation: CHF ${amount}`);
-          setDonateModalVisible(false);
-          setCustomDonation('');
-          setSelectedDonation(5);
+    Alert.alert(
+      language === 'DE' ? 'Danke!' : 'Thank you!',
+      language === 'DE' ? `Deine Spende von CHF ${amount}.00 wird verarbeitet.` : `Your donation of CHF ${amount}.00 is being processed.`,
+      [
+        {
+          text: t.common.ok,
+          onPress: () => {
+            // TODO: Backend Integration - Process donation payment
+            console.log(`Process donation: CHF ${amount}`);
+            setDonateModalVisible(false);
+            setCustomDonation('');
+            setSelectedDonation(5);
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const handleSupport = async () => {
@@ -245,11 +248,11 @@ export default function ProfilScreen() {
       if (isAvailable) {
         await MailComposer.composeAsync({
           recipients: ['support@easybudget.app'],
-          subject: `Support Request - EASY BUDGET`,
-          body: `Hello Support Team,\n\n`,
+          subject: language === 'DE' ? 'Support Anfrage - EASY BUDGET' : 'Support Request - EASY BUDGET',
+          body: language === 'DE' ? `Hallo Support Team,\n\n` : `Hello Support Team,\n\n`,
         });
       } else {
-        Alert.alert(t.common.error, 'Email is not available on this device.');
+        Alert.alert(t.common.error, language === 'DE' ? 'E-Mail ist auf diesem Gerät nicht verfügbar.' : 'Email is not available on this device.');
       }
     } catch (error) {
       console.error('Error opening mail composer:', error);
@@ -265,11 +268,11 @@ export default function ProfilScreen() {
       if (isAvailable) {
         await MailComposer.composeAsync({
           recipients: ['feedback@easybudget.app'],
-          subject: `Suggestion - EASY BUDGET`,
-          body: `My suggestion:\n\n`,
+          subject: language === 'DE' ? 'Vorschlag - EASY BUDGET' : 'Suggestion - EASY BUDGET',
+          body: language === 'DE' ? `Mein Vorschlag:\n\n` : `My suggestion:\n\n`,
         });
       } else {
-        Alert.alert(t.common.error, 'Email is not available on this device.');
+        Alert.alert(t.common.error, language === 'DE' ? 'E-Mail ist auf diesem Gerät nicht verfügbar.' : 'Email is not available on this device.');
       }
     } catch (error) {
       console.error('Error opening mail composer:', error);
@@ -290,21 +293,25 @@ export default function ProfilScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* User Profile Card with BLACK icon in GREEN circle */}
+        {/* User Profile Card */}
         <View style={styles.profileCard}>
           <View style={styles.userIconContainer}>
             <IconSymbol 
               ios_icon_name="person.fill" 
               android_material_icon_name="person"
               size={60} 
-              color={colors.black}
+              color={colors.black} 
             />
           </View>
           <Pressable onPress={handleEditName}>
             <Text style={styles.username}>{username}</Text>
-            <Text style={styles.usernameHint}>{t.profile.editName}</Text>
+            <Text style={styles.usernameHint}>
+              {language === 'DE' ? 'Tippe um Namen zu ändern' : 'Tap to change name'}
+            </Text>
           </Pressable>
-          <Text style={styles.premiumStatus}>Premium: {isPremium ? t.profile.yes : t.profile.no}</Text>
+          <Text style={styles.premiumStatus}>
+            Premium: {isPremium ? (language === 'DE' ? 'Ja' : 'Yes') : (language === 'DE' ? 'Nein' : 'No')}
+          </Text>
         </View>
 
         {/* Settings Items */}
@@ -321,7 +328,7 @@ export default function ProfilScreen() {
             androidIcon="language"
             iconColor={colors.neonGreen}
             title={`${t.profile.language}: ${language}`}
-            onPress={() => setLanguageModalVisible(true)}
+            onPress={handleLanguageChange}
           />
           <SettingsItem
             iosIcon="star.fill"
@@ -397,45 +404,6 @@ export default function ProfilScreen() {
         </View>
       </ScrollView>
 
-      {/* Language Selection Modal */}
-      <Modal
-        visible={languageModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setLanguageModalVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setLanguageModalVisible(false)}>
-          <View style={styles.languageModal}>
-            <Text style={styles.modalTitle}>{t.profile.language}</Text>
-            
-            <Pressable
-              style={[styles.languageOption, language === 'DE' && styles.languageOptionSelected]}
-              onPress={() => handleLanguageChange('DE')}
-            >
-              <Text style={[styles.languageText, language === 'DE' && styles.languageTextSelected]}>
-                DE
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={[styles.languageOption, language === 'EN' && styles.languageOptionSelected]}
-              onPress={() => handleLanguageChange('EN')}
-            >
-              <Text style={[styles.languageText, language === 'EN' && styles.languageTextSelected]}>
-                EN
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.closeModalButton}
-              onPress={() => setLanguageModalVisible(false)}
-            >
-              <Text style={styles.closeModalButtonText}>{t.common.close}</Text>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
-
       {/* Edit Name Modal */}
       <Modal
         visible={editNameModalVisible}
@@ -445,12 +413,14 @@ export default function ProfilScreen() {
       >
         <Pressable style={styles.modalOverlay} onPress={() => setEditNameModalVisible(false)}>
           <View style={styles.editModal}>
-            <Text style={styles.modalTitle}>{t.profile.editName}</Text>
+            <Text style={styles.modalTitle}>
+              {language === 'DE' ? 'Namen ändern' : 'Change Name'}
+            </Text>
             <TextInput
               style={styles.input}
               value={newUsername}
               onChangeText={setNewUsername}
-              placeholder={t.profile.username}
+              placeholder={language === 'DE' ? 'Neuer Name' : 'New Name'}
               placeholderTextColor="#666"
               autoFocus
             />
@@ -494,7 +464,7 @@ export default function ProfilScreen() {
               style={styles.bugInput}
               value={bugDescription}
               onChangeText={setBugDescription}
-              placeholder="Describe the bug..."
+              placeholder={language === 'DE' ? 'Beschreibe den Fehler...' : 'Describe the bug...'}
               placeholderTextColor="#666"
               multiline
               numberOfLines={4}
@@ -508,7 +478,9 @@ export default function ProfilScreen() {
                 size={20} 
                 color={colors.black} 
               />
-              <Text style={styles.sendButtonText}>Send</Text>
+              <Text style={styles.sendButtonText}>
+                {language === 'DE' ? 'Senden' : 'Send'}
+              </Text>
             </Pressable>
           </View>
         </Pressable>
@@ -536,8 +508,12 @@ export default function ProfilScreen() {
               <Text style={styles.heartIcon}>❤️</Text>
             </View>
 
-            <Text style={styles.modalTitle}>{t.profile.donation}</Text>
-            <Text style={styles.donateSubtitle}>Support the development of the app</Text>
+            <Text style={styles.modalTitle}>
+              {language === 'DE' ? 'Spenden' : 'Donate'}
+            </Text>
+            <Text style={styles.donateSubtitle}>
+              {language === 'DE' ? 'Unterstütze die Entwicklung der App' : 'Support the development of the app'}
+            </Text>
 
             <View style={styles.donationAmounts}>
               {[1, 5, 10, 20].map((amount) => (
@@ -571,7 +547,7 @@ export default function ProfilScreen() {
               style={styles.customAmountInput}
               value={customDonation}
               onChangeText={setCustomDonation}
-              placeholder="CHF Custom amount"
+              placeholder={language === 'DE' ? 'CHF Eigener Betrag' : 'CHF Custom amount'}
               placeholderTextColor="#666"
               keyboardType="numeric"
             />
@@ -584,7 +560,7 @@ export default function ProfilScreen() {
                 color={colors.white} 
               />
               <Text style={styles.donateButtonText}>
-                Donate CHF {customDonation || selectedDonation}.00
+                {language === 'DE' ? 'Spenden' : 'Donate'} CHF {customDonation || selectedDonation}.00
               </Text>
             </Pressable>
           </View>
@@ -691,45 +667,6 @@ const styles = StyleSheet.create({
     padding: 30,
     width: '85%',
     maxWidth: 400,
-  },
-  languageModal: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 30,
-    width: '85%',
-    maxWidth: 400,
-    gap: 16,
-  },
-  languageOption: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    alignItems: 'center',
-  },
-  languageOptionSelected: {
-    borderColor: colors.neonGreen,
-    backgroundColor: 'rgba(191, 254, 132, 0.1)',
-  },
-  languageText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.white,
-  },
-  languageTextSelected: {
-    color: colors.neonGreen,
-  },
-  closeModalButton: {
-    marginTop: 8,
-    padding: 16,
-    backgroundColor: colors.black,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  closeModalButtonText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '800',
   },
   bugModal: {
     backgroundColor: colors.darkGray,
