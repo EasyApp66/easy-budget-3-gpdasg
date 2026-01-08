@@ -129,21 +129,6 @@ export default function ProfilScreen() {
     );
   };
 
-  const handleRestorePremium = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    Alert.alert('Premium wiederherstellen', 'Käufe werden wiederhergestellt...', [
-      {
-        text: 'OK',
-        onPress: () => {
-          // TODO: Backend Integration - Restore premium purchases
-          console.log('Restore premium purchases');
-        },
-      },
-    ]);
-  };
-
   const handleBuyPremium = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -335,13 +320,6 @@ export default function ProfilScreen() {
             iconColor={colors.neonGreen}
             title={`Sprache ändern: ${language}`}
             onPress={handleLanguageChange}
-          />
-          <SettingsItem
-            iosIcon="arrow.clockwise"
-            androidIcon="refresh"
-            iconColor={colors.neonGreen}
-            title="Premium Wiederherstellen"
-            onPress={handleRestorePremium}
           />
           <SettingsItem
             iosIcon="star.fill"

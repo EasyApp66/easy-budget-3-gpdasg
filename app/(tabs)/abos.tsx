@@ -255,13 +255,6 @@ export default function AbosScreen() {
     return sub?.isPinned || false;
   };
 
-  const handleNavigateToBudget = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    router.push('/(tabs)/budget');
-  };
-
   const SubscriptionPill = ({ subscription }: { subscription: Subscription }) => {
     const translateX = useSharedValue(0);
     const scale = useSharedValue(1);
@@ -362,11 +355,6 @@ export default function AbosScreen() {
           <Text style={styles.swipeHint}>
             ← Wischen zum Löschen · Wischen zum Fixieren →
           </Text>
-
-          {/* Navigate to Budget Button */}
-          <Pressable style={styles.restoreButton} onPress={handleNavigateToBudget}>
-            <Text style={styles.restoreButtonText}>Ausgaben Ansicht</Text>
-          </Pressable>
         </ScrollView>
 
         {/* Context Menu Modal */}
@@ -581,19 +569,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     fontWeight: '600',
-  },
-  restoreButton: {
-    backgroundColor: colors.neonGreen,
-    borderRadius: 16,
-    padding: 18,
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  restoreButtonText: {
-    color: colors.black,
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 1,
   },
   modalOverlay: {
     flex: 1,
