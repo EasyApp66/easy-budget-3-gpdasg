@@ -1,31 +1,33 @@
 
-import { IconSymbol } from '@/components/IconSymbol';
-import { colors } from '@/styles/commonStyles';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   Platform,
-  Linking,
-  Image,
+  Modal,
+  ScrollView,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { colors } from '@/styles/commonStyles';
+import { IconSymbol } from '@/components/IconSymbol';
+import { useLanguage } from '@/contexts/LanguageContext';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import React from 'react';
-import { Stack, useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Stack, useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import * as Haptics from 'expo-haptics';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { signInWithGoogle, signInWithApple } = useAuth();
   const { t } = useLanguage();
+  const [legalModalVisible, setLegalModalVisible] = useState(false);
+  const [legalContent, setLegalContent] = useState({ title: '', content: '' });
 
   const AnimatedButton = ({
     title,
@@ -68,17 +70,9 @@ export default function WelcomeScreen() {
             animatedStyle,
           ]}
         >
-          {isGoogle ? (
-            <View style={styles.googleIconContainer}>
-              <Image
-                source={{ uri: 'https://www.google.com/favicon.ico' }}
-                style={styles.googleIcon}
-                resizeMode="contain"
-              />
-            </View>
-          ) : iconName ? (
+          {iconName && (
             <MaterialIcons name={iconName as any} size={20} color={textColor} style={styles.buttonIcon} />
-          ) : null}
+          )}
           <Text style={[styles.buttonText, { color: textColor }]}>{title}</Text>
         </Animated.View>
       </Pressable>
@@ -116,8 +110,34 @@ export default function WelcomeScreen() {
     }
   };
 
-  const openLink = (url: string) => {
-    Linking.openURL(url);
+  const openLegalModal = (type: 'terms' | 'privacy' | 'agb') => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    
+    let title = '';
+    let content = '';
+    
+    if (type === 'terms') {
+      title = t.legal.termsTitle;
+      content = t.legal.termsContent;
+    } else if (type === 'privacy') {
+      title = t.legal.privacyTitle;
+      content = t.legal.privacyContent;
+    } else if (type === 'agb') {
+      title = t.legal.agbTitle;
+      content = t.legal.agbContent;
+    }
+    
+    setLegalContent({ title, content });
+    setLegalModalVisible(true);
+  };
+
+  const closeLegalModal = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setLegalModalVisible(false);
   };
 
   return (
@@ -157,36 +177,68 @@ export default function WelcomeScreen() {
               onPress={handleGooglePress}
               backgroundColor={colors.white}
               textColor={colors.black}
-              isGoogle={true}
+              iconName="login"
             />
           </View>
 
-          <Text style={styles.footer}>
-            {t.welcome.footer.split('Nutzungsbedingungen')[0]}
-            <Text
-              style={styles.link}
-              onPress={() => openLink('https://example.com/terms')}
-            >
-              {t.welcome.terms}
+          <View style={styles.footerContainer}>
+            <Text style={styles.footer}>
+              {t.welcome.footer.split(t.welcome.terms)[0]}
+              <Text
+                style={styles.link}
+                onPress={() => openLegalModal('terms')}
+              >
+                {t.welcome.terms}
+              </Text>
+              {' '}und die{' '}
+              <Text
+                style={styles.link}
+                onPress={() => openLegalModal('privacy')}
+              >
+                {t.welcome.privacy}
+              </Text>
+              {' '}und die{' '}
+              <Text
+                style={styles.link}
+                onPress={() => openLegalModal('agb')}
+              >
+                {t.welcome.agb}
+              </Text>
+              {' '}gelesen hast.
             </Text>
-            {' '}und die{' '}
-            <Text
-              style={styles.link}
-              onPress={() => openLink('https://example.com/privacy')}
-            >
-              {t.welcome.privacy}
-            </Text>
-            {' '}und die{' '}
-            <Text
-              style={styles.link}
-              onPress={() => openLink('https://example.com/agb')}
-            >
-              {t.welcome.agb}
-            </Text>
-            {' '}gelesen hast.
-          </Text>
+          </View>
         </View>
       </View>
+
+      {/* Legal Modal */}
+      <Modal
+        visible={legalModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeLegalModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Pressable style={styles.closeButton} onPress={closeLegalModal}>
+              <MaterialIcons name="close" size={28} color={colors.white} />
+            </Pressable>
+            
+            <Text style={styles.modalTitle}>{legalContent.title}</Text>
+            
+            <ScrollView 
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollContent}
+              showsVerticalScrollIndicator={true}
+            >
+              <Text style={styles.modalText}>{legalContent.content}</Text>
+            </ScrollView>
+            
+            <Pressable style={styles.okButton} onPress={closeLegalModal}>
+              <Text style={styles.okButtonText}>{t.common.ok}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -240,21 +292,13 @@ const styles = StyleSheet.create({
   buttonIcon: {
     marginRight: 12,
   },
-  googleIconContainer: {
-    marginRight: 12,
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  googleIcon: {
-    width: 20,
-    height: 20,
-  },
   buttonText: {
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  footerContainer: {
+    paddingHorizontal: 8,
   },
   footer: {
     fontSize: 12,
@@ -266,5 +310,61 @@ const styles = StyleSheet.create({
   link: {
     color: colors.neonGreen,
     textDecorationLine: 'underline',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '80%',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 10,
+    padding: 4,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: colors.white,
+    marginBottom: 20,
+    marginRight: 40,
+    textAlign: 'left',
+  },
+  modalScrollView: {
+    flex: 1,
+    marginBottom: 20,
+  },
+  modalScrollContent: {
+    paddingRight: 8,
+  },
+  modalText: {
+    fontSize: 14,
+    color: colors.white,
+    lineHeight: 22,
+    textAlign: 'left',
+  },
+  okButton: {
+    backgroundColor: colors.neonGreen,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  okButtonText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.black,
+    letterSpacing: 0.5,
   },
 });

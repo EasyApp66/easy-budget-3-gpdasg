@@ -1,8 +1,7 @@
-
 {
   "expo": {
-    "name": "EASY BUDGET",
-    "slug": "easy-budget",
+    "name": "Easy Budget 2.0",
+    "slug": "Easy Budget 2.0",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -64,5 +63,6 @@
         "projectId": "your-project-id"
       }
     }
-  }
+  },
+  "scheme": "Easy Budget 2.0"
 }
