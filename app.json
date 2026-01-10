@@ -1,7 +1,8 @@
+
 {
   "expo": {
-    "name": "Easy Budget 2.0",
-    "slug": "Easy Budget 2.0",
+    "name": "EASY BUDGET 3.0",
+    "slug": "easy-budget-30",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -15,12 +16,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.easybudget.app",
-      "buildNumber": "1",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select images.",
-        "NSCameraUsageDescription": "This app needs access to your camera to take photos.",
-        "NSMicrophoneUsageDescription": "This app needs access to your microphone for audio features."
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -33,37 +30,24 @@
     },
     "web": {
       "favicon": "./assets/images/final_quest_240x240.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "static"
     },
     "plugins": [
       "expo-font",
       "expo-router",
-      "expo-web-browser",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "newArchEnabled": true
-          },
-          "android": {
-            "newArchEnabled": true
-          }
-        }
-      ]
+      "expo-web-browser"
     ],
     "scheme": "easybudget",
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "router": {
-        "origin": false
-      },
+      "router": {},
       "eas": {
         "projectId": "your-project-id"
-      },
-      "backendUrl": "https://wu7kwypubgksy89mk4h6tatrg56ateqy.app.specular.dev"
-    }
-  },
-  "scheme": "Easy Budget 2.0"
+      }
+    },
+    "owner": "anonymous"
+  }
 }
