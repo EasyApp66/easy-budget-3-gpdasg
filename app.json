@@ -61,7 +61,8 @@
       },
       "eas": {
         "projectId": "your-project-id"
-      }
+      },
+      "backendUrl": "https://wu7kwypubgksy89mk4h6tatrg56ateqy.app.specular.dev"
     }
   },
   "scheme": "Easy Budget 2.0"
