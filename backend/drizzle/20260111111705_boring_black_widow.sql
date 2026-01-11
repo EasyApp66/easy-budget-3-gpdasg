@@ -1,0 +1,1 @@
+-- This migration was removed as it attempted to drop tables unnecessarily
