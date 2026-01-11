@@ -60,8 +60,17 @@ export function usePremium() {
     monthCount: number,
     subscriptionCount: number
   ): boolean => {
-    if (isPremium) return false;
+    // Admin has unlimited access
+    if (user?.email === ADMIN_EMAIL) {
+      return false;
+    }
     
+    // Premium users have unlimited access
+    if (isPremium) {
+      return false;
+    }
+    
+    // Free users have limits
     return (
       expenseCount > 8 ||
       monthCount > 2 ||

@@ -230,6 +230,15 @@ export default function BudgetScreen() {
     const { type, itemId } = contextMenu;
 
     if (type === 'month' && itemId) {
+      // Check premium limit BEFORE duplicating
+      const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
+      if (checkLimit(totalExpenses, months.length + 1, 0)) {
+        setPendingAction({ type: 'month' });
+        setPremiumModalVisible(true);
+        setContextMenu({ visible: false, type: null, itemId: null });
+        return;
+      }
+      
       const month = months.find((m) => m.id === itemId);
       if (month) {
         const newMonth = {
@@ -241,6 +250,15 @@ export default function BudgetScreen() {
         setMonths([...months, newMonth]);
       }
     } else if (type === 'expense' && itemId) {
+      // Check premium limit BEFORE duplicating
+      const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
+      if (checkLimit(totalExpenses + 1, months.length, 0)) {
+        setPendingAction({ type: 'expense' });
+        setPremiumModalVisible(true);
+        setContextMenu({ visible: false, type: null, itemId: null });
+        return;
+      }
+      
       const expense = selectedMonth?.expenses.find((e) => e.id === itemId);
       if (expense) {
         const newExpense = {
@@ -281,46 +299,45 @@ export default function BudgetScreen() {
     if (type === 'cashLabel') {
       setCashLabel(value);
     } else if (type === 'cashValue') {
-      setMonths(
-        months.map((m) =>
-          m.id === selectedMonthId
-            ? { ...m, cash: parseFloat(value.replace(/'/g, '')) || 0 }
-            : m
-        )
+      const newMonths = months.map((m) =>
+        m.id === selectedMonthId
+          ? { ...m, cash: parseFloat(value.replace(/'/g, '')) || 0 }
+          : m
       );
+      setMonths(newMonths);
     } else if (type === 'name' && itemId) {
       if (contextMenu.type === 'month') {
-        setMonths(months.map((m) => (m.id === itemId ? { ...m, name: value } : m)));
+        const newMonths = months.map((m) => (m.id === itemId ? { ...m, name: value.toUpperCase() } : m));
+        setMonths(newMonths);
       } else {
-        setMonths(
-          months.map((m) =>
-            m.id === selectedMonthId
-              ? {
-                  ...m,
-                  expenses: m.expenses.map((e) =>
-                    e.id === itemId ? { ...e, name: value } : e
-                  ),
-                }
-              : m
-          )
-        );
-      }
-    } else if (type === 'amount' && itemId) {
-      setMonths(
-        months.map((m) =>
+        const newMonths = months.map((m) =>
           m.id === selectedMonthId
             ? {
                 ...m,
                 expenses: m.expenses.map((e) =>
-                  e.id === itemId ? { ...e, amount: parseFloat(value.replace(/'/g, '')) || 0 } : e
+                  e.id === itemId ? { ...e, name: value.toUpperCase() } : e
                 ),
               }
             : m
-        )
+        );
+        setMonths(newMonths);
+      }
+    } else if (type === 'amount' && itemId) {
+      const newMonths = months.map((m) =>
+        m.id === selectedMonthId
+          ? {
+              ...m,
+              expenses: m.expenses.map((e) =>
+                e.id === itemId ? { ...e, amount: parseFloat(value.replace(/'/g, '')) || 0 } : e
+              ),
+            }
+          : m
       );
+      setMonths(newMonths);
     }
 
     setEditModal({ visible: false, type: null, value: '', itemId: null });
+    setContextMenu({ visible: false, type: null, itemId: null });
   };
 
   const formatNumber = (num: number): string => {
@@ -716,6 +733,13 @@ export default function BudgetScreen() {
                 editModal.type === 'cashValue' || editModal.type === 'amount'
                   ? 'numeric'
                   : 'default'
+              }
+              placeholder={
+                editModal.type === 'name' 
+                  ? t.budget.namePlaceholder 
+                  : editModal.type === 'amount' || editModal.type === 'cashValue'
+                  ? t.budget.amountPlaceholder
+                  : ''
               }
               autoFocus
               placeholderTextColor={colors.darkGray}

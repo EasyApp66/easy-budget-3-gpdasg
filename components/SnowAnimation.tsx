@@ -51,10 +51,10 @@ const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) 
       )
     );
 
-    // Fade in and maintain visibility
+    // Fade in and maintain visibility - higher opacity for better visibility
     opacity.value = withDelay(
       delay,
-      withTiming(0.8, {
+      withTiming(0.9, {
         duration: 500,
         easing: Easing.inOut(Easing.ease),
       })
@@ -86,12 +86,12 @@ const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) 
 
 export const SnowAnimation: React.FC = () => {
   // Increase number of snowflakes and make them more visible
-  const snowflakes = Array.from({ length: 60 }, (_, i) => ({
+  const snowflakes = Array.from({ length: 80 }, (_, i) => ({
     id: i,
     delay: Math.random() * 5000,
-    duration: 10000 + Math.random() * 8000, // Slower falling
+    duration: 12000 + Math.random() * 10000, // Even slower falling for better visibility
     startX: Math.random() * SCREEN_WIDTH,
-    size: 5 + Math.random() * 7, // Larger snowflakes (5-12px)
+    size: 6 + Math.random() * 8, // Larger snowflakes (6-14px)
   }));
 
   return (
@@ -121,9 +121,9 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     shadowColor: '#FFFFFF',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 4,
-    elevation: 5, // For Android
+    shadowOpacity: 1,
+    shadowRadius: 6,
+    elevation: 8, // For Android - higher elevation for better visibility
   },
 });
 

@@ -330,9 +330,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 24,
-    width: '100%',
+    width: '90%',
     maxWidth: 500,
-    maxHeight: '80%',
+    maxHeight: '75%',
   },
   closeButton: {
     position: 'absolute',
@@ -351,16 +351,18 @@ const styles = StyleSheet.create({
   },
   modalScrollView: {
     flex: 1,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   modalScrollContent: {
     paddingRight: 8,
+    paddingBottom: 8,
   },
   modalText: {
     fontSize: 14,
     color: colors.white,
     lineHeight: 22,
     textAlign: 'left',
+    opacity: 1,
   },
   okButton: {
     backgroundColor: colors.neonGreen,
@@ -369,7 +371,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    marginBottom: Platform.OS === 'ios' ? 10 : 0,
+    marginTop: 4,
   },
   okButtonText: {
     fontSize: 18,

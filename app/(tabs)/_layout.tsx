@@ -18,6 +18,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter, usePathname } from 'expo-router';
 import { Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const styles = StyleSheet.create({
   tabBarContainer: {
@@ -202,6 +203,7 @@ function CustomTabBar() {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<'expense' | 'subscription' | null>(null);
   const [name, setName] = useState('');
@@ -280,13 +282,13 @@ function CustomTabBar() {
     
     // Validate input
     if (!name.trim()) {
-      Alert.alert('Fehler', 'Bitte geben Sie einen Namen ein.');
+      Alert.alert(t.common.error, modalType === 'expense' ? t.budget.expenseName : t.abos.subscriptionName);
       return;
     }
     
     const numericAmount = parseFloat(amount.replace(/'/g, ''));
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      Alert.alert('Fehler', 'Bitte geben Sie einen gültigen Betrag ein.');
+      Alert.alert(t.common.error, t.budget.amount);
       return;
     }
     
@@ -437,12 +439,12 @@ function CustomTabBar() {
               style={styles.modalContent}
             >
               <Text style={styles.modalTitle}>
-                {modalType === 'expense' ? 'Neue Ausgabe' : 'Neues Abo'}
+                {modalType === 'expense' ? t.budget.newExpense : t.abos.newSubscription}
               </Text>
               
               <TextInput
                 style={styles.input}
-                placeholder={modalType === 'expense' ? 'Name (z.B. ESSEN)' : 'Name (z.B. NETFLIX)'}
+                placeholder={modalType === 'expense' ? t.budget.namePlaceholder : t.abos.namePlaceholder}
                 placeholderTextColor="#666"
                 value={name}
                 onChangeText={setName}
@@ -451,7 +453,7 @@ function CustomTabBar() {
               
               <TextInput
                 style={styles.input}
-                placeholder="Betrag"
+                placeholder={modalType === 'expense' ? t.budget.amountPlaceholder : t.abos.amountPlaceholder}
                 placeholderTextColor="#666"
                 keyboardType="numeric"
                 value={amount}
@@ -464,7 +466,7 @@ function CustomTabBar() {
                   onPress={handleCancel}
                 >
                   <Text style={[styles.buttonText, styles.cancelButtonText]}>
-                    Abbrechen
+                    {t.common.cancel}
                   </Text>
                 </Pressable>
                 
@@ -473,7 +475,7 @@ function CustomTabBar() {
                   onPress={handleSave}
                 >
                   <Text style={[styles.buttonText, styles.saveButtonText]}>
-                    Hinzufügen
+                    {t.common.add}
                   </Text>
                 </Pressable>
               </View>
@@ -492,7 +494,7 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' },
-          animation: 'fade',
+          animation: 'shift',
         }}
       >
         <Tabs.Screen name="budget" />
