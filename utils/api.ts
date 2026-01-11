@@ -17,6 +17,32 @@
  * 3. Use apiGet(), apiPost(), etc. for convenience
  * 4. Use authenticatedApiCall() for requests requiring auth (token auto-retrieved)
  * 5. Backend URL is automatically configured in app.json when backend deploys
+ *
+ * Expected Backend Endpoints:
+ * 
+ * Authentication (handled by Better Auth):
+ * - POST /api/auth/sign-in/email - Email/password sign in
+ * - POST /api/auth/sign-up/email - Email/password sign up
+ * - GET /api/auth/session - Get current session
+ * - POST /api/auth/sign-out - Sign out
+ * - GET /api/auth/social/{provider} - OAuth sign in (google, apple, github)
+ * 
+ * Premium Management:
+ * - GET /api/premium/status - Check user's premium status
+ *   Response: { isPremium: boolean, expiresAt?: string }
+ * 
+ * Payment Processing:
+ * - POST /api/payments/stripe - Process Stripe payment (web/android)
+ *   Request: { type: 'onetime' | 'monthly', platform: string }
+ *   Response: { success: boolean, paymentUrl?: string, transactionId?: string, message?: string }
+ * 
+ * - POST /api/payments/apple-pay - Process Apple Pay payment (iOS)
+ *   Request: { type: 'onetime' | 'monthly', platform: string }
+ *   Response: { success: boolean, paymentUrl?: string, transactionId?: string, message?: string }
+ * 
+ * - POST /api/payments/donation - Process donation payment
+ *   Request: { amount: number, currency: string, platform: string }
+ *   Response: { success: boolean, paymentUrl?: string, transactionId?: string, message?: string }
  */
 
 import Constants from "expo-constants";
@@ -32,8 +58,10 @@ export const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || "";
 // Log backend configuration on module load
 if (BACKEND_URL) {
   console.log("[API] ✅ Backend URL configured:", BACKEND_URL);
+  console.log("[API] 📡 Ready to make API calls");
 } else {
   console.error("[API] ❌ Backend URL not configured! Check app.json");
+  console.error("[API] 💡 The app will work in offline mode until backend is configured");
 }
 
 /**

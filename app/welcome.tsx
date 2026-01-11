@@ -53,13 +53,13 @@ export default function WelcomeScreen() {
     return (
       <Pressable
         onPressIn={() => {
-          scale.value = withSpring(0.95);
+          scale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
           if (Platform.OS === 'ios') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
         }}
         onPressOut={() => {
-          scale.value = withSpring(1);
+          scale.value = withSpring(1, { damping: 15, stiffness: 300 });
         }}
         onPress={onPress}
       >
@@ -233,7 +233,15 @@ export default function WelcomeScreen() {
               <Text style={styles.modalText}>{legalContent.content}</Text>
             </ScrollView>
             
-            <Pressable style={styles.okButton} onPress={closeLegalModal}>
+            <Pressable 
+              style={styles.okButton} 
+              onPress={closeLegalModal}
+              onPressIn={() => {
+                if (Platform.OS === 'ios') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+              }}
+            >
               <Text style={styles.okButtonText}>{t.common.ok}</Text>
             </Pressable>
           </View>
@@ -360,6 +368,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+    marginBottom: Platform.OS === 'ios' ? 10 : 0,
   },
   okButtonText: {
     fontSize: 18,

@@ -1,8 +1,7 @@
-
 {
   "expo": {
-    "name": "EASY BUDGET 3.0",
-    "slug": "easy-budget-30",
+    "name": "Easy Budget 2.0",
+    "slug": "Easy Budget 2.0",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -46,8 +45,10 @@
       "router": {},
       "eas": {
         "projectId": "your-project-id"
-      }
+      },
+      "backendUrl": "https://wu7kwypubgksy89mk4h6tatrg56ateqy.app.specular.dev"
     },
     "owner": "anonymous"
-  }
+  },
+  "scheme": "Easy Budget 2.0"
 }

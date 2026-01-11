@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     width: 4,
     height: 28,
     backgroundColor: '#000000',
-    borderRadius: 3,
+    borderRadius: 2,
     left: 12,
     top: 0,
   },
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 4,
     backgroundColor: '#000000',
-    borderRadius: 3,
+    borderRadius: 2,
     left: 0,
     top: 12,
   },
@@ -461,6 +461,7 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' },
+          animation: 'fade',
         }}
       >
         <Tabs.Screen name="budget" />

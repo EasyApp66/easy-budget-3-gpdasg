@@ -11,6 +11,8 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  FadeIn,
+  FadeOut,
 } from 'react-native-reanimated';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter, usePathname } from 'expo-router';
@@ -429,7 +431,11 @@ function CustomTabBar() {
       >
         <Pressable style={styles.modalOverlay} onPress={handleCancel}>
           <Pressable onPress={(e) => e.stopPropagation()}>
-            <View style={styles.modalContent}>
+            <Animated.View 
+              entering={FadeIn.duration(200)}
+              exiting={FadeOut.duration(200)}
+              style={styles.modalContent}
+            >
               <Text style={styles.modalTitle}>
                 {modalType === 'expense' ? 'Neue Ausgabe' : 'Neues Abo'}
               </Text>
@@ -471,7 +477,7 @@ function CustomTabBar() {
                   </Text>
                 </Pressable>
               </View>
-            </View>
+            </Animated.View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -486,6 +492,7 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' },
+          animation: 'fade',
         }}
       >
         <Tabs.Screen name="budget" />
