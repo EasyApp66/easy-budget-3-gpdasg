@@ -21,7 +21,6 @@ import { StatusBar } from "expo-status-bar";
 import { WidgetProvider } from "@/contexts/WidgetContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { StorageProvider } from "@/contexts/StorageContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SnowAnimation } from "@/components/SnowAnimation";
 import { setupErrorLogging } from "@/utils/errorLogger";
@@ -98,11 +97,10 @@ export default function RootLayout() {
       >
         <LanguageProvider>
           <AuthProvider>
-            <StorageProvider>
-              <WidgetProvider>
-                <GestureHandlerRootView style={{ flex: 1 }}>
-                  <SnowAnimation />
-                  <Stack screenOptions={{ headerShown: false }}>
+            <WidgetProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <SnowAnimation />
+                <Stack screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="index" options={{ headerShown: false }} />
                   <Stack.Screen name="welcome" options={{ headerShown: false }} />
                   <Stack.Screen name="login" options={{ headerShown: false }} />
@@ -134,10 +132,9 @@ export default function RootLayout() {
                     }}
                   />
                 </Stack>
-                  <SystemBars style={"light"} />
-                </GestureHandlerRootView>
-              </WidgetProvider>
-            </StorageProvider>
+                <SystemBars style={"light"} />
+              </GestureHandlerRootView>
+            </WidgetProvider>
           </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>

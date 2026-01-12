@@ -509,9 +509,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 20,
-    flexDirection: 'column',
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'stretch',
+    alignItems: 'center',
     height: 120,
   },
   topPill: {
@@ -528,14 +528,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 1,
-    textAlign: 'left',
   },
   topPillValue: {
     color: colors.white,
     fontSize: 26,
     fontWeight: '800',
     textAlign: 'right',
-    alignSelf: 'flex-end',
   },
   subscriptionList: {
     gap: 12,

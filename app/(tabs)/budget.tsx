@@ -77,7 +77,7 @@ export default function BudgetScreen() {
     itemId: string | null;
   }>({ visible: false, type: null, value: '', itemId: null });
 
-  const [cashLabel, setCashLabel] = useState('BUDGET');
+  const [cashLabel, setCashLabel] = useState('CASH');
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: 'expense' | 'month'; id?: string } | null>(null);
 
@@ -733,7 +733,7 @@ const styles = StyleSheet.create({
   addMonthButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 18,
     backgroundColor: colors.neonGreen,
     justifyContent: 'center',
     alignItems: 'center',
@@ -744,8 +744,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     lineHeight: 24,
-    includeFontPadding: false,
-    textAlignVertical: 'center',
   },
   monthScrollView: {
     flex: 1,

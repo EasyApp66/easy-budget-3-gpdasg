@@ -59,7 +59,7 @@ export const translations = {
     // Budget Screen
     budget: {
       title: 'Budget',
-      cash: 'BUDGET',
+      cash: 'CASH',
       total: 'TOTAL',
       remaining: 'BLEIBT',
       expenses: 'Ausgaben',
@@ -106,7 +106,7 @@ export const translations = {
       title: 'Profil',
       username: 'Benutzername',
       editName: 'Namen bearbeiten',
-      language: 'Sprache',
+      language: 'Sprache ändern',
       currentLanguage: 'DE',
       premium: 'Premium kaufen',
       support: 'Support',
@@ -156,13 +156,13 @@ export const translations = {
     // Legal Pages
     legal: {
       termsTitle: 'Nutzungsbedingungen',
-      termsContent: 'Nutzungsbedingungen\n\n1. Allgemeine Bestimmungen\nDiese Nutzungsbedingungen regeln die Nutzung der EASY BUDGET App.\n\n2. Nutzungsrechte\nDurch die Nutzung der App erhalten Sie ein nicht-exklusives, nicht übertragbares Recht zur Nutzung.\n\n3. Datenschutz\nWir verpflichten uns, Ihre Daten gemäß unserer Datenschutzerklärung zu schützen.\n\n4. Haftungsausschluss\nDie App wird "wie besehen" bereitgestellt. Wir übernehmen keine Garantie für die Verfügbarkeit oder Fehlerfreiheit.\n\n5. Änderungen\nWir behalten uns das Recht vor, diese Bedingungen jederzeit zu ändern.\n\nKontakt: ivanmirosnic006@gmail.com',
+      termsContent: 'Nutzungsbedingungen\n\n1. Allgemeine Bestimmungen\nDiese Nutzungsbedingungen regeln die Nutzung der EASY BUDGET App.\n\n2. Nutzungsrechte\nDurch die Nutzung der App erhalten Sie ein nicht-exklusives, nicht übertragbares Recht zur Nutzung.\n\n3. Datenschutz\nWir verpflichten uns, Ihre Daten gemäß unserer Datenschutzerklärung zu schützen.\n\n4. Haftungsausschluss\nDie App wird "wie besehen" bereitgestellt. Wir übernehmen keine Garantie für die Verfügbarkeit oder Fehlerfreiheit.\n\n5. Änderungen\nWir behalten uns das Recht vor, diese Bedingungen jederzeit zu ändern.',
       privacyTitle: 'Datenschutzerklärung',
-      privacyContent: 'Datenschutzerklärung\n\n1. Datenerhebung\nWir erheben nur die notwendigsten Daten für die Funktionalität der App.\n\n2. Verwendung der Daten\nIhre Daten werden ausschließlich zur Bereitstellung unserer Dienste verwendet.\n\n3. Datenspeicherung\nAlle Daten werden sicher und verschlüsselt gespeichert.\n\n4. Weitergabe von Daten\nWir geben Ihre Daten nicht an Dritte weiter, außer wenn gesetzlich erforderlich.\n\n5. Ihre Rechte\nSie haben das Recht auf Auskunft, Berichtigung und Löschung Ihrer Daten.\n\n6. Kontakt\nBei Fragen zum Datenschutz kontaktieren Sie uns unter: ivanmirosnic006@gmail.com',
+      privacyContent: 'Datenschutzerklärung\n\n1. Datenerhebung\nWir erheben nur die notwendigsten Daten für die Funktionalität der App.\n\n2. Verwendung der Daten\nIhre Daten werden ausschließlich zur Bereitstellung unserer Dienste verwendet.\n\n3. Datenspeicherung\nAlle Daten werden sicher und verschlüsselt gespeichert.\n\n4. Weitergabe von Daten\nWir geben Ihre Daten nicht an Dritte weiter, außer wenn gesetzlich erforderlich.\n\n5. Ihre Rechte\nSie haben das Recht auf Auskunft, Berichtigung und Löschung Ihrer Daten.\n\n6. Kontakt\nBei Fragen zum Datenschutz kontaktieren Sie uns unter: privacy@easybudget.app',
       agbTitle: 'Allgemeine Geschäftsbedingungen',
-      agbContent: 'Allgemeine Geschäftsbedingungen (AGB)\n\n1. Geltungsbereich\nDiese AGB gelten für alle Verträge zwischen dem Nutzer und EASY BUDGET.\n\n2. Vertragsschluss\nDer Vertrag kommt mit der Registrierung in der App zustande.\n\n3. Leistungen\nWir bieten eine Budget- und Abo-Tracking-App mit verschiedenen Funktionen.\n\n4. Preise und Zahlung\nDie Preise für Premium-Funktionen sind in der App angegeben. Die Zahlung erfolgt über die jeweiligen App-Store-Zahlungsmethoden.\n\n5. Widerrufsrecht\nSie haben ein 14-tägiges Widerrufsrecht gemäß den gesetzlichen Bestimmungen.\n\n6. Gewährleistung\nEs gelten die gesetzlichen Gewährleistungsrechte.\n\nKontakt: ivanmirosnic006@gmail.com',
+      agbContent: 'Allgemeine Geschäftsbedingungen (AGB)\n\n1. Geltungsbereich\nDiese AGB gelten für alle Verträge zwischen dem Nutzer und EASY BUDGET.\n\n2. Vertragsschluss\nDer Vertrag kommt mit der Registrierung in der App zustande.\n\n3. Leistungen\nWir bieten eine Budget- und Abo-Tracking-App mit verschiedenen Funktionen.\n\n4. Preise und Zahlung\nDie Preise für Premium-Funktionen sind in der App angegeben. Die Zahlung erfolgt über die jeweiligen App-Store-Zahlungsmethoden.\n\n5. Widerrufsrecht\nSie haben ein 14-tägiges Widerrufsrecht gemäß den gesetzlichen Bestimmungen.\n\n6. Gewährleistung\nEs gelten die gesetzlichen Gewährleistungsrechte.',
       impressumTitle: 'Impressum',
-      impressumContent: 'Impressum\n\nEASY BUDGET 3.0\nVersion 1.0.0\n\nVerantwortlich für den Inhalt:\nEASY BUDGET Team\n\nKontakt:\nE-Mail: ivanmirosnic006@gmail.com\nSupport: ivanmirosnic006@gmail.com\n\nHaftungsausschluss:\nTrotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.',
+      impressumContent: 'Impressum\n\nEASY BUDGET 3.0\nVersion 1.0.0\n\nVerantwortlich für den Inhalt:\nEASY BUDGET Team\n\nKontakt:\nE-Mail: info@easybudget.app\nSupport: support@easybudget.app\n\nHaftungsausschluss:\nTrotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.',
     },
   },
   EN: {
@@ -222,7 +222,7 @@ export const translations = {
     // Budget Screen
     budget: {
       title: 'Budget',
-      cash: 'BUDGET',
+      cash: 'CASH',
       total: 'TOTAL',
       remaining: 'REMAINING',
       expenses: 'Expenses',
@@ -269,7 +269,7 @@ export const translations = {
       title: 'Profile',
       username: 'Username',
       editName: 'Edit Name',
-      language: 'Language',
+      language: 'Change Language',
       currentLanguage: 'EN',
       premium: 'Buy Premium',
       support: 'Support',
@@ -319,13 +319,13 @@ export const translations = {
     // Legal Pages
     legal: {
       termsTitle: 'Terms of Service',
-      termsContent: 'Terms of Service\n\n1. General Provisions\nThese Terms of Service govern the use of the EASY BUDGET app.\n\n2. Usage Rights\nBy using the app, you receive a non-exclusive, non-transferable right to use it.\n\n3. Privacy\nWe are committed to protecting your data in accordance with our Privacy Policy.\n\n4. Disclaimer\nThe app is provided "as is". We do not guarantee availability or error-free operation.\n\n5. Changes\nWe reserve the right to change these terms at any time.\n\nContact: ivanmirosnic006@gmail.com',
+      termsContent: 'Terms of Service\n\n1. General Provisions\nThese Terms of Service govern the use of the EASY BUDGET app.\n\n2. Usage Rights\nBy using the app, you receive a non-exclusive, non-transferable right to use it.\n\n3. Privacy\nWe are committed to protecting your data in accordance with our Privacy Policy.\n\n4. Disclaimer\nThe app is provided "as is". We do not guarantee availability or error-free operation.\n\n5. Changes\nWe reserve the right to change these terms at any time.',
       privacyTitle: 'Privacy Policy',
-      privacyContent: 'Privacy Policy\n\n1. Data Collection\nWe only collect the minimum necessary data for the app\'s functionality.\n\n2. Use of Data\nYour data is used exclusively to provide our services.\n\n3. Data Storage\nAll data is stored securely and encrypted.\n\n4. Data Sharing\nWe do not share your data with third parties unless legally required.\n\n5. Your Rights\nYou have the right to access, correct, and delete your data.\n\n6. Contact\nFor privacy questions, contact us at: ivanmirosnic006@gmail.com',
+      privacyContent: 'Privacy Policy\n\n1. Data Collection\nWe only collect the minimum necessary data for the app\'s functionality.\n\n2. Use of Data\nYour data is used exclusively to provide our services.\n\n3. Data Storage\nAll data is stored securely and encrypted.\n\n4. Data Sharing\nWe do not share your data with third parties unless legally required.\n\n5. Your Rights\nYou have the right to access, correct, and delete your data.\n\n6. Contact\nFor privacy questions, contact us at: privacy@easybudget.app',
       agbTitle: 'Terms and Conditions',
-      agbContent: 'Terms and Conditions\n\n1. Scope\nThese Terms and Conditions apply to all contracts between the user and EASY BUDGET.\n\n2. Contract Formation\nThe contract is formed upon registration in the app.\n\n3. Services\nWe provide a budget and subscription tracking app with various features.\n\n4. Prices and Payment\nPrices for premium features are displayed in the app. Payment is processed through the respective app store payment methods.\n\n5. Right of Withdrawal\nYou have a 14-day right of withdrawal in accordance with legal provisions.\n\n6. Warranty\nStatutory warranty rights apply.\n\nContact: ivanmirosnic006@gmail.com',
+      agbContent: 'Terms and Conditions\n\n1. Scope\nThese Terms and Conditions apply to all contracts between the user and EASY BUDGET.\n\n2. Contract Formation\nThe contract is formed upon registration in the app.\n\n3. Services\nWe provide a budget and subscription tracking app with various features.\n\n4. Prices and Payment\nPrices for premium features are displayed in the app. Payment is processed through the respective app store payment methods.\n\n5. Right of Withdrawal\nYou have a 14-day right of withdrawal in accordance with legal provisions.\n\n6. Warranty\nStatutory warranty rights apply.',
       impressumTitle: 'Imprint',
-      impressumContent: 'Imprint\n\nEASY BUDGET 3.0\nVersion 1.0.0\n\nResponsible for content:\nEASY BUDGET Team\n\nContact:\nEmail: ivanmirosnic006@gmail.com\nSupport: ivanmirosnic006@gmail.com\n\nDisclaimer:\nDespite careful content control, we assume no liability for the content of external links. The operators of the linked pages are solely responsible for their content.',
+      impressumContent: 'Imprint\n\nEASY BUDGET 3.0\nVersion 1.0.0\n\nResponsible for content:\nEASY BUDGET Team\n\nContact:\nEmail: info@easybudget.app\nSupport: support@easybudget.app\n\nDisclaimer:\nDespite careful content control, we assume no liability for the content of external links. The operators of the linked pages are solely responsible for their content.',
     },
   },
 };

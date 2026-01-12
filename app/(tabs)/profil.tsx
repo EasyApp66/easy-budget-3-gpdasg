@@ -34,8 +34,6 @@ const colors = {
   red: '#C43C3E',
 };
 
-const SUPPORT_EMAIL = 'ivanmirosnic006@gmail.com';
-
 interface SettingsItemProps {
   iosIcon: string;
   androidIcon: string;
@@ -202,7 +200,7 @@ export default function ProfilScreen() {
       const isAvailable = await MailComposer.isAvailableAsync();
       if (isAvailable) {
         await MailComposer.composeAsync({
-          recipients: [SUPPORT_EMAIL],
+          recipients: ['support@easybudget.app'],
           subject: `Bug Report - EASY BUDGET`,
           body: `Bug Description:\n\n${bugDescription}\n\n---\nUser: ${username}\nVersion: 1.0.0\nPlatform: ${Platform.OS}`,
         });
@@ -249,7 +247,7 @@ export default function ProfilScreen() {
       const isAvailable = await MailComposer.isAvailableAsync();
       if (isAvailable) {
         await MailComposer.composeAsync({
-          recipients: [SUPPORT_EMAIL],
+          recipients: ['support@easybudget.app'],
           subject: language === 'DE' ? 'Support Anfrage - EASY BUDGET' : 'Support Request - EASY BUDGET',
           body: language === 'DE' ? `Hallo Support Team,\n\n` : `Hello Support Team,\n\n`,
         });
@@ -269,7 +267,7 @@ export default function ProfilScreen() {
       const isAvailable = await MailComposer.isAvailableAsync();
       if (isAvailable) {
         await MailComposer.composeAsync({
-          recipients: [SUPPORT_EMAIL],
+          recipients: ['feedback@easybudget.app'],
           subject: language === 'DE' ? 'Vorschlag - EASY BUDGET' : 'Suggestion - EASY BUDGET',
           body: language === 'DE' ? `Mein Vorschlag:\n\n` : `My suggestion:\n\n`,
         });
