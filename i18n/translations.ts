@@ -77,8 +77,6 @@ export const translations = {
       pin: 'Fixieren',
       unpin: 'Lösen',
       save: 'Speichern',
-      namePlaceholder: 'Name (z.B. ESSEN)',
-      amountPlaceholder: 'Betrag (z.B. 100)',
     },
     // Abos Screen
     abos: {
@@ -242,8 +240,6 @@ export const translations = {
       pin: 'Pin',
       unpin: 'Unpin',
       save: 'Save',
-      namePlaceholder: 'Name (e.g. FOOD)',
-      amountPlaceholder: 'Amount (e.g. 100)',
     },
     // Abos Screen
     abos: {

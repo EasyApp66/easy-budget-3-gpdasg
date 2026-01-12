@@ -10,20 +10,17 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { GestureHandlerRootView, GestureDetector, Gesture } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useStorage } from '@/contexts/StorageContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
   runOnJS,
-  Easing,
 } from 'react-native-reanimated';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { usePremium } from '@/hooks/usePremium';
@@ -46,15 +43,11 @@ interface Subscription {
 export default function AbosScreen() {
   const router = useRouter();
   const { isPremium, checkLimit } = usePremium();
-  const storage = useStorage();
-  const { t } = useLanguage();
   
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>(storage.subscriptions);
-
-  // Auto-save to storage whenever data changes
-  useEffect(() => {
-    storage.setSubscriptions(subscriptions);
-  }, [subscriptions]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([
+    { id: '1', name: 'NETFLIX', monthlyCost: 15, isPinned: true },
+    { id: '2', name: 'APPLE CARE', monthlyCost: 14, isPinned: false },
+  ]);
 
   const [contextMenuVisible, setContextMenuVisible] = useState(false);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
@@ -162,7 +155,7 @@ export default function AbosScreen() {
 
   const saveNewSubscription = () => {
     if (!newSubName.trim() || !newSubAmount.trim()) {
-      Alert.alert(t.common.error, t.abos.errorAllFields);
+      Alert.alert('Fehler', 'Bitte fülle alle Felder aus.');
       return;
     }
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -236,9 +229,9 @@ export default function AbosScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    // TODO: Backend Integration - POST /api/payments/apple-pay or /api/payments/stripe
+    // TODO: Backend Integration - Process premium purchase via Stripe
     console.log(`Premium purchase: ${type}`);
-    Alert.alert(t.common.success, 'Premium wurde aktiviert! (Placeholder - Payment Integration folgt)');
+    Alert.alert('Erfolg!', 'Premium wurde aktiviert! (Placeholder - Stripe Integration folgt)');
     setPremiumModalVisible(false);
     setPendingSubId(null);
   };
@@ -270,60 +263,37 @@ export default function AbosScreen() {
     const panGesture = Gesture.Pan()
       .onUpdate((event) => {
         translateX.value = event.translationX;
-        // Smoother fade out when swiping
+        // Fade out when swiping
         if (Math.abs(event.translationX) > 50) {
-          opacity.value = Math.max(0.3, 1 - Math.abs(event.translationX) / 300);
+          opacity.value = 1 - Math.abs(event.translationX) / 200;
         }
       })
       .onEnd((event) => {
         if (event.translationX < -100) {
-          // Swipe left to delete - smoother slide out animation with cubic easing
-          translateX.value = withTiming(-500, { 
-            duration: 300, 
-            easing: Easing.out(Easing.cubic) 
-          });
-          opacity.value = withTiming(0, { 
-            duration: 300, 
-            easing: Easing.out(Easing.cubic) 
-          }, () => {
+          // Swipe left to delete - slide out animation
+          translateX.value = withTiming(-500, { duration: 300 });
+          opacity.value = withTiming(0, { duration: 300 }, () => {
             runOnJS(handleDeleteSub)(subscription.id);
           });
         } else if (event.translationX > 100) {
-          // Swipe right to pin/unpin - smoother slide animation with spring
+          // Swipe right to pin/unpin - slide animation
           runOnJS(handlePinToggle)(subscription.id);
-          translateX.value = withSpring(0, { 
-            damping: 25, 
-            stiffness: 250,
-            mass: 0.5,
-          });
-          opacity.value = withSpring(1, { 
-            damping: 25, 
-            stiffness: 250,
-            mass: 0.5,
-          });
+          translateX.value = withSpring(0);
+          opacity.value = withSpring(1);
         } else {
-          // Snap back with smoother spring
-          translateX.value = withSpring(0, { 
-            damping: 25, 
-            stiffness: 250,
-            mass: 0.5,
-          });
-          opacity.value = withSpring(1, { 
-            damping: 25, 
-            stiffness: 250,
-            mass: 0.5,
-          });
+          translateX.value = withSpring(0);
+          opacity.value = withSpring(1);
         }
       });
 
     const longPressGesture = Gesture.LongPress()
       .minDuration(600)
       .onStart(() => {
-        scale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
+        scale.value = withSpring(0.95);
         runOnJS(handleLongPress)(subscription.id);
       })
       .onEnd(() => {
-        scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+        scale.value = withSpring(1);
       });
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -364,12 +334,12 @@ export default function AbosScreen() {
           {/* Top Pills */}
           <View style={styles.topPillsContainer}>
             <View style={styles.topPillLarge}>
-              <Text style={styles.topPillLabel}>{t.abos.totalMonthly}</Text>
+              <Text style={styles.topPillLabel}>ABO KOSTEN</Text>
               <Text style={styles.topPillValue}>{totalCost}</Text>
             </View>
 
             <View style={styles.topPill}>
-              <Text style={styles.topPillLabel}>{t.abos.totalCount}</Text>
+              <Text style={styles.topPillLabel}>TOTAL</Text>
               <Text style={styles.topPillValue}>{totalCount}</Text>
             </View>
           </View>
@@ -383,7 +353,7 @@ export default function AbosScreen() {
 
           {/* Swipe Hint */}
           <Text style={styles.swipeHint}>
-            {t.abos.swipeHint}
+            ← Wischen zum Löschen · Wischen zum Fixieren →
           </Text>
         </ScrollView>
 
@@ -403,7 +373,7 @@ export default function AbosScreen() {
                   if (sub) openEditModal('name', sub.id, sub.name);
                 }}
               >
-                <Text style={styles.contextMenuText}>{t.abos.edit}</Text>
+                <Text style={styles.contextMenuText}>Namen anpassen</Text>
               </Pressable>
 
               <Pressable
@@ -413,16 +383,16 @@ export default function AbosScreen() {
                   if (sub) openEditModal('amount', sub.id, sub.monthlyCost.toString());
                 }}
               >
-                <Text style={styles.contextMenuText}>{t.abos.editAmount}</Text>
+                <Text style={styles.contextMenuText}>Zahl anpassen</Text>
               </Pressable>
 
               <Pressable style={styles.contextMenuItem} onPress={handleDuplicate}>
-                <Text style={styles.contextMenuText}>{t.abos.duplicate}</Text>
+                <Text style={styles.contextMenuText}>Duplizieren</Text>
               </Pressable>
 
               <Pressable style={styles.contextMenuItem} onPress={() => handlePinToggle()}>
                 <Text style={styles.contextMenuText}>
-                  {getSelectedSubPinStatus() ? t.abos.unpin : t.abos.pin}
+                  {getSelectedSubPinStatus() ? 'Lösen' : 'Fixieren'}
                 </Text>
               </Pressable>
 
@@ -433,14 +403,14 @@ export default function AbosScreen() {
                   setContextMenuVisible(false);
                 }}
               >
-                <Text style={[styles.contextMenuText, { color: colors.red }]}>{t.abos.delete}</Text>
+                <Text style={[styles.contextMenuText, { color: colors.red }]}>Löschen</Text>
               </Pressable>
 
               <Pressable
                 style={[styles.contextMenuItem, styles.contextMenuItemLast]}
                 onPress={() => setContextMenuVisible(false)}
               >
-                <Text style={styles.contextMenuText}>{t.abos.cancel}</Text>
+                <Text style={styles.contextMenuText}>Abbrechen</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -456,19 +426,19 @@ export default function AbosScreen() {
           <Pressable style={styles.modalOverlay} onPress={() => setEditModalVisible(false)}>
             <View style={styles.editModal}>
               <Text style={styles.editModalTitle}>
-                {editType === 'name' ? t.abos.edit : t.abos.editAmount}
+                {editType === 'name' ? 'Namen anpassen' : 'Zahl anpassen'}
               </Text>
               <TextInput
                 style={styles.editInput}
                 value={editValue}
                 onChangeText={setEditValue}
-                placeholder={editType === 'name' ? t.abos.namePlaceholder : t.abos.amountPlaceholder}
+                placeholder={editType === 'name' ? 'Name' : 'Betrag'}
                 placeholderTextColor="#666"
                 keyboardType={editType === 'amount' ? 'numeric' : 'default'}
                 autoFocus
               />
               <Pressable style={styles.saveButton} onPress={saveEdit}>
-                <Text style={styles.saveButtonText}>{t.abos.save}</Text>
+                <Text style={styles.saveButtonText}>Speichern</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -483,12 +453,12 @@ export default function AbosScreen() {
         >
           <Pressable style={styles.modalOverlay} onPress={() => setAddModalVisible(false)}>
             <View style={styles.editModal}>
-              <Text style={styles.editModalTitle}>{t.abos.newSubscription}</Text>
+              <Text style={styles.editModalTitle}>Neues Abo hinzufügen</Text>
               <TextInput
                 style={styles.editInput}
                 value={newSubName}
                 onChangeText={setNewSubName}
-                placeholder={t.abos.namePlaceholder}
+                placeholder="Name (z.B. SPOTIFY)"
                 placeholderTextColor="#666"
                 autoFocus
               />
@@ -496,12 +466,12 @@ export default function AbosScreen() {
                 style={styles.editInput}
                 value={newSubAmount}
                 onChangeText={setNewSubAmount}
-                placeholder={t.abos.amountPlaceholder}
+                placeholder="Betrag (z.B. 10)"
                 placeholderTextColor="#666"
                 keyboardType="numeric"
               />
               <Pressable style={styles.saveButton} onPress={saveNewSubscription}>
-                <Text style={styles.saveButtonText}>{t.abos.add}</Text>
+                <Text style={styles.saveButtonText}>Hinzufügen</Text>
               </Pressable>
             </View>
           </Pressable>

@@ -11,14 +11,11 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-  FadeIn,
-  FadeOut,
 } from 'react-native-reanimated';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter, usePathname } from 'expo-router';
 import { Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 const styles = StyleSheet.create({
   tabBarContainer: {
@@ -203,7 +200,6 @@ function CustomTabBar() {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useLanguage();
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<'expense' | 'subscription' | null>(null);
   const [name, setName] = useState('');
@@ -282,13 +278,13 @@ function CustomTabBar() {
     
     // Validate input
     if (!name.trim()) {
-      Alert.alert(t.common.error, modalType === 'expense' ? t.budget.expenseName : t.abos.subscriptionName);
+      Alert.alert('Fehler', 'Bitte geben Sie einen Namen ein.');
       return;
     }
     
     const numericAmount = parseFloat(amount.replace(/'/g, ''));
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      Alert.alert(t.common.error, t.budget.amount);
+      Alert.alert('Fehler', 'Bitte geben Sie einen gültigen Betrag ein.');
       return;
     }
     
@@ -433,18 +429,14 @@ function CustomTabBar() {
       >
         <Pressable style={styles.modalOverlay} onPress={handleCancel}>
           <Pressable onPress={(e) => e.stopPropagation()}>
-            <Animated.View 
-              entering={FadeIn.duration(200)}
-              exiting={FadeOut.duration(200)}
-              style={styles.modalContent}
-            >
+            <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>
-                {modalType === 'expense' ? t.budget.newExpense : t.abos.newSubscription}
+                {modalType === 'expense' ? 'Neue Ausgabe' : 'Neues Abo'}
               </Text>
               
               <TextInput
                 style={styles.input}
-                placeholder={modalType === 'expense' ? t.budget.namePlaceholder : t.abos.namePlaceholder}
+                placeholder={modalType === 'expense' ? 'Name (z.B. ESSEN)' : 'Name (z.B. NETFLIX)'}
                 placeholderTextColor="#666"
                 value={name}
                 onChangeText={setName}
@@ -453,7 +445,7 @@ function CustomTabBar() {
               
               <TextInput
                 style={styles.input}
-                placeholder={modalType === 'expense' ? t.budget.amountPlaceholder : t.abos.amountPlaceholder}
+                placeholder="Betrag"
                 placeholderTextColor="#666"
                 keyboardType="numeric"
                 value={amount}
@@ -466,7 +458,7 @@ function CustomTabBar() {
                   onPress={handleCancel}
                 >
                   <Text style={[styles.buttonText, styles.cancelButtonText]}>
-                    {t.common.cancel}
+                    Abbrechen
                   </Text>
                 </Pressable>
                 
@@ -475,11 +467,11 @@ function CustomTabBar() {
                   onPress={handleSave}
                 >
                   <Text style={[styles.buttonText, styles.saveButtonText]}>
-                    {t.common.add}
+                    Hinzufügen
                   </Text>
                 </Pressable>
               </View>
-            </Animated.View>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -494,7 +486,6 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' },
-          animation: 'shift',
         }}
       >
         <Tabs.Screen name="budget" />

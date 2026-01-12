@@ -139,70 +139,14 @@ export default function ProfilScreen() {
     setPremiumModalVisible(true);
   };
 
-  const handlePurchasePremium = async (type: 'onetime' | 'monthly') => {
+  const handlePurchasePremium = (type: 'onetime' | 'monthly') => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    
-    console.log(`[Profile] Initiating premium purchase: ${type}`);
-    
-    try {
-      // Import API utilities
-      const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
-      
-      if (!BACKEND_URL) {
-        console.warn('[Profile] Backend URL not configured');
-        Alert.alert(t.common.error, language === 'DE' ? 'Backend nicht konfiguriert' : 'Backend not configured');
-        return;
-      }
-
-      // Determine payment endpoint based on platform
-      const endpoint = Platform.OS === 'ios' 
-        ? '/api/payments/apple-pay' 
-        : '/api/payments/stripe';
-
-      console.log(`[Profile] Calling payment endpoint: ${endpoint}`);
-
-      // Call backend to initiate payment
-      const response = await authenticatedPost<{
-        success: boolean;
-        paymentUrl?: string;
-        transactionId?: string;
-        message?: string;
-      }>(endpoint, {
-        type,
-        platform: Platform.OS,
-      });
-
-      console.log('[Profile] Payment response:', response);
-
-      if (response.success) {
-        Alert.alert(
-          t.common.success,
-          language === 'DE' ? 'Premium wurde aktiviert!' : 'Premium activated!'
-        );
-        setPremiumModalVisible(false);
-      } else {
-        Alert.alert(t.common.error, response.message || (language === 'DE' ? 'Zahlung fehlgeschlagen' : 'Payment failed'));
-      }
-    } catch (error: any) {
-      console.error('[Profile] Premium purchase error:', error);
-      
-      // Check if it's a 404 (endpoint doesn't exist yet)
-      if (error.message?.includes('404')) {
-        Alert.alert(
-          language === 'DE' ? 'In Entwicklung' : 'In Development',
-          language === 'DE' 
-            ? 'Premium-Zahlungen werden bald verfügbar sein.' 
-            : 'Premium payments will be available soon.'
-        );
-      } else {
-        Alert.alert(
-          t.common.error,
-          language === 'DE' ? 'Zahlung fehlgeschlagen' : 'Payment failed'
-        );
-      }
-    }
+    // TODO: Backend Integration - Process premium purchase via Stripe
+    console.log(`Premium purchase: ${type}`);
+    Alert.alert(t.common.success, 'Premium activated! (Placeholder - Stripe Integration coming)');
+    setPremiumModalVisible(false);
   };
 
   const handlePremiumClose = () => {
@@ -274,73 +218,27 @@ export default function ProfilScreen() {
     setBugDescription('');
   };
 
-  const processDonation = async () => {
+  const processDonation = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    
     const amount = customDonation || selectedDonation.toString();
-    console.log(`[Profile] Processing donation: CHF ${amount}`);
-    
-    try {
-      // Import API utilities
-      const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
-      
-      if (!BACKEND_URL) {
-        console.warn('[Profile] Backend URL not configured');
-        Alert.alert(t.common.error, language === 'DE' ? 'Backend nicht konfiguriert' : 'Backend not configured');
-        return;
-      }
-
-      console.log('[Profile] Calling donation endpoint: /api/payments/donation');
-
-      // Call backend to process donation
-      // Expected request body: { amount: number, currency: string, platform: string }
-      // Expected response: { success: boolean, paymentUrl?: string, transactionId?: string }
-      const response = await authenticatedPost<{
-        success: boolean;
-        paymentUrl?: string;
-        transactionId?: string;
-        message?: string;
-      }>('/api/payments/donation', {
-        amount: parseFloat(amount),
-        currency: 'CHF',
-        platform: Platform.OS,
-      });
-
-      console.log('[Profile] Donation response:', response);
-
-      if (response.success) {
-        Alert.alert(
-          language === 'DE' ? 'Danke!' : 'Thank you!',
-          language === 'DE' 
-            ? `Deine Spende von CHF ${amount}.00 wurde verarbeitet!` 
-            : `Your donation of CHF ${amount}.00 has been processed!`
-        );
-        setDonateModalVisible(false);
-        setCustomDonation('');
-        setSelectedDonation(5);
-      } else {
-        Alert.alert(t.common.error, response.message || (language === 'DE' ? 'Spende fehlgeschlagen' : 'Donation failed'));
-      }
-    } catch (error: any) {
-      console.error('[Profile] Donation error:', error);
-      
-      // Check if it's a 404 (endpoint doesn't exist yet)
-      if (error.message?.includes('404')) {
-        Alert.alert(
-          language === 'DE' ? 'In Entwicklung' : 'In Development',
-          language === 'DE' 
-            ? 'Spenden werden bald verfügbar sein. Die Backend-Integration ist noch in Arbeit.' 
-            : 'Donations will be available soon. Backend integration is still in progress.'
-        );
-      } else {
-        Alert.alert(
-          t.common.error,
-          language === 'DE' ? 'Spende fehlgeschlagen' : 'Donation failed'
-        );
-      }
-    }
+    Alert.alert(
+      language === 'DE' ? 'Danke!' : 'Thank you!',
+      language === 'DE' ? `Deine Spende von CHF ${amount}.00 wird verarbeitet.` : `Your donation of CHF ${amount}.00 is being processed.`,
+      [
+        {
+          text: t.common.ok,
+          onPress: () => {
+            // TODO: Backend Integration - Process donation payment
+            console.log(`Process donation: CHF ${amount}`);
+            setDonateModalVisible(false);
+            setCustomDonation('');
+            setSelectedDonation(5);
+          },
+        },
+      ]
+    );
   };
 
   const handleSupport = async () => {

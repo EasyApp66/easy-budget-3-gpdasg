@@ -53,13 +53,13 @@ export default function WelcomeScreen() {
     return (
       <Pressable
         onPressIn={() => {
-          scale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
+          scale.value = withSpring(0.95);
           if (Platform.OS === 'ios') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
         }}
         onPressOut={() => {
-          scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+          scale.value = withSpring(1);
         }}
         onPress={onPress}
       >
@@ -233,15 +233,7 @@ export default function WelcomeScreen() {
               <Text style={styles.modalText}>{legalContent.content}</Text>
             </ScrollView>
             
-            <Pressable 
-              style={styles.okButton} 
-              onPress={closeLegalModal}
-              onPressIn={() => {
-                if (Platform.OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-              }}
-            >
+            <Pressable style={styles.okButton} onPress={closeLegalModal}>
               <Text style={styles.okButtonText}>{t.common.ok}</Text>
             </Pressable>
           </View>
@@ -330,9 +322,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 24,
-    width: '90%',
+    width: '100%',
     maxWidth: 500,
-    maxHeight: '75%',
+    maxHeight: '80%',
   },
   closeButton: {
     position: 'absolute',
@@ -351,18 +343,16 @@ const styles = StyleSheet.create({
   },
   modalScrollView: {
     flex: 1,
-    marginBottom: 16,
+    marginBottom: 20,
   },
   modalScrollContent: {
     paddingRight: 8,
-    paddingBottom: 8,
   },
   modalText: {
     fontSize: 14,
     color: colors.white,
     lineHeight: 22,
     textAlign: 'left',
-    opacity: 1,
   },
   okButton: {
     backgroundColor: colors.neonGreen,
@@ -370,8 +360,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
-    marginTop: 4,
   },
   okButtonText: {
     fontSize: 18,

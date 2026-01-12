@@ -12,11 +12,9 @@ import {
   Dimensions,
 } from 'react-native';
 import { colors } from '@/styles/commonStyles';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { usePremium } from '@/hooks/usePremium';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useStorage } from '@/contexts/StorageContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -42,26 +40,30 @@ interface Month {
 
 export default function BudgetScreen() {
   const { isPremium, checkLimit } = usePremium();
-  const storage = useStorage();
-  const { t } = useLanguage();
   
-  const [months, setMonths] = useState<Month[]>(storage.months);
-  const [selectedMonthId, setSelectedMonthId] = useState(storage.selectedMonthId);
-  const [cashLabel, setCashLabel] = useState(storage.cashLabel);
+  const [months, setMonths] = useState<Month[]>([
+    {
+      id: '1',
+      name: 'JHZFJH',
+      isPinned: true,
+      cash: 93838,
+      expenses: [
+        { id: '1', name: 'ESSEN', amount: 250, isPinned: true },
+        { id: '2', name: 'MIETE', amount: 2005, isPinned: false },
+        { id: '3', name: 'PARKPLATZ', amount: 150, isPinned: false },
+        { id: '4', name: 'KLEIDER', amount: 120, isPinned: false },
+      ],
+    },
+    {
+      id: '2',
+      name: 'KEJNEND',
+      isPinned: false,
+      cash: 0,
+      expenses: [],
+    },
+  ]);
 
-  // Auto-save to storage whenever data changes
-  useEffect(() => {
-    storage.setMonths(months);
-  }, [months]);
-
-  useEffect(() => {
-    storage.setSelectedMonthId(selectedMonthId);
-  }, [selectedMonthId]);
-
-  useEffect(() => {
-    storage.setCashLabel(cashLabel);
-  }, [cashLabel]);
-
+  const [selectedMonthId, setSelectedMonthId] = useState('1');
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     type: 'month' | 'expense' | null;
@@ -75,6 +77,7 @@ export default function BudgetScreen() {
     itemId: string | null;
   }>({ visible: false, type: null, value: '', itemId: null });
 
+  const [cashLabel, setCashLabel] = useState('BUDGET');
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: 'expense' | 'month'; id?: string } | null>(null);
 
@@ -230,15 +233,6 @@ export default function BudgetScreen() {
     const { type, itemId } = contextMenu;
 
     if (type === 'month' && itemId) {
-      // Check premium limit BEFORE duplicating
-      const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
-      if (checkLimit(totalExpenses, months.length + 1, 0)) {
-        setPendingAction({ type: 'month' });
-        setPremiumModalVisible(true);
-        setContextMenu({ visible: false, type: null, itemId: null });
-        return;
-      }
-      
       const month = months.find((m) => m.id === itemId);
       if (month) {
         const newMonth = {
@@ -250,15 +244,6 @@ export default function BudgetScreen() {
         setMonths([...months, newMonth]);
       }
     } else if (type === 'expense' && itemId) {
-      // Check premium limit BEFORE duplicating
-      const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
-      if (checkLimit(totalExpenses + 1, months.length, 0)) {
-        setPendingAction({ type: 'expense' });
-        setPremiumModalVisible(true);
-        setContextMenu({ visible: false, type: null, itemId: null });
-        return;
-      }
-      
       const expense = selectedMonth?.expenses.find((e) => e.id === itemId);
       if (expense) {
         const newExpense = {
@@ -299,115 +284,61 @@ export default function BudgetScreen() {
     if (type === 'cashLabel') {
       setCashLabel(value);
     } else if (type === 'cashValue') {
-      const newMonths = months.map((m) =>
-        m.id === selectedMonthId
-          ? { ...m, cash: parseFloat(value.replace(/'/g, '')) || 0 }
-          : m
+      setMonths(
+        months.map((m) =>
+          m.id === selectedMonthId
+            ? { ...m, cash: parseFloat(value.replace(/'/g, '')) || 0 }
+            : m
+        )
       );
-      setMonths(newMonths);
     } else if (type === 'name' && itemId) {
       if (contextMenu.type === 'month') {
-        const newMonths = months.map((m) => (m.id === itemId ? { ...m, name: value.toUpperCase() } : m));
-        setMonths(newMonths);
+        setMonths(months.map((m) => (m.id === itemId ? { ...m, name: value } : m)));
       } else {
-        const newMonths = months.map((m) =>
+        setMonths(
+          months.map((m) =>
+            m.id === selectedMonthId
+              ? {
+                  ...m,
+                  expenses: m.expenses.map((e) =>
+                    e.id === itemId ? { ...e, name: value } : e
+                  ),
+                }
+              : m
+          )
+        );
+      }
+    } else if (type === 'amount' && itemId) {
+      setMonths(
+        months.map((m) =>
           m.id === selectedMonthId
             ? {
                 ...m,
                 expenses: m.expenses.map((e) =>
-                  e.id === itemId ? { ...e, name: value.toUpperCase() } : e
+                  e.id === itemId ? { ...e, amount: parseFloat(value.replace(/'/g, '')) || 0 } : e
                 ),
               }
             : m
-        );
-        setMonths(newMonths);
-      }
-    } else if (type === 'amount' && itemId) {
-      const newMonths = months.map((m) =>
-        m.id === selectedMonthId
-          ? {
-              ...m,
-              expenses: m.expenses.map((e) =>
-                e.id === itemId ? { ...e, amount: parseFloat(value.replace(/'/g, '')) || 0 } : e
-              ),
-            }
-          : m
+        )
       );
-      setMonths(newMonths);
     }
 
     setEditModal({ visible: false, type: null, value: '', itemId: null });
-    setContextMenu({ visible: false, type: null, itemId: null });
   };
 
   const formatNumber = (num: number): string => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
   };
 
-  const handlePremiumPurchase = async (type: 'onetime' | 'monthly') => {
+  const handlePremiumPurchase = (type: 'onetime' | 'monthly') => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    
-    console.log(`[Budget] Initiating premium purchase: ${type}`);
-    
-    try {
-      // Import API utilities
-      const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
-      
-      if (!BACKEND_URL) {
-        console.warn('[Budget] Backend URL not configured');
-        Alert.alert(t.common.error, 'Backend nicht konfiguriert. Bitte App neu starten.');
-        return;
-      }
-
-      // Determine payment endpoint based on platform
-      // iOS: Use Apple Pay / In-App Purchase
-      // Android/Web: Use Stripe
-      const endpoint = Platform.OS === 'ios' 
-        ? '/api/payments/apple-pay' 
-        : '/api/payments/stripe';
-
-      console.log(`[Budget] Calling payment endpoint: ${endpoint}`);
-
-      // Call backend to initiate payment
-      // Expected request body: { type: 'onetime' | 'monthly', platform: string }
-      // Expected response: { success: boolean, paymentUrl?: string, transactionId?: string }
-      const response = await authenticatedPost<{
-        success: boolean;
-        paymentUrl?: string;
-        transactionId?: string;
-        message?: string;
-      }>(endpoint, {
-        type,
-        platform: Platform.OS,
-      });
-
-      console.log('[Budget] Payment response:', response);
-
-      if (response.success) {
-        Alert.alert(t.common.success, 'Premium wurde aktiviert!');
-        setPremiumModalVisible(false);
-        setPendingAction(null);
-        
-        // Refresh premium status
-        // The usePremium hook will automatically refresh when user changes
-      } else {
-        Alert.alert(t.common.error, response.message || 'Zahlung fehlgeschlagen');
-      }
-    } catch (error: any) {
-      console.error('[Budget] Premium purchase error:', error);
-      
-      // Check if it's a 404 (endpoint doesn't exist yet)
-      if (error.message?.includes('404')) {
-        Alert.alert(
-          'In Entwicklung',
-          'Premium-Zahlungen werden bald verfügbar sein. Die Backend-Integration ist noch in Arbeit.'
-        );
-      } else {
-        Alert.alert(t.common.error, 'Zahlung fehlgeschlagen. Bitte versuche es später erneut.');
-      }
-    }
+    // TODO: Backend Integration - Process premium purchase via Stripe
+    console.log(`Premium purchase: ${type}`);
+    Alert.alert('Erfolg!', 'Premium wurde aktiviert! (Placeholder - Stripe Integration folgt)');
+    setPremiumModalVisible(false);
+    setPendingAction(null);
   };
 
   const handlePremiumClose = () => {
@@ -603,20 +534,9 @@ export default function BudgetScreen() {
 
         {/* Month Row with Sticky Add Button */}
         <View style={styles.monthRowContainer}>
-          {/* Sticky Add Month Button with rounded cross */}
-          <Pressable 
-            onPress={handleAddMonth} 
-            style={styles.addMonthButton}
-            onPressIn={() => {
-              if (Platform.OS === 'ios' || Platform.OS === 'android') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-            }}
-          >
-            <View style={styles.plusIconContainer}>
-              <View style={styles.plusVertical} />
-              <View style={styles.plusHorizontal} />
-            </View>
+          {/* Sticky Add Month Button */}
+          <Pressable onPress={handleAddMonth} style={styles.addMonthButton}>
+            <Text style={styles.addMonthText}>+</Text>
           </Pressable>
 
           {/* Scrollable Month Pills */}
@@ -662,7 +582,7 @@ export default function BudgetScreen() {
                 openEditModal('name', contextMenu.itemId, item?.name || '');
               }}
             >
-              <Text style={styles.menuItemText}>{t.budget.edit}</Text>
+              <Text style={styles.menuItemText}>Namen anpassen</Text>
             </Pressable>
 
             {contextMenu.type === 'expense' && (
@@ -675,17 +595,17 @@ export default function BudgetScreen() {
                   openEditModal('amount', contextMenu.itemId, expense?.amount.toString() || '0');
                 }}
               >
-                <Text style={styles.menuItemText}>{t.budget.editAmount}</Text>
+                <Text style={styles.menuItemText}>Zahl anpassen</Text>
               </Pressable>
             )}
 
             <Pressable style={styles.menuItem} onPress={handleDuplicate}>
-              <Text style={styles.menuItemText}>{t.budget.duplicate}</Text>
+              <Text style={styles.menuItemText}>Duplizieren</Text>
             </Pressable>
 
             <Pressable style={styles.menuItem} onPress={handlePinToggle}>
               <Text style={styles.menuItemText}>
-                {getItemPinStatus() ? t.budget.unpin : t.budget.pin}
+                {getItemPinStatus() ? 'Lösen' : 'Fixieren'}
               </Text>
             </Pressable>
 
@@ -700,14 +620,14 @@ export default function BudgetScreen() {
                 }
               }}
             >
-              <Text style={[styles.menuItemText, styles.menuItemDanger]}>{t.budget.delete}</Text>
+              <Text style={[styles.menuItemText, styles.menuItemDanger]}>Löschen</Text>
             </Pressable>
 
             <Pressable
               style={styles.menuItem}
               onPress={() => setContextMenu({ visible: false, type: null, itemId: null })}
             >
-              <Text style={styles.menuItemText}>{t.budget.cancel}</Text>
+              <Text style={styles.menuItemText}>Abbrechen</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -734,18 +654,11 @@ export default function BudgetScreen() {
                   ? 'numeric'
                   : 'default'
               }
-              placeholder={
-                editModal.type === 'name' 
-                  ? t.budget.namePlaceholder 
-                  : editModal.type === 'amount' || editModal.type === 'cashValue'
-                  ? t.budget.amountPlaceholder
-                  : ''
-              }
               autoFocus
               placeholderTextColor={colors.darkGray}
             />
             <Pressable style={styles.saveButton} onPress={saveEdit}>
-              <Text style={styles.saveButtonText}>{t.budget.save}</Text>
+              <Text style={styles.saveButtonText}>Speichern</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -826,26 +739,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  plusIconContainer: {
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  plusVertical: {
-    position: 'absolute',
-    width: 3,
-    height: 20,
-    backgroundColor: colors.black,
-    borderRadius: 2,
-  },
-  plusHorizontal: {
-    position: 'absolute',
-    width: 20,
-    height: 3,
-    backgroundColor: colors.black,
-    borderRadius: 2,
+  addMonthText: {
+    color: colors.black,
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 24,
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   monthScrollView: {
     flex: 1,
