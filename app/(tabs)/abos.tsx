@@ -24,11 +24,9 @@ import Animated, {
   withTiming,
   runOnJS,
   Easing,
-  interpolate,
 } from 'react-native-reanimated';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { usePremium } from '@/hooks/usePremium';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 const colors = {
   black: '#000000',
@@ -234,59 +232,15 @@ export default function AbosScreen() {
     };
   }, [addSubscriptionFromModal]);
 
-  const handlePremiumPurchase = async (type: 'onetime' | 'monthly') => {
+  const handlePremiumPurchase = (type: 'onetime' | 'monthly') => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    
-    console.log(`[Abos] Initiating premium purchase: ${type}`);
-    
-    try {
-      const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
-      
-      if (!BACKEND_URL) {
-        console.warn('[Abos] Backend URL not configured');
-        Alert.alert(t.common.error, 'Backend nicht konfiguriert. Bitte App neu starten.');
-        return;
-      }
-
-      const endpoint = Platform.OS === 'ios' 
-        ? '/api/payments/apple-pay' 
-        : '/api/payments/stripe';
-
-      console.log(`[Abos] Calling payment endpoint: ${endpoint}`);
-
-      const response = await authenticatedPost<{
-        success: boolean;
-        paymentUrl?: string;
-        transactionId?: string;
-        message?: string;
-      }>(endpoint, {
-        type,
-        platform: Platform.OS,
-      });
-
-      console.log('[Abos] Payment response:', response);
-
-      if (response.success) {
-        Alert.alert(t.common.success, 'Premium wurde aktiviert!');
-        setPremiumModalVisible(false);
-        setPendingSubId(null);
-      } else {
-        Alert.alert(t.common.error, response.message || 'Zahlung fehlgeschlagen');
-      }
-    } catch (error: any) {
-      console.error('[Abos] Premium purchase error:', error);
-      
-      if (error.message?.includes('404')) {
-        Alert.alert(
-          'In Entwicklung',
-          'Premium-Zahlungen werden bald verfügbar sein. Die Backend-Integration ist noch in Arbeit.'
-        );
-      } else {
-        Alert.alert(t.common.error, 'Zahlung fehlgeschlagen. Bitte versuche es später erneut.');
-      }
-    }
+    // TODO: Backend Integration - POST /api/payments/apple-pay or /api/payments/stripe
+    console.log(`Premium purchase: ${type}`);
+    Alert.alert(t.common.success, 'Premium wurde aktiviert! (Placeholder - Payment Integration folgt)');
+    setPremiumModalVisible(false);
+    setPendingSubId(null);
   };
 
   const handlePremiumClose = () => {
@@ -312,61 +266,53 @@ export default function AbosScreen() {
     const translateX = useSharedValue(0);
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
-    const iconOpacity = useSharedValue(0);
 
     const panGesture = Gesture.Pan()
       .onUpdate((event) => {
         translateX.value = event.translationX;
-        
-        // Smoother fade and icon reveal
-        const absTranslation = Math.abs(event.translationX);
-        if (absTranslation > 30) {
-          opacity.value = Math.max(0.5, 1 - absTranslation / 400);
-          iconOpacity.value = Math.min(1, absTranslation / 100);
-        } else {
-          iconOpacity.value = 0;
+        // Smoother fade out when swiping
+        if (Math.abs(event.translationX) > 50) {
+          opacity.value = Math.max(0.3, 1 - Math.abs(event.translationX) / 300);
         }
       })
       .onEnd((event) => {
-        if (event.translationX < -120) {
-          // Swipe left to delete - very smooth slide out with cubic easing
+        if (event.translationX < -100) {
+          // Swipe left to delete - smoother slide out animation with cubic easing
           translateX.value = withTiming(-500, { 
-            duration: 400, 
+            duration: 300, 
             easing: Easing.out(Easing.cubic) 
           });
           opacity.value = withTiming(0, { 
-            duration: 400, 
+            duration: 300, 
             easing: Easing.out(Easing.cubic) 
           }, () => {
             runOnJS(handleDeleteSub)(subscription.id);
           });
-        } else if (event.translationX > 120) {
-          // Swipe right to pin/unpin - smooth slide with spring
+        } else if (event.translationX > 100) {
+          // Swipe right to pin/unpin - smoother slide animation with spring
           runOnJS(handlePinToggle)(subscription.id);
           translateX.value = withSpring(0, { 
-            damping: 30, 
-            stiffness: 200,
-            mass: 0.8,
+            damping: 25, 
+            stiffness: 250,
+            mass: 0.5,
           });
           opacity.value = withSpring(1, { 
-            damping: 30, 
-            stiffness: 200,
-            mass: 0.8,
+            damping: 25, 
+            stiffness: 250,
+            mass: 0.5,
           });
-          iconOpacity.value = withTiming(0, { duration: 200 });
         } else {
-          // Snap back with very smooth spring
+          // Snap back with smoother spring
           translateX.value = withSpring(0, { 
-            damping: 30, 
-            stiffness: 200,
-            mass: 0.8,
+            damping: 25, 
+            stiffness: 250,
+            mass: 0.5,
           });
           opacity.value = withSpring(1, { 
-            damping: 30, 
-            stiffness: 200,
-            mass: 0.8,
+            damping: 25, 
+            stiffness: 250,
+            mass: 0.5,
           });
-          iconOpacity.value = withTiming(0, { duration: 200 });
         }
       });
 
@@ -385,39 +331,19 @@ export default function AbosScreen() {
       opacity: opacity.value,
     }));
 
-    const deleteIconStyle = useAnimatedStyle(() => ({
-      opacity: translateX.value < -30 ? iconOpacity.value : 0,
-    }));
-
-    const pinIconStyle = useAnimatedStyle(() => ({
-      opacity: translateX.value > 30 ? iconOpacity.value : 0,
-    }));
-
     return (
-      <View style={styles.subscriptionContainer}>
-        {/* Delete icon (left side) */}
-        <Animated.View style={[styles.swipeIconLeft, deleteIconStyle]}>
-          <MaterialIcons name="delete" size={24} color={colors.red} />
+      <GestureDetector gesture={Gesture.Simultaneous(panGesture, longPressGesture)}>
+        <Animated.View
+          style={[
+            styles.subscriptionPill,
+            subscription.isPinned && styles.pinnedPill,
+            animatedStyle,
+          ]}
+        >
+          <Text style={styles.subscriptionName}>{subscription.name}</Text>
+          <Text style={styles.subscriptionAmount}>{subscription.monthlyCost}</Text>
         </Animated.View>
-
-        {/* Pin icon (right side) */}
-        <Animated.View style={[styles.swipeIconRight, pinIconStyle]}>
-          <MaterialIcons name="push-pin" size={24} color={colors.neonGreen} />
-        </Animated.View>
-
-        <GestureDetector gesture={Gesture.Simultaneous(panGesture, longPressGesture)}>
-          <Animated.View
-            style={[
-              styles.subscriptionPill,
-              subscription.isPinned && styles.pinnedPill,
-              animatedStyle,
-            ]}
-          >
-            <Text style={styles.subscriptionName}>{subscription.name}</Text>
-            <Text style={styles.subscriptionAmount}>{subscription.monthlyCost}</Text>
-          </Animated.View>
-        </GestureDetector>
-      </View>
+      </GestureDetector>
     );
   };
 
@@ -644,28 +570,6 @@ const styles = StyleSheet.create({
   subscriptionList: {
     gap: 12,
   },
-  subscriptionContainer: {
-    position: 'relative',
-    height: 80,
-  },
-  swipeIconLeft: {
-    position: 'absolute',
-    left: 20,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 0,
-  },
-  swipeIconRight: {
-    position: 'absolute',
-    right: 20,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 0,
-  },
   subscriptionPill: {
     backgroundColor: colors.darkGray,
     borderRadius: 20,
@@ -674,7 +578,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     height: 80,
-    zIndex: 1,
   },
   pinnedPill: {
     borderWidth: 2,

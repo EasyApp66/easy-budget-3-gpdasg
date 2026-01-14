@@ -96,8 +96,6 @@ export default function ProfilScreen() {
   const [donateModalVisible, setDonateModalVisible] = useState(false);
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [editNameModalVisible, setEditNameModalVisible] = useState(false);
-  const [legalModalVisible, setLegalModalVisible] = useState(false);
-  const [legalContent, setLegalContent] = useState({ title: '', content: '' });
   
   // Form states
   const [bugDescription, setBugDescription] = useState('');
@@ -120,62 +118,6 @@ export default function ProfilScreen() {
           onPress: async () => {
             await signOut();
             router.replace('/welcome');
-          },
-        },
-      ]
-    );
-  };
-
-  const handleDeleteAccount = async () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    Alert.alert(
-      language === 'DE' ? 'Account löschen' : 'Delete Account',
-      language === 'DE' 
-        ? 'Möchtest du deinen Account wirklich permanent löschen? Diese Aktion kann nicht rückgängig gemacht werden.' 
-        : 'Are you sure you want to permanently delete your account? This action cannot be undone.',
-      [
-        { text: t.common.cancel, style: 'cancel' },
-        {
-          text: language === 'DE' ? 'Löschen' : 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('[Profile] Deleting account...');
-              
-              const { authenticatedDelete, BACKEND_URL } = await import('@/utils/api');
-              
-              if (!BACKEND_URL) {
-                Alert.alert(t.common.error, language === 'DE' ? 'Backend nicht konfiguriert' : 'Backend not configured');
-                return;
-              }
-
-              const response = await authenticatedDelete('/api/user/account');
-              
-              if (response.success) {
-                Alert.alert(
-                  t.common.success,
-                  language === 'DE' ? 'Account wurde gelöscht' : 'Account has been deleted'
-                );
-                await signOut();
-                router.replace('/welcome');
-              } else {
-                Alert.alert(t.common.error, language === 'DE' ? 'Löschen fehlgeschlagen' : 'Deletion failed');
-              }
-            } catch (error: any) {
-              console.error('[Profile] Delete account error:', error);
-              if (error.message?.includes('404')) {
-                Alert.alert(
-                  language === 'DE' ? 'In Entwicklung' : 'In Development',
-                  language === 'DE' 
-                    ? 'Account-Löschung wird bald verfügbar sein.' 
-                    : 'Account deletion will be available soon.'
-                );
-              } else {
-                Alert.alert(t.common.error, language === 'DE' ? 'Löschen fehlgeschlagen' : 'Deletion failed');
-              }
-            }
           },
         },
       ]
@@ -205,6 +147,7 @@ export default function ProfilScreen() {
     console.log(`[Profile] Initiating premium purchase: ${type}`);
     
     try {
+      // Import API utilities
       const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
       
       if (!BACKEND_URL) {
@@ -213,12 +156,14 @@ export default function ProfilScreen() {
         return;
       }
 
+      // Determine payment endpoint based on platform
       const endpoint = Platform.OS === 'ios' 
         ? '/api/payments/apple-pay' 
         : '/api/payments/stripe';
 
       console.log(`[Profile] Calling payment endpoint: ${endpoint}`);
 
+      // Call backend to initiate payment
       const response = await authenticatedPost<{
         success: boolean;
         paymentUrl?: string;
@@ -243,6 +188,7 @@ export default function ProfilScreen() {
     } catch (error: any) {
       console.error('[Profile] Premium purchase error:', error);
       
+      // Check if it's a 404 (endpoint doesn't exist yet)
       if (error.message?.includes('404')) {
         Alert.alert(
           language === 'DE' ? 'In Entwicklung' : 'In Development',
@@ -337,6 +283,7 @@ export default function ProfilScreen() {
     console.log(`[Profile] Processing donation: CHF ${amount}`);
     
     try {
+      // Import API utilities
       const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
       
       if (!BACKEND_URL) {
@@ -347,6 +294,9 @@ export default function ProfilScreen() {
 
       console.log('[Profile] Calling donation endpoint: /api/payments/donation');
 
+      // Call backend to process donation
+      // Expected request body: { amount: number, currency: string, platform: string }
+      // Expected response: { success: boolean, paymentUrl?: string, transactionId?: string }
       const response = await authenticatedPost<{
         success: boolean;
         paymentUrl?: string;
@@ -376,6 +326,7 @@ export default function ProfilScreen() {
     } catch (error: any) {
       console.error('[Profile] Donation error:', error);
       
+      // Check if it's a 404 (endpoint doesn't exist yet)
       if (error.message?.includes('404')) {
         Alert.alert(
           language === 'DE' ? 'In Entwicklung' : 'In Development',
@@ -432,37 +383,11 @@ export default function ProfilScreen() {
     }
   };
 
-  const openLegalModal = (type: 'terms' | 'privacy' | 'agb' | 'impressum') => {
+  const handleTextPage = (title: string, content: string) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    
-    let title = '';
-    let content = '';
-    
-    if (type === 'terms') {
-      title = t.legal.termsTitle;
-      content = t.legal.termsContent;
-    } else if (type === 'privacy') {
-      title = t.legal.privacyTitle;
-      content = t.legal.privacyContent;
-    } else if (type === 'agb') {
-      title = t.legal.agbTitle;
-      content = t.legal.agbContent;
-    } else if (type === 'impressum') {
-      title = t.legal.impressumTitle;
-      content = t.legal.impressumContent;
-    }
-    
-    setLegalContent({ title, content });
-    setLegalModalVisible(true);
-  };
-
-  const closeLegalModal = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setLegalModalVisible(false);
+    Alert.alert(title, content);
   };
 
   return (
@@ -503,13 +428,6 @@ export default function ProfilScreen() {
             onPress={handleLogout}
           />
           <SettingsItem
-            iosIcon="trash"
-            androidIcon="delete"
-            iconColor={colors.red}
-            title={language === 'DE' ? 'Account löschen' : 'Delete Account'}
-            onPress={handleDeleteAccount}
-          />
-          <SettingsItem
             iosIcon="globe"
             androidIcon="language"
             iconColor={colors.neonGreen}
@@ -528,28 +446,28 @@ export default function ProfilScreen() {
             androidIcon="description"
             iconColor={colors.white}
             title={t.profile.agb}
-            onPress={() => openLegalModal('agb')}
+            onPress={() => handleTextPage(t.legal.agbTitle, t.legal.agbContent)}
           />
           <SettingsItem
             iosIcon="shield"
             androidIcon="shield"
             iconColor={colors.white}
             title={t.profile.terms}
-            onPress={() => openLegalModal('terms')}
+            onPress={() => handleTextPage(t.legal.termsTitle, t.legal.termsContent)}
           />
           <SettingsItem
             iosIcon="lock.shield"
             androidIcon="lock"
             iconColor={colors.white}
             title={t.profile.privacy}
-            onPress={() => openLegalModal('privacy')}
+            onPress={() => handleTextPage(t.legal.privacyTitle, t.legal.privacyContent)}
           />
           <SettingsItem
             iosIcon="info.circle"
             androidIcon="info"
             iconColor={colors.white}
             title={t.profile.impressum}
-            onPress={() => openLegalModal('impressum')}
+            onPress={() => handleTextPage(t.legal.impressumTitle, t.legal.impressumContent)}
           />
           <SettingsItem
             iosIcon="envelope"
@@ -753,56 +671,6 @@ export default function ProfilScreen() {
         </Pressable>
       </Modal>
 
-      {/* COMPLETELY NEW Legal Modal - Same design as Welcome page */}
-      <Modal
-        visible={legalModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeLegalModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.legalModalContainer}>
-            <Pressable 
-              style={styles.closeButton} 
-              onPress={closeLegalModal}
-              hitSlop={10}
-            >
-              <IconSymbol 
-                ios_icon_name="xmark" 
-                android_material_icon_name="close"
-                size={28} 
-                color={colors.white} 
-              />
-            </Pressable>
-            
-            <Text style={styles.modalTitle}>{legalContent.title}</Text>
-            
-            <ScrollView 
-              style={styles.scrollContainer}
-              contentContainerStyle={styles.scrollContentContainer}
-              showsVerticalScrollIndicator={true}
-              persistentScrollbar={true}
-            >
-              <Text style={styles.modalContentText}>
-                {legalContent.content}
-              </Text>
-            </ScrollView>
-            
-            <Pressable 
-              style={styles.okButton} 
-              onPress={closeLegalModal}
-              onPressIn={() => {
-                if (Platform.OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-              }}
-            >
-              <Text style={styles.okButtonText}>{t.common.ok}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-
       {/* Premium Purchase Modal */}
       <PremiumPaywallModal
         visible={premiumModalVisible}
@@ -893,10 +761,9 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
   editModal: {
     backgroundColor: colors.darkGray,
@@ -921,12 +788,9 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 20,
-    right: 20,
-    zIndex: 100,
-    padding: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 20,
+    top: 15,
+    right: 15,
+    zIndex: 10,
   },
   bugIconContainer: {
     width: 80,
@@ -1054,42 +918,5 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 18,
     fontWeight: '800',
-  },
-  // COMPLETELY NEW Legal Modal Styles - Same as Welcome page
-  legalModalContainer: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 24,
-    width: '92%',
-    maxWidth: 500,
-    maxHeight: '80%',
-  },
-  scrollContainer: {
-    flex: 1,
-    marginBottom: 16,
-  },
-  scrollContentContainer: {
-    paddingRight: 8,
-    paddingBottom: 16,
-  },
-  modalContentText: {
-    fontSize: 15,
-    color: colors.white,
-    lineHeight: 24,
-    textAlign: 'left',
-  },
-  okButton: {
-    backgroundColor: colors.neonGreen,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  okButtonText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.black,
-    letterSpacing: 0.5,
   },
 });
