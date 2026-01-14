@@ -1,0 +1,1 @@
+-- This migration will be regenerated after auth schema is established
