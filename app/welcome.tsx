@@ -210,7 +210,7 @@ export default function WelcomeScreen() {
         </View>
       </View>
 
-      {/* COMPLETELY NEW Legal Modal - Rebuilt from scratch for iOS/Android visibility */}
+      {/* Legal Modal */}
       <Modal
         visible={legalModalVisible}
         transparent
@@ -218,32 +218,21 @@ export default function WelcomeScreen() {
         onRequestClose={closeLegalModal}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            {/* Close button */}
-            <Pressable 
-              style={styles.closeButton} 
-              onPress={closeLegalModal}
-              hitSlop={10}
-            >
+          <View style={styles.modalContent}>
+            <Pressable style={styles.closeButton} onPress={closeLegalModal}>
               <MaterialIcons name="close" size={28} color={colors.white} />
             </Pressable>
             
-            {/* Title */}
             <Text style={styles.modalTitle}>{legalContent.title}</Text>
             
-            {/* Scrollable content with guaranteed visibility */}
             <ScrollView 
-              style={styles.scrollContainer}
-              contentContainerStyle={styles.scrollContentContainer}
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollContent}
               showsVerticalScrollIndicator={true}
-              persistentScrollbar={true}
             >
-              <Text style={styles.modalContentText}>
-                {legalContent.content}
-              </Text>
+              <Text style={styles.modalText}>{legalContent.content}</Text>
             </ScrollView>
             
-            {/* OK button - properly positioned */}
             <Pressable 
               style={styles.okButton} 
               onPress={closeLegalModal}
@@ -330,52 +319,50 @@ const styles = StyleSheet.create({
     color: colors.neonGreen,
     textDecorationLine: 'underline',
   },
-  // COMPLETELY NEW MODAL STYLES - Rebuilt for guaranteed iOS/Android visibility
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  modalContainer: {
+  modalContent: {
     backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 24,
-    width: '92%',
+    width: '90%',
     maxWidth: 500,
-    maxHeight: '80%',
+    maxHeight: '75%',
   },
   closeButton: {
     position: 'absolute',
-    top: 20,
-    right: 20,
-    zIndex: 100,
+    top: 16,
+    right: 16,
+    zIndex: 10,
     padding: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 20,
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: '800',
     color: colors.white,
     marginBottom: 20,
-    marginRight: 50,
+    marginRight: 40,
     textAlign: 'left',
   },
-  scrollContainer: {
+  modalScrollView: {
     flex: 1,
     marginBottom: 16,
   },
-  scrollContentContainer: {
+  modalScrollContent: {
     paddingRight: 8,
-    paddingBottom: 16,
+    paddingBottom: 8,
   },
-  modalContentText: {
-    fontSize: 15,
+  modalText: {
+    fontSize: 14,
     color: colors.white,
-    lineHeight: 24,
+    lineHeight: 22,
     textAlign: 'left',
+    opacity: 1,
   },
   okButton: {
     backgroundColor: colors.neonGreen,
@@ -384,6 +371,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
+    marginTop: 4,
   },
   okButtonText: {
     fontSize: 18,

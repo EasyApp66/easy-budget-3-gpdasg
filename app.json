@@ -16,8 +16,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.easybudget.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "UILaunchStoryboardName": "SplashScreen"
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
