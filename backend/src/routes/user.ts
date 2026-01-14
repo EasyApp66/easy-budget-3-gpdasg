@@ -133,4 +133,62 @@ export function registerUserRoutes(app: App) {
       };
     }
   );
+
+  /**
+   * DELETE /api/user/account
+   * Permanently delete the user account and all associated data
+   * Protected route - requires authentication
+   * This action cannot be undone
+   */
+  app.fastify.delete(
+    '/api/user/account',
+    {
+      schema: {
+        description: 'Permanently delete user account and all associated data',
+        tags: ['user'],
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              message: { type: 'string' },
+              deletedUserId: { type: 'string' },
+            },
+          },
+          404: {
+            type: 'object',
+            properties: {
+              error: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const session = await requireAuth(request, reply);
+      if (!session) return;
+
+      const userId = session.user.id;
+
+      // Verify user exists before deleting
+      const userExists = await app.db
+        .select()
+        .from(authSchema.user)
+        .where(eq(authSchema.user.id, userId))
+        .limit(1);
+
+      if (!userExists || userExists.length === 0) {
+        return reply.status(404).send({ error: 'User not found' });
+      }
+
+      // Delete user - cascade rules will handle deletion of sessions, accounts, verifications
+      await app.db
+        .delete(authSchema.user)
+        .where(eq(authSchema.user.id, userId));
+
+      return {
+        message: 'Account permanently deleted',
+        deletedUserId: userId,
+      };
+    }
+  );
 }

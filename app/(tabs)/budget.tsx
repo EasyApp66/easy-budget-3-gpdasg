@@ -307,8 +307,12 @@ export default function BudgetScreen() {
       setMonths(newMonths);
     } else if (type === 'name' && itemId) {
       if (contextMenu.type === 'month') {
-        const newMonths = months.map((m) => (m.id === itemId ? { ...m, name: value.toUpperCase() } : m));
+        // FIX: Properly update month name and save
+        const newMonths = months.map((m) => 
+          m.id === itemId ? { ...m, name: value.toUpperCase() } : m
+        );
         setMonths(newMonths);
+        console.log('[Budget] Month name updated:', value.toUpperCase());
       } else {
         const newMonths = months.map((m) =>
           m.id === selectedMonthId
@@ -352,7 +356,6 @@ export default function BudgetScreen() {
     console.log(`[Budget] Initiating premium purchase: ${type}`);
     
     try {
-      // Import API utilities
       const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
       
       if (!BACKEND_URL) {
@@ -361,18 +364,12 @@ export default function BudgetScreen() {
         return;
       }
 
-      // Determine payment endpoint based on platform
-      // iOS: Use Apple Pay / In-App Purchase
-      // Android/Web: Use Stripe
       const endpoint = Platform.OS === 'ios' 
         ? '/api/payments/apple-pay' 
         : '/api/payments/stripe';
 
       console.log(`[Budget] Calling payment endpoint: ${endpoint}`);
 
-      // Call backend to initiate payment
-      // Expected request body: { type: 'onetime' | 'monthly', platform: string }
-      // Expected response: { success: boolean, paymentUrl?: string, transactionId?: string }
       const response = await authenticatedPost<{
         success: boolean;
         paymentUrl?: string;
@@ -389,16 +386,12 @@ export default function BudgetScreen() {
         Alert.alert(t.common.success, 'Premium wurde aktiviert!');
         setPremiumModalVisible(false);
         setPendingAction(null);
-        
-        // Refresh premium status
-        // The usePremium hook will automatically refresh when user changes
       } else {
         Alert.alert(t.common.error, response.message || 'Zahlung fehlgeschlagen');
       }
     } catch (error: any) {
       console.error('[Budget] Premium purchase error:', error);
       
-      // Check if it's a 404 (endpoint doesn't exist yet)
       if (error.message?.includes('404')) {
         Alert.alert(
           'In Entwicklung',
