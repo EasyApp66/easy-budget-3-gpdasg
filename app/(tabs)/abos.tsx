@@ -232,15 +232,62 @@ export default function AbosScreen() {
     };
   }, [addSubscriptionFromModal]);
 
-  const handlePremiumPurchase = (type: 'onetime' | 'monthly') => {
+  const handlePremiumPurchase = async (type: 'onetime' | 'monthly') => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    // TODO: Backend Integration - POST /api/payments/apple-pay or /api/payments/stripe
-    console.log(`Premium purchase: ${type}`);
-    Alert.alert(t.common.success, 'Premium wurde aktiviert! (Placeholder - Payment Integration folgt)');
-    setPremiumModalVisible(false);
-    setPendingSubId(null);
+    
+    console.log(`[Abos] Initiating premium purchase: ${type}`);
+    
+    try {
+      // Import API utilities
+      const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
+      
+      if (!BACKEND_URL) {
+        console.warn('[Abos] Backend URL not configured');
+        Alert.alert(t.common.error, 'Backend nicht konfiguriert. Bitte App neu starten.');
+        return;
+      }
+
+      console.log(`[Abos] Calling premium purchase endpoint`);
+
+      // Call backend to purchase premium
+      const response = await authenticatedPost<{
+        success: boolean;
+        isPremium: boolean;
+        expiresAt?: string;
+        message?: string;
+      }>('/api/premium/purchase', {
+        type,
+      });
+
+      console.log('[Abos] Premium purchase response:', response);
+
+      if (response.success) {
+        Alert.alert(t.common.success, 'Premium wurde aktiviert!');
+        setPremiumModalVisible(false);
+        setPendingSubId(null);
+        
+        // Refresh the app to update premium status
+        if (Platform.OS === 'web') {
+          window.location.reload();
+        }
+      } else {
+        Alert.alert(t.common.error, response.message || 'Zahlung fehlgeschlagen');
+      }
+    } catch (error: any) {
+      console.error('[Abos] Premium purchase error:', error);
+      
+      // Check if it's a 404 (endpoint doesn't exist yet)
+      if (error.message?.includes('404')) {
+        Alert.alert(
+          'In Entwicklung',
+          'Premium-Zahlungen werden bald verfügbar sein. Die Backend-Integration ist noch in Arbeit.'
+        );
+      } else {
+        Alert.alert(t.common.error, 'Zahlung fehlgeschlagen. Bitte versuche es später erneut.');
+      }
+    }
   };
 
   const handlePremiumClose = () => {

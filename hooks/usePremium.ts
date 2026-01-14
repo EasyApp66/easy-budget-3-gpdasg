@@ -7,6 +7,12 @@ const ADMIN_EMAIL = 'mirosnic.ivan@icloud.com';
 export function usePremium() {
   const { user } = useAuth();
   const [isPremium, setIsPremium] = useState(false);
+  const [premiumStatus, setPremiumStatus] = useState<{
+    isPremium: boolean;
+    expiresAt?: string;
+    daysRemaining?: number;
+    isLifetime?: boolean;
+  }>({ isPremium: false });
 
   useEffect(() => {
     checkPremiumStatus();
@@ -17,6 +23,7 @@ export function usePremium() {
     if (user?.email === ADMIN_EMAIL) {
       console.log('[Premium] Admin user detected, granting premium access');
       setIsPremium(true);
+      setPremiumStatus({ isPremium: true, isLifetime: true });
       return;
     }
 
@@ -31,27 +38,31 @@ export function usePremium() {
         if (!BACKEND_URL) {
           console.warn('[Premium] Backend URL not configured, defaulting to non-premium');
           setIsPremium(false);
+          setPremiumStatus({ isPremium: false });
           return;
         }
 
         // Call backend to check premium status
-        // Expected endpoint: GET /api/premium/status
-        // Expected response: { isPremium: boolean, expiresAt?: string }
-        const data = await authenticatedGet<{ isPremium: boolean; expiresAt?: string }>(
-          '/api/premium/status'
-        );
+        const data = await authenticatedGet<{ 
+          isPremium: boolean; 
+          expiresAt?: string;
+          daysRemaining?: number;
+          isLifetime?: boolean;
+        }>('/api/premium/status');
         
         console.log('[Premium] Status received:', data);
         setIsPremium(data.isPremium || false);
+        setPremiumStatus(data);
       } else {
         console.log('[Premium] No user email, defaulting to non-premium');
         setIsPremium(false);
+        setPremiumStatus({ isPremium: false });
       }
     } catch (error) {
       console.error('[Premium] Error checking premium status:', error);
       // If endpoint doesn't exist yet (404), default to non-premium
-      // This allows the app to work before backend endpoints are created
       setIsPremium(false);
+      setPremiumStatus({ isPremium: false });
     }
   };
 
@@ -80,6 +91,8 @@ export function usePremium() {
 
   return {
     isPremium,
+    premiumStatus,
     checkLimit,
+    checkPremiumStatus,
   };
 }

@@ -78,6 +78,10 @@ export default function BudgetScreen() {
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: 'expense' | 'month'; id?: string } | null>(null);
 
+  // New state for month name input when creating
+  const [newMonthNameModalVisible, setNewMonthNameModalVisible] = useState(false);
+  const [newMonthName, setNewMonthName] = useState('');
+
   const selectedMonth = months.find((m) => m.id === selectedMonthId);
   const totalExpenses = selectedMonth?.expenses.reduce((sum, e) => sum + e.amount, 0) || 0;
   const remaining = (selectedMonth?.cash || 0) - totalExpenses;
@@ -114,14 +118,34 @@ export default function BudgetScreen() {
       return;
     }
     
+    // Open modal to ask for month name first
+    console.log('[Budget] Opening new month name modal');
+    setNewMonthName('');
+    setNewMonthNameModalVisible(true);
+  };
+
+  const saveNewMonth = () => {
+    if (!newMonthName.trim()) {
+      Alert.alert(t.common.error, t.budget.errorMonthName || 'Bitte gib einen Monatsnamen ein');
+      return;
+    }
+
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
     const newMonth: Month = {
       id: Date.now().toString(),
-      name: `MONAT ${months.length + 1}`,
+      name: newMonthName.toUpperCase(),
       isPinned: false,
       cash: 0,
       expenses: [],
     };
+    
+    console.log('[Budget] Creating new month:', newMonth);
     setMonths([...months, newMonth]);
+    setNewMonthNameModalVisible(false);
+    setNewMonthName('');
   };
 
   // Function to add expense from the tab bar modal
@@ -307,7 +331,9 @@ export default function BudgetScreen() {
       setMonths(newMonths);
     } else if (type === 'name' && itemId) {
       if (contextMenu.type === 'month') {
+        // Update month name and save
         const newMonths = months.map((m) => (m.id === itemId ? { ...m, name: value.toUpperCase() } : m));
+        console.log('[Budget] Updating month name:', { itemId, newName: value.toUpperCase() });
         setMonths(newMonths);
       } else {
         const newMonths = months.map((m) =>
@@ -361,29 +387,19 @@ export default function BudgetScreen() {
         return;
       }
 
-      // Determine payment endpoint based on platform
-      // iOS: Use Apple Pay / In-App Purchase
-      // Android/Web: Use Stripe
-      const endpoint = Platform.OS === 'ios' 
-        ? '/api/payments/apple-pay' 
-        : '/api/payments/stripe';
+      console.log(`[Budget] Calling premium purchase endpoint`);
 
-      console.log(`[Budget] Calling payment endpoint: ${endpoint}`);
-
-      // Call backend to initiate payment
-      // Expected request body: { type: 'onetime' | 'monthly', platform: string }
-      // Expected response: { success: boolean, paymentUrl?: string, transactionId?: string }
+      // Call backend to purchase premium
       const response = await authenticatedPost<{
         success: boolean;
-        paymentUrl?: string;
-        transactionId?: string;
+        isPremium: boolean;
+        expiresAt?: string;
         message?: string;
-      }>(endpoint, {
+      }>('/api/premium/purchase', {
         type,
-        platform: Platform.OS,
       });
 
-      console.log('[Budget] Payment response:', response);
+      console.log('[Budget] Premium purchase response:', response);
 
       if (response.success) {
         Alert.alert(t.common.success, 'Premium wurde aktiviert!');
@@ -391,7 +407,7 @@ export default function BudgetScreen() {
         setPendingAction(null);
         
         // Refresh premium status
-        // The usePremium hook will automatically refresh when user changes
+        window.location.reload();
       } else {
         Alert.alert(t.common.error, response.message || 'Zahlung fehlgeschlagen');
       }
@@ -639,6 +655,34 @@ export default function BudgetScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {/* New Month Name Modal */}
+      <Modal
+        visible={newMonthNameModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setNewMonthNameModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setNewMonthNameModalVisible(false)}
+        >
+          <Pressable style={styles.editModal} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>{t.budget.newMonth || 'Neuer Monat'}</Text>
+            <TextInput
+              style={styles.editInput}
+              value={newMonthName}
+              onChangeText={setNewMonthName}
+              placeholder={t.budget.monthNamePlaceholder || 'Monatsname (z.B. JANUAR)'}
+              autoFocus
+              placeholderTextColor={colors.darkGray}
+            />
+            <Pressable style={styles.saveButton} onPress={saveNewMonth}>
+              <Text style={styles.saveButtonText}>{t.budget.save}</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Context Menu Modal */}
       <Modal
@@ -957,6 +1001,13 @@ const styles = StyleSheet.create({
     padding: 24,
     width: '80%',
     gap: 16,
+  },
+  modalTitle: {
+    color: colors.white,
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 8,
   },
   editInput: {
     backgroundColor: colors.black,
