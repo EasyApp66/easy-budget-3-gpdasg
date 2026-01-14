@@ -11,6 +11,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  Easing,
 } from 'react-native-reanimated';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter, usePathname } from 'expo-router';
@@ -197,14 +198,26 @@ function CustomTabBar() {
     return pathname.includes(route);
   };
 
-  // Update bubble position based on active tab
+  // Update bubble position based on active tab with smooth iOS-style animation
   React.useEffect(() => {
     if (pathname.includes('budget')) {
-      bubblePosition.value = withSpring(0, { damping: 15, stiffness: 150 });
+      bubblePosition.value = withSpring(0, { 
+        damping: 20, 
+        stiffness: 180,
+        mass: 0.8,
+      });
     } else if (pathname.includes('abos')) {
-      bubblePosition.value = withSpring(1, { damping: 15, stiffness: 150 });
+      bubblePosition.value = withSpring(1, { 
+        damping: 20, 
+        stiffness: 180,
+        mass: 0.8,
+      });
     } else if (pathname.includes('profil')) {
-      bubblePosition.value = withSpring(2, { damping: 15, stiffness: 150 });
+      bubblePosition.value = withSpring(2, { 
+        damping: 20, 
+        stiffness: 180,
+        mass: 0.8,
+      });
     }
   }, [pathname, bubblePosition]);
 
@@ -220,11 +233,13 @@ function CustomTabBar() {
   });
 
   const handleTabPress = (route: string) => {
+    console.log(`[TabBar iOS] Navigating to: ${route}`);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(route as any);
   };
 
   const handleAddPress = () => {
+    console.log('[TabBar iOS] Add button pressed');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     if (pathname.includes('budget')) {
@@ -239,6 +254,7 @@ function CustomTabBar() {
   };
 
   const handleShare = async () => {
+    console.log('[TabBar iOS] Opening share dialog');
     try {
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync('https://easybudget.app', {
@@ -248,7 +264,7 @@ function CustomTabBar() {
         Alert.alert('Teilen nicht verfügbar', 'Teilen wird auf diesem Gerät nicht unterstützt.');
       }
     } catch (error) {
-      console.error('Share error:', error);
+      console.error('[TabBar iOS] Share error:', error);
     }
   };
 
@@ -266,6 +282,8 @@ function CustomTabBar() {
       Alert.alert('Fehler', 'Bitte geben Sie einen gültigen Betrag ein.');
       return;
     }
+    
+    console.log(`[TabBar iOS] Saving ${modalType}: ${name}, ${numericAmount}`);
     
     // Call the appropriate global function to add the item
     if (modalType === 'expense') {
@@ -287,6 +305,7 @@ function CustomTabBar() {
   };
 
   const handleCancel = () => {
+    console.log('[TabBar iOS] Modal cancelled');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setModalVisible(false);
     setName('');
@@ -314,10 +333,18 @@ function CustomTabBar() {
       <Pressable
         onPress={() => handleTabPress(route)}
         onPressIn={() => {
-          scaleValue.value = withSpring(0.85, { damping: 10, stiffness: 200 });
+          scaleValue.value = withSpring(0.88, { 
+            damping: 15, 
+            stiffness: 300,
+            mass: 0.5,
+          });
         }}
         onPressOut={() => {
-          scaleValue.value = withSpring(1, { damping: 10, stiffness: 200 });
+          scaleValue.value = withSpring(1, { 
+            damping: 15, 
+            stiffness: 300,
+            mass: 0.5,
+          });
         }}
         style={styles.tabButton}
       >
@@ -346,10 +373,18 @@ function CustomTabBar() {
         <Pressable
           onPress={handleAddPress}
           onPressIn={() => {
-            addScale.value = withSpring(0.85, { damping: 10, stiffness: 200 });
+            addScale.value = withSpring(0.88, { 
+              damping: 15, 
+              stiffness: 300,
+              mass: 0.5,
+            });
           }}
           onPressOut={() => {
-            addScale.value = withSpring(1, { damping: 10, stiffness: 200 });
+            addScale.value = withSpring(1, { 
+              damping: 15, 
+              stiffness: 300,
+              mass: 0.5,
+            });
           }}
         >
           <Animated.View style={[styles.addButton, animatedStyle]}>
@@ -462,6 +497,7 @@ export default function TabLayout() {
           headerShown: false,
           tabBarStyle: { display: 'none' },
           animation: 'fade',
+          animationDuration: 150,
         }}
       >
         <Tabs.Screen name="budget" />

@@ -23,7 +23,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { StorageProvider } from "@/contexts/StorageContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { SnowAnimation } from "@/components/SnowAnimation";
 import { setupErrorLogging } from "@/utils/errorLogger";
 
 // Setup error logging for production builds
@@ -101,39 +100,83 @@ export default function RootLayout() {
             <StorageProvider>
               <WidgetProvider>
                 <GestureHandlerRootView style={{ flex: 1 }}>
-                  <SnowAnimation />
-                  <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="index" options={{ headerShown: false }} />
-                  <Stack.Screen name="welcome" options={{ headerShown: false }} />
-                  <Stack.Screen name="login" options={{ headerShown: false }} />
-                  <Stack.Screen name="register" options={{ headerShown: false }} />
-                  <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen
-                    name="modal"
-                    options={{
-                      presentation: "modal",
-                      title: "Standard Modal",
-                    }}
-                  />
-                  <Stack.Screen
-                    name="formsheet"
-                    options={{
-                      presentation: "formSheet",
-                      title: "Form Sheet Modal",
-                      sheetGrabberVisible: true,
-                      sheetAllowedDetents: [0.5, 0.8, 1.0],
-                      sheetCornerRadius: 20,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="transparent-modal"
-                    options={{
-                      presentation: "transparentModal",
+                  <Stack
+                    screenOptions={{
                       headerShown: false,
+                      animation: 'default',
+                      animationDuration: 200,
                     }}
-                  />
-                </Stack>
+                  >
+                    <Stack.Screen 
+                      name="index" 
+                      options={{ 
+                        headerShown: false,
+                        animation: 'fade',
+                      }} 
+                    />
+                    <Stack.Screen 
+                      name="welcome" 
+                      options={{ 
+                        headerShown: false,
+                        animation: 'fade',
+                      }} 
+                    />
+                    <Stack.Screen 
+                      name="login" 
+                      options={{ 
+                        headerShown: false,
+                        animation: 'slide_from_right',
+                      }} 
+                    />
+                    <Stack.Screen 
+                      name="register" 
+                      options={{ 
+                        headerShown: false,
+                        animation: 'slide_from_right',
+                      }} 
+                    />
+                    <Stack.Screen 
+                      name="forgot-password" 
+                      options={{ 
+                        headerShown: false,
+                        animation: 'slide_from_right',
+                      }} 
+                    />
+                    <Stack.Screen 
+                      name="(tabs)" 
+                      options={{ 
+                        headerShown: false,
+                        animation: 'fade',
+                      }} 
+                    />
+                    <Stack.Screen
+                      name="modal"
+                      options={{
+                        presentation: "modal",
+                        title: "Standard Modal",
+                        animation: 'slide_from_bottom',
+                      }}
+                    />
+                    <Stack.Screen
+                      name="formsheet"
+                      options={{
+                        presentation: "formSheet",
+                        title: "Form Sheet Modal",
+                        sheetGrabberVisible: true,
+                        sheetAllowedDetents: [0.5, 0.8, 1.0],
+                        sheetCornerRadius: 20,
+                        animation: 'slide_from_bottom',
+                      }}
+                    />
+                    <Stack.Screen
+                      name="transparent-modal"
+                      options={{
+                        presentation: "transparentModal",
+                        headerShown: false,
+                        animation: 'fade',
+                      }}
+                    />
+                  </Stack>
                   <SystemBars style={"light"} />
                 </GestureHandlerRootView>
               </WidgetProvider>

@@ -116,6 +116,7 @@ export default function ProfilScreen() {
           text: t.profile.logout,
           style: 'destructive',
           onPress: async () => {
+            console.log('[Profile] User logging out');
             await signOut();
             router.replace('/welcome');
           },
@@ -129,6 +130,7 @@ export default function ProfilScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     const newLang = language === 'DE' ? 'EN' : 'DE';
+    console.log(`[Profile] Changing language to: ${newLang}`);
     await setLanguage(newLang);
   };
 
@@ -136,6 +138,7 @@ export default function ProfilScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    console.log('[Profile] Opening premium modal');
     setPremiumModalVisible(true);
   };
 
@@ -225,6 +228,7 @@ export default function ProfilScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     if (newUsername.trim()) {
+      console.log(`[Profile] Saving new username: ${newUsername.trim()}`);
       setUsername(newUsername.trim());
       setEditNameModalVisible(false);
     }
@@ -234,6 +238,7 @@ export default function ProfilScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log('[Profile] Opening bug report modal');
     setBugModalVisible(true);
   };
 
@@ -241,6 +246,7 @@ export default function ProfilScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log('[Profile] Opening donation modal');
     setDonateModalVisible(true);
   };
 
@@ -254,6 +260,8 @@ export default function ProfilScreen() {
       return;
     }
 
+    console.log('[Profile] Sending bug report');
+
     try {
       const isAvailable = await MailComposer.isAvailableAsync();
       if (isAvailable) {
@@ -266,7 +274,7 @@ export default function ProfilScreen() {
         Alert.alert(t.common.error, language === 'DE' ? 'E-Mail ist auf diesem Gerät nicht verfügbar.' : 'Email is not available on this device.');
       }
     } catch (error) {
-      console.error('Error sending bug report:', error);
+      console.error('[Profile] Error sending bug report:', error);
       Alert.alert(t.common.error, language === 'DE' ? 'Fehler beim Senden des Bug Reports.' : 'Error sending bug report.');
     }
     
@@ -295,8 +303,6 @@ export default function ProfilScreen() {
       console.log('[Profile] Calling donation endpoint: /api/payments/donation');
 
       // Call backend to process donation
-      // Expected request body: { amount: number, currency: string, platform: string }
-      // Expected response: { success: boolean, paymentUrl?: string, transactionId?: string }
       const response = await authenticatedPost<{
         success: boolean;
         paymentUrl?: string;
@@ -343,10 +349,89 @@ export default function ProfilScreen() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    Alert.alert(
+      t.profile.deleteAccount,
+      t.profile.deleteAccountConfirm,
+      [
+        { text: t.common.cancel, style: 'cancel' },
+        {
+          text: t.common.delete,
+          style: 'destructive',
+          onPress: async () => {
+            console.log('[Profile] User confirmed account deletion');
+            
+            try {
+              // Import API utilities
+              const { authenticatedDelete, BACKEND_URL } = await import('@/utils/api');
+              
+              if (!BACKEND_URL) {
+                console.warn('[Profile] Backend URL not configured');
+                Alert.alert(t.common.error, language === 'DE' ? 'Backend nicht konfiguriert' : 'Backend not configured');
+                return;
+              }
+
+              console.log('[Profile] Calling account deletion endpoint: DELETE /api/user/account');
+
+              // Call backend to delete account
+              const response = await authenticatedDelete<{
+                success: boolean;
+                message?: string;
+              }>('/api/user/account');
+
+              console.log('[Profile] Account deletion response:', response);
+
+              if (response.success) {
+                Alert.alert(
+                  t.profile.accountDeleted,
+                  t.profile.accountDeletedMessage,
+                  [
+                    {
+                      text: t.common.ok,
+                      onPress: async () => {
+                        console.log('[Profile] Account deleted, signing out');
+                        await signOut();
+                        router.replace('/welcome');
+                      },
+                    },
+                  ]
+                );
+              } else {
+                Alert.alert(t.common.error, response.message || (language === 'DE' ? 'Konto konnte nicht gelöscht werden' : 'Could not delete account'));
+              }
+            } catch (error: any) {
+              console.error('[Profile] Account deletion error:', error);
+              
+              // Check if it's a 404 (endpoint doesn't exist yet)
+              if (error.message?.includes('404')) {
+                Alert.alert(
+                  language === 'DE' ? 'In Entwicklung' : 'In Development',
+                  language === 'DE' 
+                    ? 'Konto-Löschung wird bald verfügbar sein.' 
+                    : 'Account deletion will be available soon.'
+                );
+              } else {
+                Alert.alert(
+                  t.common.error,
+                  language === 'DE' ? 'Konto konnte nicht gelöscht werden' : 'Could not delete account'
+                );
+              }
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleSupport = async () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log('[Profile] Opening support email');
     try {
       const isAvailable = await MailComposer.isAvailableAsync();
       if (isAvailable) {
@@ -359,7 +444,7 @@ export default function ProfilScreen() {
         Alert.alert(t.common.error, language === 'DE' ? 'E-Mail ist auf diesem Gerät nicht verfügbar.' : 'Email is not available on this device.');
       }
     } catch (error) {
-      console.error('Error opening mail composer:', error);
+      console.error('[Profile] Error opening mail composer:', error);
     }
   };
 
@@ -367,6 +452,7 @@ export default function ProfilScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log('[Profile] Opening suggestion email');
     try {
       const isAvailable = await MailComposer.isAvailableAsync();
       if (isAvailable) {
@@ -379,7 +465,7 @@ export default function ProfilScreen() {
         Alert.alert(t.common.error, language === 'DE' ? 'E-Mail ist auf diesem Gerät nicht verfügbar.' : 'Email is not available on this device.');
       }
     } catch (error) {
-      console.error('Error opening mail composer:', error);
+      console.error('[Profile] Error opening mail composer:', error);
     }
   };
 
@@ -387,6 +473,7 @@ export default function ProfilScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log(`[Profile] Opening legal page: ${title}`);
     Alert.alert(title, content);
   };
 
@@ -496,6 +583,13 @@ export default function ProfilScreen() {
             iconColor={colors.red}
             title={t.profile.donation}
             onPress={handleDonation}
+          />
+          <SettingsItem
+            iosIcon="trash"
+            androidIcon="delete"
+            iconColor={colors.red}
+            title={t.profile.deleteAccount}
+            onPress={handleDeleteAccount}
           />
         </View>
 

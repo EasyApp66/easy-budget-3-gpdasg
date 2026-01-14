@@ -110,11 +110,15 @@ export const translations = {
       editName: 'Namen bearbeiten',
       language: 'Sprache',
       currentLanguage: 'DE',
-      premium: 'Premium kaufen',
+      premium: 'Premium Holen',
       support: 'Support',
       bugReport: 'Bug Melden',
       suggestion: 'Vorschlag',
       donation: 'Donation',
+      deleteAccount: 'Konto löschen',
+      deleteAccountConfirm: 'Möchtest du dein Konto wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+      accountDeleted: 'Konto gelöscht',
+      accountDeletedMessage: 'Dein Konto wurde erfolgreich gelöscht.',
       terms: 'Nutzungsbedingungen',
       privacy: 'Datenschutz',
       agb: 'AGB',
@@ -126,7 +130,7 @@ export const translations = {
     },
     // Premium Modal
     premium: {
-      title: 'Premium Kaufen',
+      title: 'Premium Holen',
       subtitle: 'Erhalte unbegrenzte App-Funktionen:',
       features: [
         'Unbegrenzte Abo Counter',
@@ -275,11 +279,15 @@ export const translations = {
       editName: 'Edit Name',
       language: 'Language',
       currentLanguage: 'EN',
-      premium: 'Buy Premium',
+      premium: 'Get Premium',
       support: 'Support',
       bugReport: 'Report Bug',
       suggestion: 'Suggestion',
       donation: 'Donate',
+      deleteAccount: 'Delete Account',
+      deleteAccountConfirm: 'Are you sure you want to delete your account? This action cannot be undone.',
+      accountDeleted: 'Account Deleted',
+      accountDeletedMessage: 'Your account has been successfully deleted.',
       terms: 'Terms of Service',
       privacy: 'Privacy Policy',
       agb: 'Terms and Conditions',
@@ -291,7 +299,7 @@ export const translations = {
     },
     // Premium Modal
     premium: {
-      title: 'Buy Premium',
+      title: 'Get Premium',
       subtitle: 'Get unlimited app features:',
       features: [
         'Unlimited Subscription Counter',
