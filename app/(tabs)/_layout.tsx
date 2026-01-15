@@ -157,15 +157,6 @@ function CustomTabBar() {
       addScale.value = withSpring(1);
     });
 
-    // If on profile page, trigger secret code modal
-    if (pathname === '/profil' || pathname.startsWith('/profil')) {
-      console.log('[TabBar] Opening secret code modal from profile page');
-      if (typeof (global as any).openSecretCodeModal === 'function') {
-        (global as any).openSecretCodeModal();
-      }
-      return;
-    }
-
     // Open modal for adding expense or subscription
     setItemName('');
     setItemAmount('');

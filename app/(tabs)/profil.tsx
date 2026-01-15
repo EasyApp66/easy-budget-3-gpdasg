@@ -16,8 +16,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withSequence,
-  withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,7 +25,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import * as MailComposer from 'expo-mail-composer';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { usePremium } from '@/hooks/usePremium';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const colors = {
   black: '#000000',
@@ -35,9 +32,6 @@ const colors = {
   neonGreen: '#BFFE84',
   darkGray: '#232323',
   red: '#C43C3E',
-  mysticalPurple: '#9D4EDD',
-  mysticalBlue: '#3A86FF',
-  mysticalGold: '#FFD60A',
 };
 
 const SUPPORT_EMAIL = 'ivanmirosnic006@gmail.com';
@@ -111,7 +105,6 @@ export default function ProfilScreen() {
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [editNameModalVisible, setEditNameModalVisible] = useState(false);
   const [promoCodeModalVisible, setPromoCodeModalVisible] = useState(false);
-  const [secretCodeModalVisible, setSecretCodeModalVisible] = useState(false);
   
   // Form states
   const [bugDescription, setBugDescription] = useState('');
@@ -119,98 +112,33 @@ export default function ProfilScreen() {
   const [customDonation, setCustomDonation] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [promoCode, setPromoCode] = useState('');
-  const [secretCode, setSecretCode] = useState('');
 
   // Load premium status on mount
   useEffect(() => {
     loadPremiumStatus();
   }, [user]);
 
-  // Expose secret code modal function globally for tab bar
-  useEffect(() => {
-    (global as any).openSecretCodeModal = () => {
-      console.log('[Profile] Opening secret code modal from tab bar');
-      setSecretCodeModalVisible(true);
-    };
-    return () => {
-      delete (global as any).openSecretCodeModal;
-    };
-  }, []);
-
   const loadPremiumStatus = async () => {
-    const ADMIN_EMAIL = 'mirosnic.ivan@icloud.com';
-    
-    // Check if user is admin
-    if (user?.email === ADMIN_EMAIL) {
-      console.log('[Profile] Admin user detected, granting premium access');
-      setPremiumStatus({ isPremium: true, isLifetime: true });
-      return;
-    }
-
-    // First check local storage for offline premium code
     try {
-      const expiresAt = await AsyncStorage.getItem('premium_expires_at');
-      const codeUsed = await AsyncStorage.getItem('premium_code_used');
+      console.log('[Profile] Loading premium status');
+      const { authenticatedGet, BACKEND_URL } = await import('@/utils/api');
       
-      if (expiresAt && codeUsed === 'EASY2') {
-        const expiryDate = new Date(expiresAt);
-        const now = new Date();
-        
-        if (expiryDate > now) {
-          // Premium is still valid
-          const daysRemaining = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-          console.log('[Profile] Local premium active, days remaining:', daysRemaining);
-          
-          setPremiumStatus({ 
-            isPremium: true, 
-            expiresAt: expiresAt,
-            daysRemaining: daysRemaining,
-            isLifetime: false
-          });
-          return;
-        } else {
-          // Premium expired, clear local storage
-          console.log('[Profile] Local premium expired');
-          await AsyncStorage.removeItem('premium_expires_at');
-          await AsyncStorage.removeItem('premium_code_used');
-        }
+      if (!BACKEND_URL) {
+        console.warn('[Profile] Backend URL not configured');
+        return;
       }
-    } catch (error) {
-      console.error('[Profile] Error checking local premium status:', error);
-    }
 
-    // Check premium status from backend
-    try {
-      if (user?.email) {
-        console.log('[Profile] Checking premium status for:', user.email);
-        
-        // Import API utilities
-        const { authenticatedGet, BACKEND_URL } = await import('@/utils/api');
-        
-        if (!BACKEND_URL) {
-          console.warn('[Profile] Backend URL not configured, defaulting to non-premium');
-          setPremiumStatus({ isPremium: false });
-          return;
-        }
-
-        // Call backend to check premium status
-        const data = await authenticatedGet<{ 
-          isPremium: boolean; 
-          expiresAt?: string;
-          daysRemaining?: number;
-          isLifetime?: boolean;
-        }>('/api/premium/status');
-        
-        console.log('[Profile] Status received:', data);
-        setPremiumStatus(data);
-      } else {
-        console.log('[Profile] No user email, defaulting to non-premium');
-        setPremiumStatus({ isPremium: false });
-      }
+      const data = await authenticatedGet<{
+        isPremium: boolean;
+        expiresAt?: string;
+        daysRemaining?: number;
+        isLifetime?: boolean;
+      }>('/api/premium/status');
+      
+      console.log('[Profile] Premium status:', data);
+      setPremiumStatus(data);
     } catch (error) {
-      console.error('[Profile] Error checking premium status:', error);
-      // If endpoint doesn't exist yet (404), default to non-premium
-      setPremiumStatus({ isPremium: false });
+      console.error('[Profile] Error loading premium status:', error);
     }
   };
 
@@ -224,51 +152,14 @@ export default function ProfilScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    const code = promoCode.trim().toUpperCase();
-    console.log('[Profile] Redeeming promo code:', code);
+    console.log('[Profile] Redeeming promo code:', promoCode);
 
-    // Check if code is EASY2 (works offline)
-    if (code === 'EASY2') {
-      try {
-        // Calculate expiry date (1 month from now)
-        const expiryDate = new Date();
-        expiryDate.setMonth(expiryDate.getMonth() + 1);
-        
-        // Store premium status locally
-        await AsyncStorage.setItem('premium_expires_at', expiryDate.toISOString());
-        await AsyncStorage.setItem('premium_code_used', 'EASY2');
-        
-        console.log('[Profile] EASY2 code redeemed offline, expires:', expiryDate.toISOString());
-        
-        Alert.alert(
-          language === 'DE' ? 'Code eingelöst!' : 'Code Redeemed!',
-          language === 'DE' 
-            ? 'Du hast 1 Monat Premium erhalten!' 
-            : 'You received 1 month of Premium!'
-        );
-        
-        setPromoCodeModalVisible(false);
-        setPromoCode('');
-        
-        // Reload premium status
-        await loadPremiumStatus();
-        
-        return;
-      } catch (error) {
-        console.error('[Profile] Error storing premium status locally:', error);
-      }
-    }
-
-    // For other codes, try backend
     try {
       const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
       
       if (!BACKEND_URL) {
         console.warn('[Profile] Backend URL not configured');
-        Alert.alert(
-          t.profile.invalidCode,
-          language === 'DE' ? 'Ungültiger Code' : 'Invalid code'
-        );
+        Alert.alert(t.common.error, language === 'DE' ? 'Backend nicht konfiguriert' : 'Backend not configured');
         return;
       }
 
@@ -278,7 +169,7 @@ export default function ProfilScreen() {
         expiresAt?: string;
         daysRemaining?: number;
       }>('/api/premium/redeem-code', {
-        code: code,
+        code: promoCode.trim().toUpperCase(),
       });
 
       console.log('[Profile] Redeem code response:', response);
@@ -301,61 +192,19 @@ export default function ProfilScreen() {
     } catch (error: any) {
       console.error('[Profile] Error redeeming code:', error);
       
-      Alert.alert(
-        t.profile.invalidCode,
-        language === 'DE' ? 'Ungültiger Code' : 'Invalid code'
-      );
-    }
-  };
-
-  const handleSecretCodeRedeem = async () => {
-    if (!secretCode.trim()) {
-      Alert.alert(t.common.error, language === 'DE' ? 'Bitte gib einen Code ein' : 'Please enter a code');
-      return;
-    }
-
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-
-    const code = secretCode.trim().toUpperCase();
-    console.log('[Profile] Redeeming secret code:', code);
-
-    // Check if code is EASY2 (works offline)
-    if (code === 'EASY2') {
-      try {
-        // Calculate expiry date (1 month from now)
-        const expiryDate = new Date();
-        expiryDate.setMonth(expiryDate.getMonth() + 1);
-        
-        // Store premium status locally
-        await AsyncStorage.setItem('premium_expires_at', expiryDate.toISOString());
-        await AsyncStorage.setItem('premium_code_used', 'EASY2');
-        
-        console.log('[Profile] EASY2 secret code redeemed offline, expires:', expiryDate.toISOString());
-        
+      if (error.message?.includes('404')) {
         Alert.alert(
-          language === 'DE' ? '🎉 Code eingelöst!' : '🎉 Code Redeemed!',
+          language === 'DE' ? 'In Entwicklung' : 'In Development',
           language === 'DE' 
-            ? 'Du hast 1 Monat Premium erhalten!' 
-            : 'You received 1 month of Premium!'
+            ? 'Promo-Codes werden bald verfügbar sein.' 
+            : 'Promo codes will be available soon.'
         );
-        
-        setSecretCodeModalVisible(false);
-        setSecretCode('');
-        
-        // Reload premium status
-        await loadPremiumStatus();
-        
-        return;
-      } catch (error) {
-        console.error('[Profile] Error storing premium status locally:', error);
+      } else {
+        Alert.alert(
+          t.common.error,
+          language === 'DE' ? 'Code konnte nicht eingelöst werden' : 'Could not redeem code'
+        );
       }
-    } else {
-      Alert.alert(
-        t.profile.invalidCode,
-        language === 'DE' ? 'Ungültiger Code' : 'Invalid code'
-      );
     }
   };
 
@@ -1043,77 +892,6 @@ export default function ProfilScreen() {
         </Pressable>
       </Modal>
 
-      {/* Secret Code Modal - Mystical Design */}
-      <Modal
-        visible={secretCodeModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSecretCodeModalVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setSecretCodeModalVisible(false)}>
-          <Animated.View 
-            style={styles.secretCodeModal}
-            entering={withSequence(
-              withTiming({ opacity: 0, scale: 0.8 }, { duration: 0 }),
-              withSpring({ opacity: 1, scale: 1 }, { damping: 15, stiffness: 150 })
-            )}
-          >
-            <Pressable style={styles.closeButton} onPress={() => setSecretCodeModalVisible(false)}>
-              <IconSymbol 
-                ios_icon_name="xmark" 
-                android_material_icon_name="close"
-                size={24} 
-                color={colors.mysticalGold} 
-              />
-            </Pressable>
-
-            {/* Mystical Icon */}
-            <View style={styles.mysticalIconContainer}>
-              <Text style={styles.mysticalIcon}>✨</Text>
-            </View>
-
-            <Text style={styles.secretModalTitle}>
-              {language === 'DE' ? 'Geheimcode gefunden!!!' : 'Secret Code Found!!!'}
-            </Text>
-            
-            <Text style={styles.secretModalSubtitle}>
-              {language === 'DE' 
-                ? 'Löse den Geheimcode ein um einen Monat Premium zu erhalten!' 
-                : 'Redeem the secret code to get one month of Premium!'}
-            </Text>
-
-            <View style={styles.codeDisplayContainer}>
-              <Text style={styles.codeLabel}>
-                {language === 'DE' ? 'Code:' : 'Code:'}
-              </Text>
-              <Text style={styles.codeDisplay}>Easy2</Text>
-            </View>
-
-            <TextInput
-              style={styles.secretCodeInput}
-              value={secretCode}
-              onChangeText={setSecretCode}
-              placeholder={language === 'DE' ? 'Code eingeben...' : 'Enter code...'}
-              placeholderTextColor="#666"
-              autoCapitalize="characters"
-              autoFocus
-            />
-
-            <Pressable style={styles.secretRedeemButton} onPress={handleSecretCodeRedeem}>
-              <IconSymbol 
-                ios_icon_name="star.fill" 
-                android_material_icon_name="star"
-                size={20} 
-                color={colors.black} 
-              />
-              <Text style={styles.secretRedeemButtonText}>
-                {language === 'DE' ? 'Einlösen' : 'Redeem'}
-              </Text>
-            </Pressable>
-          </Animated.View>
-        </Pressable>
-      </Modal>
-
       {/* Premium Purchase Modal */}
       <PremiumPaywallModal
         visible={premiumModalVisible}
@@ -1265,20 +1043,6 @@ const styles = StyleSheet.create({
     width: '85%',
     maxWidth: 400,
   },
-  secretCodeModal: {
-    backgroundColor: '#1a1a2e',
-    borderRadius: 24,
-    padding: 30,
-    width: '85%',
-    maxWidth: 400,
-    borderWidth: 2,
-    borderColor: colors.mysticalGold,
-    shadowColor: colors.mysticalGold,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
-  },
   closeButton: {
     position: 'absolute',
     top: 15,
@@ -1308,65 +1072,12 @@ const styles = StyleSheet.create({
   heartIcon: {
     fontSize: 40,
   },
-  mysticalIconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(157, 78, 221, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: colors.mysticalPurple,
-  },
-  mysticalIcon: {
-    fontSize: 50,
-  },
   modalTitle: {
     color: colors.white,
     fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: 10,
-  },
-  secretModalTitle: {
-    color: colors.mysticalGold,
-    fontSize: 26,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 15,
-    textShadowColor: colors.mysticalGold,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
-  },
-  secretModalSubtitle: {
-    color: colors.white,
-    fontSize: 15,
-    textAlign: 'center',
-    marginBottom: 25,
-    lineHeight: 22,
-  },
-  codeDisplayContainer: {
-    backgroundColor: 'rgba(157, 78, 221, 0.15)',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: colors.mysticalPurple,
-    alignItems: 'center',
-  },
-  codeLabel: {
-    color: colors.mysticalPurple,
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  codeDisplay: {
-    color: colors.mysticalGold,
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: 4,
   },
   donateSubtitle: {
     color: '#999',
@@ -1393,18 +1104,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlignVertical: 'top',
   },
-  secretCodeInput: {
-    backgroundColor: 'rgba(58, 134, 255, 0.1)',
-    borderRadius: 12,
-    padding: 15,
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 20,
-    textAlign: 'center',
-    borderWidth: 1,
-    borderColor: colors.mysticalBlue,
-  },
   primaryButton: {
     backgroundColor: colors.neonGreen,
     borderRadius: 12,
@@ -1426,25 +1125,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sendButtonText: {
-    color: colors.black,
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  secretRedeemButton: {
-    backgroundColor: colors.mysticalGold,
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 10,
-    shadowColor: colors.mysticalGold,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  secretRedeemButtonText: {
     color: colors.black,
     fontSize: 18,
     fontWeight: '800',
