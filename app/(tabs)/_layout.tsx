@@ -1,9 +1,11 @@
 
-import { Tabs } from 'expo-router';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { useRouter, usePathname } from 'expo-router';
-import React, { useState } from 'react';
 import { Platform, Pressable, View, StyleSheet, Modal, TextInput, Alert } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import * as Sharing from 'expo-sharing';
+import { BlurView } from 'expo-blur';
+import React, { useState } from 'react';
+import { colors } from '@/styles/commonStyles';
+import { Tabs } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,307 +15,333 @@ import Animated, {
   FadeOut,
   Easing,
 } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Sharing from 'expo-sharing';
-import * as Haptics from 'expo-haptics';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useRouter, usePathname } from 'expo-router';
 import { Text } from 'react-native';
-import { colors } from '@/styles/commonStyles';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { usePremium } from '@/hooks/usePremium';
 
 const styles = StyleSheet.create({
-  tabBar: {
+  tabBarContainer: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    height: 70,
-    borderRadius: 35,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    zIndex: 1000,
+  },
+  tabBarInner: {
+    height: 80,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    borderRadius: 40,
     overflow: 'hidden',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 10,
+      },
+      web: {
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+      },
+    }),
+  },
+  blurView: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(30, 30, 30, 0.85)',
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'space-around',
   },
   tabButton: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: '100%',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minWidth: 70,
+  },
+  tabIcon: {
+    marginBottom: 4,
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  tabLabelActive: {
+    color: '#BFFE84',
+  },
+  addButtonContainer: {
+    marginLeft: 8,
   },
   addButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.neonGreen,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#BFFE84',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#BFFE84',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+      web: {
+        boxShadow: '0 4px 20px rgba(191, 254, 132, 0.5)',
+      },
+    }),
+  },
+  plusIconContainer: {
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  plusVertical: {
+    position: 'absolute',
+    width: 4,
+    height: 28,
+    backgroundColor: '#000000',
+    borderRadius: 3,
+    left: 12,
+    top: 0,
+  },
+  plusHorizontal: {
+    position: 'absolute',
+    width: 28,
+    height: 4,
+    backgroundColor: '#000000',
+    borderRadius: 3,
+    left: 0,
+    top: 12,
+  },
+  bubbleIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    height: 3,
+    backgroundColor: '#BFFE84',
+    borderRadius: 2,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 16,
   },
   modalContent: {
-    backgroundColor: colors.darkGray,
+    backgroundColor: '#232323',
     borderRadius: 20,
-    padding: 30,
-    width: '85%',
-    maxWidth: 400,
+    padding: 24,
+    paddingBottom: 16,
+    width: '95%',
+    maxWidth: 440,
+    minWidth: 340,
   },
   modalTitle: {
-    color: colors.white,
     fontSize: 24,
-    fontWeight: '800',
+    fontWeight: 'bold',
+    color: '#FFFFFF',
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   input: {
-    backgroundColor: '#333',
+    backgroundColor: '#000000',
     borderRadius: 12,
-    padding: 15,
-    color: colors.white,
+    padding: 18,
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 15,
+    marginBottom: 14,
   },
-  buttonRow: {
+  modalButtons: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
     marginTop: 10,
   },
-  button: {
+  modalButton: {
     flex: 1,
-    backgroundColor: colors.neonGreen,
+    paddingVertical: 16,
     borderRadius: 12,
-    padding: 15,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: '#333',
+    backgroundColor: '#000000',
+  },
+  saveButton: {
+    backgroundColor: '#BFFE84',
   },
   buttonText: {
-    color: colors.black,
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: 'bold',
+    letterSpacing: 0.4,
   },
   cancelButtonText: {
-    color: colors.white,
+    color: '#FFFFFF',
   },
-  secretCodeModal: {
-    backgroundColor: '#1a0f2e',
-    borderRadius: 24,
-    padding: 32,
-    width: '85%',
-    maxWidth: 400,
-    borderWidth: 2,
-    borderColor: '#8b5cf6',
-    shadowColor: '#8b5cf6',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  secretCodeTitle: {
-    color: '#fbbf24',
-    fontSize: 28,
-    fontWeight: '800',
-    marginBottom: 16,
-    textAlign: 'center',
-    textShadowColor: '#fbbf24',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
-  },
-  secretCodeDescription: {
-    color: '#e0e7ff',
-    fontSize: 16,
-    marginBottom: 24,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  secretCodeBox: {
-    backgroundColor: '#2d1b4e',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#8b5cf6',
-  },
-  secretCodeLabel: {
-    color: '#a78bfa',
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  secretCodeValue: {
-    color: '#fbbf24',
-    fontSize: 32,
-    fontWeight: '800',
-    textAlign: 'center',
-    letterSpacing: 4,
-  },
-  secretCodeButton: {
-    backgroundColor: '#8b5cf6',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  secretCodeButtonText: {
-    color: colors.white,
-    fontSize: 18,
-    fontWeight: '800',
+  saveButtonText: {
+    color: '#000000',
   },
 });
 
 function CustomTabBar() {
-  const router = useRouter();
   const pathname = usePathname();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
-  const { redeemPromoCode, checkPremiumStatus } = usePremium();
-
   const [modalVisible, setModalVisible] = useState(false);
-  const [secretCodeModalVisible, setSecretCodeModalVisible] = useState(false);
-  const [itemName, setItemName] = useState('');
-  const [itemAmount, setItemAmount] = useState('');
+  const [modalType, setModalType] = useState<'expense' | 'subscription' | null>(null);
+  const [name, setName] = useState('');
+  const [amount, setAmount] = useState('');
 
   const budgetScale = useSharedValue(1);
   const abosScale = useSharedValue(1);
   const profilScale = useSharedValue(1);
   const addScale = useSharedValue(1);
-
-  const budgetStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: budgetScale.value }],
-  }));
-
-  const abosStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: abosScale.value }],
-  }));
-
-  const profilStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: profilScale.value }],
-  }));
-
-  const addStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: addScale.value }],
-  }));
+  
+  // Animated bubble indicator
+  const bubblePosition = useSharedValue(0);
+  const bubbleWidth = useSharedValue(70);
 
   const isActive = (route: string) => {
-    return pathname === route || pathname.startsWith(route);
+    return pathname.includes(route);
   };
 
-  const handleTabPress = (route: string) => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  // Update bubble position based on active tab with smooth iOS-style animation
+  React.useEffect(() => {
+    if (pathname.includes('budget')) {
+      bubblePosition.value = withSpring(0, { 
+        damping: 20, 
+        stiffness: 180,
+        mass: 0.8,
+      });
+    } else if (pathname.includes('abos')) {
+      bubblePosition.value = withSpring(1, { 
+        damping: 20, 
+        stiffness: 180,
+        mass: 0.8,
+      });
+    } else if (pathname.includes('profil')) {
+      bubblePosition.value = withSpring(2, { 
+        damping: 20, 
+        stiffness: 180,
+        mass: 0.8,
+      });
     }
+  }, [pathname, bubblePosition]);
+
+  const bubbleStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateX: bubblePosition.value * (bubbleWidth.value + 20),
+        },
+      ],
+      width: bubbleWidth.value,
+    };
+  });
+
+  const handleTabPress = (route: string) => {
     console.log(`[TabBar] Navigating to: ${route}`);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(route as any);
   };
 
   const handleAddPress = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    console.log('[TabBar] Add button pressed, current route:', pathname);
+    console.log('[TabBar] Add button pressed');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
-    addScale.value = withSpring(0.9, {}, () => {
-      addScale.value = withSpring(1);
-    });
-
-    // Check if we're on the profile page
-    if (pathname === '/profil' || pathname.startsWith('/profil')) {
-      console.log('[TabBar] Opening secret code modal on profile page');
-      setSecretCodeModalVisible(true);
-      return;
+    if (pathname.includes('budget')) {
+      setModalType('expense');
+      setModalVisible(true);
+    } else if (pathname.includes('abos')) {
+      setModalType('subscription');
+      setModalVisible(true);
+    } else if (pathname.includes('profil')) {
+      handleShare();
     }
+  };
 
-    // Open modal for adding expense or subscription
-    setItemName('');
-    setItemAmount('');
-    setModalVisible(true);
+  const handleShare = async () => {
+    console.log('[TabBar] Opening share dialog');
+    try {
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync('https://easybudget.app', {
+          dialogTitle: 'Schau dir meine Budget-App an!',
+        });
+      } else {
+        Alert.alert('Teilen nicht verfügbar', 'Teilen wird auf diesem Gerät nicht unterstützt.');
+      }
+    } catch (error) {
+      console.error('[TabBar] Share error:', error);
+    }
   };
 
   const handleSave = () => {
-    if (!itemName.trim() || !itemAmount.trim()) {
-      Alert.alert(t.common.error, t.budget.errorAllFields || 'Bitte fülle alle Felder aus');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Validate input
+    if (!name.trim()) {
+      Alert.alert(t.common.error, modalType === 'expense' ? t.budget.expenseName : t.abos.subscriptionName);
       return;
     }
-
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-
-    const amount = parseFloat(itemAmount);
-    if (isNaN(amount)) {
-      Alert.alert(t.common.error, t.budget.errorInvalidAmount || 'Ungültiger Betrag');
+    
+    const numericAmount = parseFloat(amount.replace(/'/g, ''));
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      Alert.alert(t.common.error, t.budget.amount);
       return;
     }
-
-    console.log('[TabBar] Saving item:', { name: itemName, amount, route: pathname });
-
-    // Call the appropriate add function based on current route
-    if (pathname === '/budget' || pathname.startsWith('/budget')) {
-      if (typeof (global as any).addExpenseFromModal === 'function') {
-        (global as any).addExpenseFromModal(itemName.toUpperCase(), amount);
+    
+    console.log(`[TabBar] Saving ${modalType}: ${name}, ${numericAmount}`);
+    
+    // Call the appropriate global function to add the item
+    if (modalType === 'expense') {
+      // Call the budget screen's add function
+      if ((global as any).addExpenseFromModal) {
+        (global as any).addExpenseFromModal(name.toUpperCase(), numericAmount);
       }
-    } else if (pathname === '/abos' || pathname.startsWith('/abos')) {
-      if (typeof (global as any).addSubscriptionFromModal === 'function') {
-        (global as any).addSubscriptionFromModal(itemName.toUpperCase(), amount);
+    } else if (modalType === 'subscription') {
+      // Call the abos screen's add function
+      if ((global as any).addSubscriptionFromModal) {
+        (global as any).addSubscriptionFromModal(name.toUpperCase(), numericAmount);
       }
     }
-
+    
+    // Close modal and reset
     setModalVisible(false);
-    setItemName('');
-    setItemAmount('');
+    setName('');
+    setAmount('');
   };
 
   const handleCancel = () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
+    console.log('[TabBar] Modal cancelled');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setModalVisible(false);
-    setItemName('');
-    setItemAmount('');
-  };
-
-  const handleRedeemSecretCode = async () => {
-    if (Platform.OS === 'ios' || Platform.OS === 'android') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
-    
-    console.log('[TabBar] Redeeming secret code: EASY2');
-    
-    const result = await redeemPromoCode('EASY2');
-    
-    if (result.success) {
-      Alert.alert(
-        '🎉 Premium Aktiviert!',
-        'Du hast 1 Monat Premium freigeschaltet!',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setSecretCodeModalVisible(false);
-              // Refresh premium status
-              checkPremiumStatus();
-            },
-          },
-        ]
-      );
-    } else {
-      Alert.alert('Fehler', result.message);
-    }
+    setName('');
+    setAmount('');
   };
 
   const TabButton = ({ 
     androidIcon, 
     route, 
     label,
-    scaleValue,
+    scaleValue 
   }: { 
     androidIcon: string;
     route: string; 
@@ -321,73 +349,117 @@ function CustomTabBar() {
     scaleValue: Animated.SharedValue<number>;
   }) => {
     const active = isActive(route);
+    
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: scaleValue.value }],
+    }));
 
     return (
       <Pressable
-        style={styles.tabButton}
-        onPress={() => {
-          scaleValue.value = withSpring(0.9, {}, () => {
-            scaleValue.value = withSpring(1);
+        onPress={() => handleTabPress(route)}
+        onPressIn={() => {
+          scaleValue.value = withSpring(0.88, { 
+            damping: 15, 
+            stiffness: 300,
+            mass: 0.5,
           });
-          handleTabPress(route);
         }}
+        onPressOut={() => {
+          scaleValue.value = withSpring(1, { 
+            damping: 15, 
+            stiffness: 300,
+            mass: 0.5,
+          });
+        }}
+        style={styles.tabButton}
       >
-        <Animated.View style={scaleValue === budgetScale ? budgetStyle : scaleValue === abosScale ? abosStyle : profilStyle}>
+        <Animated.View style={[animatedStyle, { alignItems: 'center' }]}>
           <MaterialIcons
             name={androidIcon as any}
             size={28}
-            color={active ? colors.neonGreen : colors.white}
+            color={active ? '#BFFE84' : '#FFFFFF'}
+            style={styles.tabIcon}
           />
+          <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+            {label}
+          </Text>
         </Animated.View>
       </Pressable>
     );
   };
 
-  const AddButton = () => (
-    <Pressable onPress={handleAddPress}>
-      <Animated.View style={[styles.addButton, addStyle]}>
-        <MaterialIcons name="add" size={32} color={colors.black} />
-      </Animated.View>
-    </Pressable>
-  );
+  const AddButton = () => {
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: addScale.value }],
+    }));
 
-  const getModalTitle = () => {
-    if (pathname === '/budget' || pathname.startsWith('/budget')) {
-      return t.budget.newExpense;
-    } else if (pathname === '/abos' || pathname.startsWith('/abos')) {
-      return t.abos.newSubscription;
-    }
-    return t.budget.newExpense;
-  };
-
-  const getNamePlaceholder = () => {
-    if (pathname === '/budget' || pathname.startsWith('/budget')) {
-      return t.budget.namePlaceholder;
-    } else if (pathname === '/abos' || pathname.startsWith('/abos')) {
-      return t.abos.namePlaceholder;
-    }
-    return t.budget.namePlaceholder;
-  };
-
-  const getAmountPlaceholder = () => {
-    if (pathname === '/budget' || pathname.startsWith('/budget')) {
-      return t.budget.amountPlaceholder;
-    } else if (pathname === '/abos' || pathname.startsWith('/abos')) {
-      return t.abos.amountPlaceholder;
-    }
-    return t.budget.amountPlaceholder;
+    return (
+      <View style={styles.addButtonContainer}>
+        <Pressable
+          onPress={handleAddPress}
+          onPressIn={() => {
+            addScale.value = withSpring(0.88, { 
+              damping: 15, 
+              stiffness: 300,
+              mass: 0.5,
+            });
+          }}
+          onPressOut={() => {
+            addScale.value = withSpring(1, { 
+              damping: 15, 
+              stiffness: 300,
+              mass: 0.5,
+            });
+          }}
+        >
+          <Animated.View style={[styles.addButton, animatedStyle]}>
+            <View style={styles.plusIconContainer}>
+              <View style={styles.plusVertical} />
+              <View style={styles.plusHorizontal} />
+            </View>
+          </Animated.View>
+        </Pressable>
+      </View>
+    );
   };
 
   return (
     <>
-      <BlurView intensity={80} tint="dark" style={[styles.tabBar, { marginBottom: insets.bottom }]}>
-        <TabButton androidIcon="attach-money" route="/budget" label="Budget" scaleValue={budgetScale} />
-        <TabButton androidIcon="subscriptions" route="/abos" label="Abos" scaleValue={abosScale} />
-        <AddButton />
-        <TabButton androidIcon="person" route="/profil" label="Profil" scaleValue={profilScale} />
-      </BlurView>
+      <View style={[styles.tabBarContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+        <View style={styles.tabBarInner}>
+          {Platform.OS === 'ios' ? (
+            <BlurView intensity={80} style={styles.blurView} tint="dark" />
+          ) : (
+            <View style={styles.blurView} />
+          )}
+          
+          <View style={styles.tabsRow}>
+            <TabButton
+              androidIcon="attach-money"
+              route="/budget"
+              label="Budget"
+              scaleValue={budgetScale}
+            />
+            
+            <TabButton
+              androidIcon="autorenew"
+              route="/abos"
+              label="Abos"
+              scaleValue={abosScale}
+            />
+            
+            <TabButton
+              androidIcon="person"
+              route="/profil"
+              label="Profil"
+              scaleValue={profilScale}
+            />
+          </View>
+          
+          <AddButton />
+        </View>
+      </View>
 
-      {/* Add Item Modal */}
       <Modal
         visible={modalVisible}
         transparent
@@ -395,62 +467,54 @@ function CustomTabBar() {
         onRequestClose={handleCancel}
       >
         <Pressable style={styles.modalOverlay} onPress={handleCancel}>
-          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>{getModalTitle()}</Text>
-            
-            <TextInput
-              style={styles.input}
-              value={itemName}
-              onChangeText={setItemName}
-              placeholder={getNamePlaceholder()}
-              placeholderTextColor="#666"
-              autoFocus
-            />
-            
-            <TextInput
-              style={styles.input}
-              value={itemAmount}
-              onChangeText={setItemAmount}
-              placeholder={getAmountPlaceholder()}
-              placeholderTextColor="#666"
-              keyboardType="numeric"
-            />
-
-            <View style={styles.buttonRow}>
-              <Pressable style={[styles.button, styles.cancelButton]} onPress={handleCancel}>
-                <Text style={[styles.buttonText, styles.cancelButtonText]}>{t.common.cancel}</Text>
-              </Pressable>
-              <Pressable style={styles.button} onPress={handleSave}>
-                <Text style={styles.buttonText}>{t.common.save}</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* Secret Code Modal */}
-      <Modal
-        visible={secretCodeModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setSecretCodeModalVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setSecretCodeModalVisible(false)}>
-          <Pressable style={styles.secretCodeModal} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.secretCodeTitle}>✨ Geheimcode gefunden! ✨</Text>
-            
-            <Text style={styles.secretCodeDescription}>
-              Löse den Geheimcode ein um einen Monat Premium zu erhalten!
-            </Text>
-
-            <View style={styles.secretCodeBox}>
-              <Text style={styles.secretCodeLabel}>Code:</Text>
-              <Text style={styles.secretCodeValue}>EASY2</Text>
-            </View>
-
-            <Pressable style={styles.secretCodeButton} onPress={handleRedeemSecretCode}>
-              <Text style={styles.secretCodeButtonText}>Code einlösen</Text>
-            </Pressable>
+          <Pressable onPress={(e) => e.stopPropagation()}>
+            <Animated.View 
+              entering={FadeIn.duration(200)}
+              exiting={FadeOut.duration(200)}
+              style={styles.modalContent}
+            >
+              <Text style={styles.modalTitle}>
+                {modalType === 'expense' ? t.budget.newExpense : t.abos.newSubscription}
+              </Text>
+              
+              <TextInput
+                style={styles.input}
+                placeholder={modalType === 'expense' ? t.budget.namePlaceholder : t.abos.namePlaceholder}
+                placeholderTextColor="#666"
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="characters"
+              />
+              
+              <TextInput
+                style={styles.input}
+                placeholder={modalType === 'expense' ? t.budget.amountPlaceholder : t.abos.amountPlaceholder}
+                placeholderTextColor="#666"
+                keyboardType="numeric"
+                value={amount}
+                onChangeText={setAmount}
+              />
+              
+              <View style={styles.modalButtons}>
+                <Pressable
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={handleCancel}
+                >
+                  <Text style={[styles.buttonText, styles.cancelButtonText]}>
+                    {t.common.cancel}
+                  </Text>
+                </Pressable>
+                
+                <Pressable
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={handleSave}
+                >
+                  <Text style={[styles.buttonText, styles.saveButtonText]}>
+                    {t.common.add}
+                  </Text>
+                </Pressable>
+              </View>
+            </Animated.View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -465,11 +529,15 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: { display: 'none' },
+          animation: 'fade',
+          animationDuration: 150,
         }}
       >
         <Tabs.Screen name="budget" />
         <Tabs.Screen name="abos" />
         <Tabs.Screen name="profil" />
+        <Tabs.Screen name="profile" options={{ href: null }} />
+        <Tabs.Screen name="(home)" options={{ href: null }} />
       </Tabs>
       <CustomTabBar />
     </>
