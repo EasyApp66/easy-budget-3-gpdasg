@@ -5,11 +5,8 @@ import {
   StyleSheet,
   Pressable,
   Platform,
-  Modal,
-  ScrollView,
 } from 'react-native';
 import { colors } from '@/styles/commonStyles';
-import { IconSymbol } from '@/components/IconSymbol';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Animated, {
@@ -19,15 +16,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
 import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import * as Haptics from 'expo-haptics';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { signInWithGoogle, signInWithApple } = useAuth();
   const { t } = useLanguage();
-  const [legalModalVisible, setLegalModalVisible] = useState(false);
-  const [legalContent, setLegalContent] = useState({ title: '', content: '' });
 
   const AnimatedButton = ({
     title,
@@ -35,14 +30,12 @@ export default function WelcomeScreen() {
     backgroundColor,
     textColor,
     iconName,
-    isGoogle,
   }: {
     title: string;
     onPress: () => void;
     backgroundColor: string;
     textColor: string;
     iconName?: string;
-    isGoogle?: boolean;
   }) => {
     const scale = useSharedValue(1);
 
@@ -83,6 +76,7 @@ export default function WelcomeScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    console.log('[Welcome] User tapped email login button');
     router.push('/login');
   };
 
@@ -90,6 +84,7 @@ export default function WelcomeScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    console.log('[Welcome] User tapped Apple sign in button');
     try {
       await signInWithApple();
       router.replace('/(tabs)/budget');
@@ -102,42 +97,13 @@ export default function WelcomeScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    console.log('[Welcome] User tapped Google sign in button');
     try {
       await signInWithGoogle();
       router.replace('/(tabs)/budget');
     } catch (error) {
       console.error('Google sign in error:', error);
     }
-  };
-
-  const openLegalModal = (type: 'terms' | 'privacy' | 'agb') => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    
-    let title = '';
-    let content = '';
-    
-    if (type === 'terms') {
-      title = t.legal.termsTitle;
-      content = t.legal.termsContent;
-    } else if (type === 'privacy') {
-      title = t.legal.privacyTitle;
-      content = t.legal.privacyContent;
-    } else if (type === 'agb') {
-      title = t.legal.agbTitle;
-      content = t.legal.agbContent;
-    }
-    
-    setLegalContent({ title, content });
-    setLegalModalVisible(true);
-  };
-
-  const closeLegalModal = () => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setLegalModalVisible(false);
   };
 
   return (
@@ -183,70 +149,11 @@ export default function WelcomeScreen() {
 
           <View style={styles.footerContainer}>
             <Text style={styles.footer}>
-              {t.welcome.footer.split(t.welcome.terms)[0]}
-              <Text
-                style={styles.link}
-                onPress={() => openLegalModal('terms')}
-              >
-                {t.welcome.terms}
-              </Text>
-              {' '}und die{' '}
-              <Text
-                style={styles.link}
-                onPress={() => openLegalModal('privacy')}
-              >
-                {t.welcome.privacy}
-              </Text>
-              {' '}und die{' '}
-              <Text
-                style={styles.link}
-                onPress={() => openLegalModal('agb')}
-              >
-                {t.welcome.agb}
-              </Text>
-              {' '}gelesen hast.
+              {t.welcome.footer}
             </Text>
           </View>
         </View>
       </View>
-
-      {/* Legal Modal */}
-      <Modal
-        visible={legalModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={closeLegalModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Pressable style={styles.closeButton} onPress={closeLegalModal}>
-              <MaterialIcons name="close" size={28} color={colors.white} />
-            </Pressable>
-            
-            <Text style={styles.modalTitle}>{legalContent.title}</Text>
-            
-            <ScrollView 
-              style={styles.modalScrollView}
-              contentContainerStyle={styles.modalScrollContent}
-              showsVerticalScrollIndicator={true}
-            >
-              <Text style={styles.modalText}>{legalContent.content}</Text>
-            </ScrollView>
-            
-            <Pressable 
-              style={styles.okButton} 
-              onPress={closeLegalModal}
-              onPressIn={() => {
-                if (Platform.OS === 'ios') {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-              }}
-            >
-              <Text style={styles.okButtonText}>{t.common.ok}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
     </>
   );
 }
@@ -314,69 +221,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     opacity: 0.7,
-  },
-  link: {
-    color: colors.neonGreen,
-    textDecorationLine: 'underline',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 24,
-    width: '90%',
-    maxWidth: 500,
-    maxHeight: '75%',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    zIndex: 10,
-    padding: 4,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.white,
-    marginBottom: 20,
-    marginRight: 40,
-    textAlign: 'left',
-  },
-  modalScrollView: {
-    flex: 1,
-    marginBottom: 16,
-  },
-  modalScrollContent: {
-    paddingRight: 8,
-    paddingBottom: 8,
-  },
-  modalText: {
-    fontSize: 14,
-    color: colors.white,
-    lineHeight: 22,
-    textAlign: 'left',
-    opacity: 1,
-  },
-  okButton: {
-    backgroundColor: colors.neonGreen,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    marginTop: 4,
-  },
-  okButtonText: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.black,
-    letterSpacing: 0.5,
   },
 });

@@ -10,7 +10,7 @@ import {
   Modal,
   TextInput,
 } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import Animated, {
   useSharedValue,
@@ -91,17 +91,122 @@ export default function ProfilScreen() {
   const { language, setLanguage, t } = useLanguage();
   const [username, setUsername] = useState('mirosnic.ivan');
   
+  // Premium status state
+  const [premiumStatus, setPremiumStatus] = useState<{
+    isPremium: boolean;
+    daysRemaining?: number;
+    expiresAt?: string;
+    isLifetime?: boolean;
+  }>({ isPremium: false });
+  
   // Modal states
   const [bugModalVisible, setBugModalVisible] = useState(false);
   const [donateModalVisible, setDonateModalVisible] = useState(false);
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [editNameModalVisible, setEditNameModalVisible] = useState(false);
+  const [promoCodeModalVisible, setPromoCodeModalVisible] = useState(false);
   
   // Form states
   const [bugDescription, setBugDescription] = useState('');
   const [selectedDonation, setSelectedDonation] = useState(5);
   const [customDonation, setCustomDonation] = useState('');
   const [newUsername, setNewUsername] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+
+  // Load premium status on mount
+  useEffect(() => {
+    loadPremiumStatus();
+  }, [user]);
+
+  const loadPremiumStatus = async () => {
+    try {
+      console.log('[Profile] Loading premium status');
+      const { authenticatedGet, BACKEND_URL } = await import('@/utils/api');
+      
+      if (!BACKEND_URL) {
+        console.warn('[Profile] Backend URL not configured');
+        return;
+      }
+
+      const data = await authenticatedGet<{
+        isPremium: boolean;
+        expiresAt?: string;
+        daysRemaining?: number;
+        isLifetime?: boolean;
+      }>('/api/premium/status');
+      
+      console.log('[Profile] Premium status:', data);
+      setPremiumStatus(data);
+    } catch (error) {
+      console.error('[Profile] Error loading premium status:', error);
+    }
+  };
+
+  const handleRedeemCode = async () => {
+    if (!promoCode.trim()) {
+      Alert.alert(t.common.error, language === 'DE' ? 'Bitte gib einen Code ein' : 'Please enter a code');
+      return;
+    }
+
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    console.log('[Profile] Redeeming promo code:', promoCode);
+
+    try {
+      const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
+      
+      if (!BACKEND_URL) {
+        console.warn('[Profile] Backend URL not configured');
+        Alert.alert(t.common.error, language === 'DE' ? 'Backend nicht konfiguriert' : 'Backend not configured');
+        return;
+      }
+
+      const response = await authenticatedPost<{
+        success: boolean;
+        message: string;
+        expiresAt?: string;
+        daysRemaining?: number;
+      }>('/api/premium/redeem-code', {
+        code: promoCode.trim().toUpperCase(),
+      });
+
+      console.log('[Profile] Redeem code response:', response);
+
+      if (response.success) {
+        Alert.alert(
+          t.profile.codeRedeemed,
+          t.profile.codeRedeemedMessage
+        );
+        setPromoCodeModalVisible(false);
+        setPromoCode('');
+        // Reload premium status
+        await loadPremiumStatus();
+      } else {
+        Alert.alert(
+          t.profile.invalidCode,
+          response.message || t.profile.invalidCodeMessage
+        );
+      }
+    } catch (error: any) {
+      console.error('[Profile] Error redeeming code:', error);
+      
+      if (error.message?.includes('404')) {
+        Alert.alert(
+          language === 'DE' ? 'In Entwicklung' : 'In Development',
+          language === 'DE' 
+            ? 'Promo-Codes werden bald verfügbar sein.' 
+            : 'Promo codes will be available soon.'
+        );
+      } else {
+        Alert.alert(
+          t.common.error,
+          language === 'DE' ? 'Code konnte nicht eingelöst werden' : 'Could not redeem code'
+        );
+      }
+    }
+  };
 
   const handleLogout = async () => {
     if (Platform.OS === 'ios') {
@@ -150,7 +255,6 @@ export default function ProfilScreen() {
     console.log(`[Profile] Initiating premium purchase: ${type}`);
     
     try {
-      // Import API utilities
       const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
       
       if (!BACKEND_URL) {
@@ -159,25 +263,18 @@ export default function ProfilScreen() {
         return;
       }
 
-      // Determine payment endpoint based on platform
-      const endpoint = Platform.OS === 'ios' 
-        ? '/api/payments/apple-pay' 
-        : '/api/payments/stripe';
+      console.log(`[Profile] Calling premium purchase endpoint`);
 
-      console.log(`[Profile] Calling payment endpoint: ${endpoint}`);
-
-      // Call backend to initiate payment
       const response = await authenticatedPost<{
         success: boolean;
-        paymentUrl?: string;
-        transactionId?: string;
+        isPremium: boolean;
+        expiresAt?: string;
         message?: string;
-      }>(endpoint, {
+      }>('/api/premium/purchase', {
         type,
-        platform: Platform.OS,
       });
 
-      console.log('[Profile] Payment response:', response);
+      console.log('[Profile] Premium purchase response:', response);
 
       if (response.success) {
         Alert.alert(
@@ -185,13 +282,14 @@ export default function ProfilScreen() {
           language === 'DE' ? 'Premium wurde aktiviert!' : 'Premium activated!'
         );
         setPremiumModalVisible(false);
+        // Reload premium status
+        await loadPremiumStatus();
       } else {
         Alert.alert(t.common.error, response.message || (language === 'DE' ? 'Zahlung fehlgeschlagen' : 'Payment failed'));
       }
     } catch (error: any) {
       console.error('[Profile] Premium purchase error:', error);
       
-      // Check if it's a 404 (endpoint doesn't exist yet)
       if (error.message?.includes('404')) {
         Alert.alert(
           language === 'DE' ? 'In Entwicklung' : 'In Development',
@@ -291,7 +389,6 @@ export default function ProfilScreen() {
     console.log(`[Profile] Processing donation: CHF ${amount}`);
     
     try {
-      // Import API utilities
       const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
       
       if (!BACKEND_URL) {
@@ -302,7 +399,6 @@ export default function ProfilScreen() {
 
       console.log('[Profile] Calling donation endpoint: /api/payments/donation');
 
-      // Call backend to process donation
       const response = await authenticatedPost<{
         success: boolean;
         paymentUrl?: string;
@@ -332,7 +428,6 @@ export default function ProfilScreen() {
     } catch (error: any) {
       console.error('[Profile] Donation error:', error);
       
-      // Check if it's a 404 (endpoint doesn't exist yet)
       if (error.message?.includes('404')) {
         Alert.alert(
           language === 'DE' ? 'In Entwicklung' : 'In Development',
@@ -366,7 +461,6 @@ export default function ProfilScreen() {
             console.log('[Profile] User confirmed account deletion');
             
             try {
-              // Import API utilities
               const { authenticatedDelete, BACKEND_URL } = await import('@/utils/api');
               
               if (!BACKEND_URL) {
@@ -377,7 +471,6 @@ export default function ProfilScreen() {
 
               console.log('[Profile] Calling account deletion endpoint: DELETE /api/user/account');
 
-              // Call backend to delete account
               const response = await authenticatedDelete<{
                 success: boolean;
                 message?: string;
@@ -406,7 +499,6 @@ export default function ProfilScreen() {
             } catch (error: any) {
               console.error('[Profile] Account deletion error:', error);
               
-              // Check if it's a 404 (endpoint doesn't exist yet)
               if (error.message?.includes('404')) {
                 Alert.alert(
                   language === 'DE' ? 'In Entwicklung' : 'In Development',
@@ -500,9 +592,44 @@ export default function ProfilScreen() {
               {language === 'DE' ? 'Tippe um Namen zu ändern' : 'Tap to change name'}
             </Text>
           </Pressable>
-          <Text style={styles.premiumStatus}>
-            Premium: {isPremium ? (language === 'DE' ? 'Ja' : 'Yes') : (language === 'DE' ? 'Nein' : 'No')}
-          </Text>
+          
+          {/* Premium Status */}
+          <View style={styles.premiumStatusContainer}>
+            <Text style={styles.premiumStatusLabel}>
+              {t.profile.premiumStatus}:
+            </Text>
+            <Text style={[
+              styles.premiumStatusValue,
+              { color: premiumStatus.isPremium ? colors.neonGreen : colors.white }
+            ]}>
+              {premiumStatus.isPremium 
+                ? (premiumStatus.isLifetime 
+                    ? t.profile.premiumYes 
+                    : `${t.profile.premiumYes} (${premiumStatus.daysRemaining} ${t.profile.premiumDays})`)
+                : t.profile.premiumNo
+              }
+            </Text>
+          </View>
+
+          {/* Promo Code Input */}
+          {!premiumStatus.isPremium && (
+            <View style={styles.promoCodeContainer}>
+              <TextInput
+                style={styles.promoCodeInput}
+                value={promoCode}
+                onChangeText={setPromoCode}
+                placeholder={t.profile.promoCodePlaceholder}
+                placeholderTextColor="#666"
+                autoCapitalize="characters"
+              />
+              <Pressable 
+                style={styles.redeemButton}
+                onPress={handleRedeemCode}
+              >
+                <Text style={styles.redeemButtonText}>{t.profile.redeemCode}</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
 
         {/* Settings Items */}
@@ -817,10 +944,46 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 15,
   },
-  premiumStatus: {
+  premiumStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 15,
+  },
+  premiumStatusLabel: {
     color: colors.white,
     fontSize: 16,
     fontWeight: '700',
+  },
+  premiumStatusValue: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  promoCodeContainer: {
+    width: '100%',
+    gap: 10,
+    marginTop: 10,
+  },
+  promoCodeInput: {
+    backgroundColor: '#333',
+    borderRadius: 12,
+    padding: 15,
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  redeemButton: {
+    backgroundColor: colors.neonGreen,
+    borderRadius: 12,
+    padding: 15,
+  },
+  redeemButtonText: {
+    color: colors.black,
+    fontSize: 16,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   settingsList: {
     gap: 12,
