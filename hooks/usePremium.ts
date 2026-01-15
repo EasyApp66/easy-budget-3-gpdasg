@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ADMIN_EMAIL = 'mirosnic.ivan@icloud.com';
 
@@ -25,6 +26,39 @@ export function usePremium() {
       setIsPremium(true);
       setPremiumStatus({ isPremium: true, isLifetime: true });
       return;
+    }
+
+    // First check local storage for offline premium code
+    try {
+      const expiresAt = await AsyncStorage.getItem('premium_expires_at');
+      const codeUsed = await AsyncStorage.getItem('premium_code_used');
+      
+      if (expiresAt && codeUsed === 'EASY2') {
+        const expiryDate = new Date(expiresAt);
+        const now = new Date();
+        
+        if (expiryDate > now) {
+          // Premium is still valid
+          const daysRemaining = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          console.log('[Premium] Local premium active, days remaining:', daysRemaining);
+          
+          setIsPremium(true);
+          setPremiumStatus({ 
+            isPremium: true, 
+            expiresAt: expiresAt,
+            daysRemaining: daysRemaining,
+            isLifetime: false
+          });
+          return;
+        } else {
+          // Premium expired, clear local storage
+          console.log('[Premium] Local premium expired');
+          await AsyncStorage.removeItem('premium_expires_at');
+          await AsyncStorage.removeItem('premium_code_used');
+        }
+      }
+    } catch (error) {
+      console.error('[Premium] Error checking local premium status:', error);
     }
 
     // Check premium status from backend

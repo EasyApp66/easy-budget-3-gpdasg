@@ -696,31 +696,31 @@ export default function BudgetScreen() {
           onPress={() => setContextMenu({ visible: false, type: null, itemId: null })}
         >
           <View style={styles.contextMenu}>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                const item =
-                  contextMenu.type === 'month'
-                    ? months.find((m) => m.id === contextMenu.itemId)
-                    : selectedMonth?.expenses.find((e) => e.id === contextMenu.itemId);
-                openEditModal('name', contextMenu.itemId, item?.name || '');
-              }}
-            >
-              <Text style={styles.menuItemText}>{t.budget.edit}</Text>
-            </Pressable>
-
+            {/* Only show edit name for expenses, not for months */}
             {contextMenu.type === 'expense' && (
-              <Pressable
-                style={styles.menuItem}
-                onPress={() => {
-                  const expense = selectedMonth?.expenses.find(
-                    (e) => e.id === contextMenu.itemId
-                  );
-                  openEditModal('amount', contextMenu.itemId, expense?.amount.toString() || '0');
-                }}
-              >
-                <Text style={styles.menuItemText}>{t.budget.editAmount}</Text>
-              </Pressable>
+              <>
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={() => {
+                    const expense = selectedMonth?.expenses.find((e) => e.id === contextMenu.itemId);
+                    openEditModal('name', contextMenu.itemId, expense?.name || '');
+                  }}
+                >
+                  <Text style={styles.menuItemText}>{t.budget.edit}</Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.menuItem}
+                  onPress={() => {
+                    const expense = selectedMonth?.expenses.find(
+                      (e) => e.id === contextMenu.itemId
+                    );
+                    openEditModal('amount', contextMenu.itemId, expense?.amount.toString() || '0');
+                  }}
+                >
+                  <Text style={styles.menuItemText}>{t.budget.editAmount}</Text>
+                </Pressable>
+              </>
             )}
 
             <Pressable style={styles.menuItem} onPress={handleDuplicate}>
