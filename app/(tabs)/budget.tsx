@@ -102,6 +102,7 @@ export default function BudgetScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    console.log(`[Budget] Long press on ${type}:`, itemId);
     setContextMenu({ visible: true, type, itemId });
   };
 
@@ -110,9 +111,12 @@ export default function BudgetScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     
+    console.log('[Budget] User tapped add month button');
+    
     // Check premium limit
     const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
     if (checkLimit(totalExpenses, months.length + 1, 0)) {
+      console.log('[Budget] Premium limit reached for months');
       setPendingAction({ type: 'month' });
       setPremiumModalVisible(true);
       return;
@@ -151,13 +155,14 @@ export default function BudgetScreen() {
   // Function to add expense from the tab bar modal
   const addExpenseFromModal = useCallback((name: string, amount: number) => {
     if (!selectedMonth) {
-      console.log('No selected month');
+      console.log('[Budget] No selected month for adding expense');
       return;
     }
 
     // Check premium limit
     const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
     if (checkLimit(totalExpenses + 1, months.length, 0)) {
+      console.log('[Budget] Premium limit reached for expenses');
       setPendingAction({ type: 'expense' });
       setPremiumModalVisible(true);
       return;
@@ -170,7 +175,7 @@ export default function BudgetScreen() {
       isPinned: false,
     };
 
-    console.log('Adding expense:', newExpense);
+    console.log('[Budget] Adding expense:', newExpense);
 
     setMonths((prevMonths) =>
       prevMonths.map((m) =>
@@ -198,6 +203,7 @@ export default function BudgetScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
+    console.log('[Budget] Deleting month:', monthId);
     setMonths(months.filter((m) => m.id !== monthId));
     if (selectedMonthId === monthId && months.length > 1) {
       setSelectedMonthId(months.find((m) => m.id !== monthId)?.id || '');
@@ -209,6 +215,7 @@ export default function BudgetScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
+    console.log('[Budget] Deleting expense:', expenseId);
     setMonths(
       months.map((m) =>
         m.id === selectedMonthId
@@ -223,6 +230,8 @@ export default function BudgetScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     const { type, itemId } = contextMenu;
+
+    console.log(`[Budget] Toggling pin for ${type}:`, itemId);
 
     if (type === 'month' && itemId) {
       setMonths(
@@ -253,10 +262,13 @@ export default function BudgetScreen() {
     }
     const { type, itemId } = contextMenu;
 
+    console.log(`[Budget] Duplicating ${type}:`, itemId);
+
     if (type === 'month' && itemId) {
       // Check premium limit BEFORE duplicating
       const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
       if (checkLimit(totalExpenses, months.length + 1, 0)) {
+        console.log('[Budget] Premium limit reached for month duplication');
         setPendingAction({ type: 'month' });
         setPremiumModalVisible(true);
         setContextMenu({ visible: false, type: null, itemId: null });
@@ -277,6 +289,7 @@ export default function BudgetScreen() {
       // Check premium limit BEFORE duplicating
       const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
       if (checkLimit(totalExpenses + 1, months.length, 0)) {
+        console.log('[Budget] Premium limit reached for expense duplication');
         setPendingAction({ type: 'expense' });
         setPremiumModalVisible(true);
         setContextMenu({ visible: false, type: null, itemId: null });
@@ -310,6 +323,7 @@ export default function BudgetScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log(`[Budget] Opening edit modal for ${type}:`, itemId);
     setEditModal({ visible: true, type, value: currentValue, itemId });
     setContextMenu({ visible: false, type: null, itemId: null });
   };
@@ -319,6 +333,8 @@ export default function BudgetScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     const { type, value, itemId } = editModal;
+
+    console.log(`[Budget] Saving edit for ${type}:`, { itemId, value });
 
     if (type === 'cashLabel') {
       setCashLabel(value);
@@ -430,6 +446,7 @@ export default function BudgetScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log('[Budget] Closing premium modal');
     // Delete the pending item when closing without purchase
     if (pendingAction?.type === 'expense' && pendingAction.id) {
       handleDeleteExpense(pendingAction.id);
@@ -514,6 +531,7 @@ export default function BudgetScreen() {
           scale.value = withSpring(0.95, {}, () => {
             scale.value = withSpring(1);
           });
+          console.log('[Budget] User selected month:', month.name);
           setSelectedMonthId(month.id);
         }}
         onLongPress={() => handleLongPress('month', month.id)}
@@ -531,7 +549,10 @@ export default function BudgetScreen() {
             {month.name}
           </Text>
           <Pressable
-            onPress={() => handleDeleteMonth(month.id)}
+            onPress={() => {
+              console.log('[Budget] User tapped delete month button');
+              handleDeleteMonth(month.id);
+            }}
             hitSlop={10}
             style={styles.deleteIcon}
           >
@@ -568,6 +589,7 @@ export default function BudgetScreen() {
                 if (Platform.OS === 'ios' || Platform.OS === 'android') {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }
+                console.log('[Budget] User tapped delete expense button');
                 handleDeleteExpense(expense.id);
               }}
               hitSlop={10}
@@ -684,7 +706,7 @@ export default function BudgetScreen() {
         </Pressable>
       </Modal>
 
-      {/* Context Menu Modal */}
+      {/* Context Menu Modal - REMOVED "Namen anpassen" for months */}
       <Modal
         visible={contextMenu.visible}
         transparent
@@ -696,18 +718,18 @@ export default function BudgetScreen() {
           onPress={() => setContextMenu({ visible: false, type: null, itemId: null })}
         >
           <View style={styles.contextMenu}>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => {
-                const item =
-                  contextMenu.type === 'month'
-                    ? months.find((m) => m.id === contextMenu.itemId)
-                    : selectedMonth?.expenses.find((e) => e.id === contextMenu.itemId);
-                openEditModal('name', contextMenu.itemId, item?.name || '');
-              }}
-            >
-              <Text style={styles.menuItemText}>{t.budget.edit}</Text>
-            </Pressable>
+            {/* Only show "Namen anpassen" for expenses, NOT for months */}
+            {contextMenu.type === 'expense' && (
+              <Pressable
+                style={styles.menuItem}
+                onPress={() => {
+                  const item = selectedMonth?.expenses.find((e) => e.id === contextMenu.itemId);
+                  openEditModal('name', contextMenu.itemId, item?.name || '');
+                }}
+              >
+                <Text style={styles.menuItemText}>{t.budget.edit}</Text>
+              </Pressable>
+            )}
 
             {contextMenu.type === 'expense' && (
               <Pressable

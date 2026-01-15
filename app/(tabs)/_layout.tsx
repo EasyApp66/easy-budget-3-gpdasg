@@ -20,6 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { Text } from 'react-native';
 import { colors } from '@/styles/commonStyles';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePremium } from '@/hooks/usePremium';
 
 const styles = StyleSheet.create({
   tabBar: {
@@ -102,6 +103,70 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: colors.white,
   },
+  secretCodeModal: {
+    backgroundColor: '#1a0f2e',
+    borderRadius: 24,
+    padding: 32,
+    width: '85%',
+    maxWidth: 400,
+    borderWidth: 2,
+    borderColor: '#8b5cf6',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  secretCodeTitle: {
+    color: '#fbbf24',
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 16,
+    textAlign: 'center',
+    textShadowColor: '#fbbf24',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+  },
+  secretCodeDescription: {
+    color: '#e0e7ff',
+    fontSize: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  secretCodeBox: {
+    backgroundColor: '#2d1b4e',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#8b5cf6',
+  },
+  secretCodeLabel: {
+    color: '#a78bfa',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  secretCodeValue: {
+    color: '#fbbf24',
+    fontSize: 32,
+    fontWeight: '800',
+    textAlign: 'center',
+    letterSpacing: 4,
+  },
+  secretCodeButton: {
+    backgroundColor: '#8b5cf6',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  secretCodeButtonText: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: '800',
+  },
 });
 
 function CustomTabBar() {
@@ -109,8 +174,10 @@ function CustomTabBar() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
+  const { redeemPromoCode, checkPremiumStatus } = usePremium();
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [secretCodeModalVisible, setSecretCodeModalVisible] = useState(false);
   const [itemName, setItemName] = useState('');
   const [itemAmount, setItemAmount] = useState('');
 
@@ -156,6 +223,13 @@ function CustomTabBar() {
     addScale.value = withSpring(0.9, {}, () => {
       addScale.value = withSpring(1);
     });
+
+    // Check if we're on the profile page
+    if (pathname === '/profil' || pathname.startsWith('/profil')) {
+      console.log('[TabBar] Opening secret code modal on profile page');
+      setSecretCodeModalVisible(true);
+      return;
+    }
 
     // Open modal for adding expense or subscription
     setItemName('');
@@ -204,6 +278,35 @@ function CustomTabBar() {
     setModalVisible(false);
     setItemName('');
     setItemAmount('');
+  };
+
+  const handleRedeemSecretCode = async () => {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    
+    console.log('[TabBar] Redeeming secret code: EASY2');
+    
+    const result = await redeemPromoCode('EASY2');
+    
+    if (result.success) {
+      Alert.alert(
+        '🎉 Premium Aktiviert!',
+        'Du hast 1 Monat Premium freigeschaltet!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setSecretCodeModalVisible(false);
+              // Refresh premium status
+              checkPremiumStatus();
+            },
+          },
+        ]
+      );
+    } else {
+      Alert.alert('Fehler', result.message);
+    }
   };
 
   const TabButton = ({ 
@@ -321,6 +424,33 @@ function CustomTabBar() {
                 <Text style={styles.buttonText}>{t.common.save}</Text>
               </Pressable>
             </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Secret Code Modal */}
+      <Modal
+        visible={secretCodeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSecretCodeModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setSecretCodeModalVisible(false)}>
+          <Pressable style={styles.secretCodeModal} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.secretCodeTitle}>✨ Geheimcode gefunden! ✨</Text>
+            
+            <Text style={styles.secretCodeDescription}>
+              Löse den Geheimcode ein um einen Monat Premium zu erhalten!
+            </Text>
+
+            <View style={styles.secretCodeBox}>
+              <Text style={styles.secretCodeLabel}>Code:</Text>
+              <Text style={styles.secretCodeValue}>EASY2</Text>
+            </View>
+
+            <Pressable style={styles.secretCodeButton} onPress={handleRedeemSecretCode}>
+              <Text style={styles.secretCodeButtonText}>Code einlösen</Text>
+            </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
