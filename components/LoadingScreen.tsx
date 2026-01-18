@@ -6,45 +6,22 @@ import Animated, {
   useAnimatedStyle,
   withRepeat,
   withTiming,
-  withSequence,
-  Easing,
 } from 'react-native-reanimated';
 
 export const LoadingScreen = () => {
   const opacity = useSharedValue(0.3);
-  const scale = useSharedValue(0.95);
 
   useEffect(() => {
-    // Fast, snappy animation - completes in under 1 second
     opacity.value = withRepeat(
-      withTiming(1, { 
-        duration: 400,  // Reduced from 1000ms to 400ms
-        easing: Easing.inOut(Easing.ease),
-      }),
+      withTiming(1, { duration: 1000 }),
       -1,
       true
     );
-
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1, { 
-          duration: 400,  // Fast scale up
-          easing: Easing.out(Easing.ease),
-        }),
-        withTiming(0.95, { 
-          duration: 400,  // Fast scale down
-          easing: Easing.in(Easing.ease),
-        })
-      ),
-      -1,
-      false
-    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array is correct - opacity and scale are shared values
+  }, []); // Empty dependency array is correct - opacity is a shared value, not a dependency
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [{ scale: scale.value }],
   }));
 
   return (
@@ -65,8 +42,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#BFFE84',
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontSize: 24,
+    fontWeight: 'bold',
   },
 });
