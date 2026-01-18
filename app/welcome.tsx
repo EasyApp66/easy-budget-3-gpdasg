@@ -5,8 +5,6 @@ import {
   StyleSheet,
   Pressable,
   Platform,
-  Modal,
-  ScrollView,
 } from 'react-native';
 import { colors } from '@/styles/commonStyles';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -18,16 +16,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
 import { Stack, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import * as Haptics from 'expo-haptics';
-import { IconSymbol } from '@/components/IconSymbol';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { signInWithGoogle, signInWithApple } = useAuth();
-  const { t, language } = useLanguage();
-  const [legalModalVisible, setLegalModalVisible] = useState(false);
-  const [legalContent, setLegalContent] = useState({ title: '', content: '' });
+  const { t } = useLanguage();
 
   const AnimatedButton = ({
     title,
@@ -111,15 +106,6 @@ export default function WelcomeScreen() {
     }
   };
 
-  const handleLegalPress = (title: string, content: string) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    console.log(`[Welcome] User tapped legal link: ${title}`);
-    setLegalContent({ title, content });
-    setLegalModalVisible(true);
-  };
-
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -163,73 +149,11 @@ export default function WelcomeScreen() {
 
           <View style={styles.footerContainer}>
             <Text style={styles.footer}>
-              {language === 'DE' 
-                ? 'Indem du fortfährst, bestätigst du, dass du die '
-                : 'By continuing, you confirm that you have read the '}
-              <Text 
-                style={styles.footerLink}
-                onPress={() => handleLegalPress(t.legal.termsTitle, t.legal.termsContent)}
-              >
-                {t.welcome.terms}
-              </Text>
-              {language === 'DE' ? ' und die ' : ', '}
-              <Text 
-                style={styles.footerLink}
-                onPress={() => handleLegalPress(t.legal.privacyTitle, t.legal.privacyContent)}
-              >
-                {t.welcome.privacy}
-              </Text>
-              {language === 'DE' ? ' und die ' : ', and '}
-              <Text 
-                style={styles.footerLink}
-                onPress={() => handleLegalPress(t.legal.agbTitle, t.legal.agbContent)}
-              >
-                {t.welcome.agb}
-              </Text>
-              {language === 'DE' ? ' gelesen hast.' : '.'}
+              {t.welcome.footer}
             </Text>
           </View>
         </View>
       </View>
-
-      {/* Legal Text Modal */}
-      <Modal
-        visible={legalModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setLegalModalVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setLegalModalVisible(false)}>
-          <Pressable style={styles.legalModal} onPress={(e) => e.stopPropagation()}>
-            <Pressable style={styles.closeButton} onPress={() => setLegalModalVisible(false)}>
-              <IconSymbol 
-                ios_icon_name="xmark" 
-                android_material_icon_name="close"
-                size={24} 
-                color={colors.white} 
-              />
-            </Pressable>
-
-            <Text style={styles.modalTitle}>{legalContent.title}</Text>
-
-            <ScrollView 
-              style={styles.legalScrollView}
-              contentContainerStyle={styles.legalScrollContent}
-              showsVerticalScrollIndicator={true}
-            >
-              <Text style={styles.legalText}>{legalContent.content}</Text>
-            </ScrollView>
-
-            <View style={styles.legalButtonContainer}>
-              <Pressable style={styles.legalOkButton} onPress={() => setLegalModalVisible(false)}>
-                <Text style={styles.legalOkButtonText}>
-                  {language === 'DE' ? 'OK' : 'OK'}
-                </Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </>
   );
 }
@@ -297,64 +221,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     opacity: 0.7,
-  },
-  footerLink: {
-    color: colors.neonGreen,
-    textDecorationLine: 'underline',
-    fontWeight: '700',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  legalModal: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 30,
-    width: '85%',
-    maxWidth: 400,
-    maxHeight: '80%',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    zIndex: 10,
-  },
-  modalTitle: {
-    color: colors.white,
-    fontSize: 24,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  legalScrollView: {
-    flex: 1,
-    marginBottom: 20,
-  },
-  legalScrollContent: {
-    paddingBottom: 10,
-  },
-  legalText: {
-    color: colors.white,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  legalButtonContainer: {
-    paddingTop: 10,
-    paddingBottom: 5,
-  },
-  legalOkButton: {
-    backgroundColor: colors.neonGreen,
-    borderRadius: 12,
-    padding: 15,
-    alignItems: 'center',
-  },
-  legalOkButtonText: {
-    color: colors.black,
-    fontSize: 18,
-    fontWeight: '800',
   },
 });

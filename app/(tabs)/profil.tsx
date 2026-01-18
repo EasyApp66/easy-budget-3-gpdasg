@@ -105,8 +105,6 @@ export default function ProfilScreen() {
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [editNameModalVisible, setEditNameModalVisible] = useState(false);
   const [promoCodeModalVisible, setPromoCodeModalVisible] = useState(false);
-  const [legalModalVisible, setLegalModalVisible] = useState(false);
-  const [legalContent, setLegalContent] = useState({ title: '', content: '' });
   
   // Form states
   const [bugDescription, setBugDescription] = useState('');
@@ -568,8 +566,7 @@ export default function ProfilScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     console.log(`[Profile] Opening legal page: ${title}`);
-    setLegalContent({ title, content });
-    setLegalModalVisible(true);
+    Alert.alert(title, content);
   };
 
   return (
@@ -895,43 +892,6 @@ export default function ProfilScreen() {
         </Pressable>
       </Modal>
 
-      {/* Legal Text Modal - FIXED: OK button now fully visible */}
-      <Modal
-        visible={legalModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setLegalModalVisible(false)}
-      >
-        <Pressable style={styles.modalOverlay} onPress={() => setLegalModalVisible(false)}>
-          <Pressable style={styles.legalModal} onPress={(e) => e.stopPropagation()}>
-            <Pressable style={styles.closeButton} onPress={() => setLegalModalVisible(false)}>
-              <IconSymbol 
-                ios_icon_name="xmark" 
-                android_material_icon_name="close"
-                size={24} 
-                color={colors.white} 
-              />
-            </Pressable>
-
-            <Text style={styles.modalTitle}>{legalContent.title}</Text>
-
-            <ScrollView 
-              style={styles.legalScrollView}
-              contentContainerStyle={styles.legalScrollContent}
-              showsVerticalScrollIndicator={true}
-            >
-              <Text style={styles.legalText}>{legalContent.content}</Text>
-            </ScrollView>
-
-            <View style={styles.legalButtonContainer}>
-              <Pressable style={styles.legalOkButton} onPress={() => setLegalModalVisible(false)}>
-                <Text style={styles.legalOkButtonText}>{t.common.ok}</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
       {/* Premium Purchase Modal */}
       <PremiumPaywallModal
         visible={premiumModalVisible}
@@ -1083,14 +1043,6 @@ const styles = StyleSheet.create({
     width: '85%',
     maxWidth: 400,
   },
-  legalModal: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    padding: 30,
-    width: '85%',
-    maxWidth: 400,
-    maxHeight: '80%',
-  },
   closeButton: {
     position: 'absolute',
     top: 15,
@@ -1125,7 +1077,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   donateSubtitle: {
     color: '#999',
@@ -1221,33 +1173,6 @@ const styles = StyleSheet.create({
   },
   donateButtonText: {
     color: colors.white,
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  legalScrollView: {
-    flex: 1,
-    marginBottom: 20,
-  },
-  legalScrollContent: {
-    paddingBottom: 10,
-  },
-  legalText: {
-    color: colors.white,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  legalButtonContainer: {
-    paddingTop: 10,
-    paddingBottom: 5,
-  },
-  legalOkButton: {
-    backgroundColor: colors.neonGreen,
-    borderRadius: 12,
-    padding: 15,
-    alignItems: 'center',
-  },
-  legalOkButtonText: {
-    color: colors.black,
     fontSize: 18,
     fontWeight: '800',
   },
