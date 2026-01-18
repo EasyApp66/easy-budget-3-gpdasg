@@ -1,4 +1,6 @@
 
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   View,
   Text,
@@ -8,9 +10,7 @@ import {
   Modal,
   ScrollView,
 } from 'react-native';
-import { colors } from '@/styles/commonStyles';
-import { useLanguage } from '@/contexts/LanguageContext';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import * as Haptics from 'expo-haptics';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -19,11 +19,11 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { useAuth } from '@/contexts/AuthContext';
-import { Stack, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
+import { Stack, useRouter } from 'expo-router';
+import { useLanguage } from '@/contexts/LanguageContext';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { colors } from '@/styles/commonStyles';
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -32,21 +32,28 @@ export default function WelcomeScreen() {
   const [legalModalVisible, setLegalModalVisible] = useState(false);
   const [legalModalContent, setLegalModalContent] = useState({ title: '', content: '' });
 
-  // Animated blur circle
+  // Animated blur circle - FASTER, BRIGHTER, MORE BLUR
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+  const scale = useSharedValue(1);
 
   useEffect(() => {
-    console.log('[Welcome] Starting animated blur circle');
-    // Horizontal movement
+    console.log('[Welcome] Starting animated blur circle - faster and brighter');
+    // Horizontal movement - FASTER (4 seconds instead of 8)
     translateX.value = withRepeat(
-      withTiming(100, { duration: 8000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(150, { duration: 4000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
-    // Vertical movement
+    // Vertical movement - FASTER (5 seconds instead of 10)
     translateY.value = withRepeat(
-      withTiming(150, { duration: 10000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(200, { duration: 5000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+    // Pulsing scale effect for more dynamic movement
+    scale.value = withRepeat(
+      withTiming(1.3, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
@@ -56,6 +63,7 @@ export default function WelcomeScreen() {
     transform: [
       { translateX: translateX.value },
       { translateY: translateY.value },
+      { scale: scale.value },
     ],
   }));
 
@@ -72,22 +80,22 @@ export default function WelcomeScreen() {
     textColor: string;
     iconName?: string;
   }) => {
-    const scale = useSharedValue(1);
+    const buttonScale = useSharedValue(1);
 
     const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
+      transform: [{ scale: buttonScale.value }],
     }));
 
     return (
       <Pressable
         onPressIn={() => {
-          scale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
+          buttonScale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
           if (Platform.OS === 'ios') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }
         }}
         onPressOut={() => {
-          scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+          buttonScale.value = withSpring(1, { damping: 15, stiffness: 300 });
         }}
         onPress={onPress}
       >
@@ -145,7 +153,7 @@ export default function WelcomeScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log(`[Welcome] User tapped ${type} link`);
+    console.log(`[Welcome] User tapped ${type} link - opening popup with full legal text`);
     
     let title = '';
     let content = '';
@@ -177,13 +185,14 @@ export default function WelcomeScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        {/* Animated blur green circle background */}
+        {/* Animated blur green circle background - BRIGHTER, MORE BLUR, FASTER */}
         <Animated.View style={[styles.blurCircle, blurCircleStyle]}>
-          <BlurView intensity={80} style={styles.blurView} />
+          <BlurView intensity={100} style={styles.blurView} />
         </Animated.View>
 
         <View style={styles.content}>
           <View style={styles.textBlock}>
+            {/* SMALLER "Hallo! ich bin" text */}
             <Text style={styles.title}>
               {t.welcome.greeting} <Text style={styles.highlight}>{t.welcome.appName}</Text>
             </Text>
@@ -238,7 +247,7 @@ export default function WelcomeScreen() {
           </View>
         </View>
 
-        {/* Legal Modal */}
+        {/* Legal Modal - FULL TEXT VISIBLE ON iOS */}
         <Modal
           visible={legalModalVisible}
           transparent={true}
@@ -290,18 +299,19 @@ const styles = StyleSheet.create({
   },
   blurCircle: {
     position: 'absolute',
-    top: '20%',
-    left: '10%',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
+    top: '15%',
+    left: '5%',
+    width: 350,
+    height: 350,
+    borderRadius: 175,
+    // BRIGHTER green with higher opacity
     backgroundColor: colors.neonGreen,
-    opacity: 0.3,
+    opacity: 0.5,
   },
   blurView: {
     width: '100%',
     height: '100%',
-    borderRadius: 150,
+    borderRadius: 175,
   },
   content: {
     flex: 1,
@@ -313,8 +323,9 @@ const styles = StyleSheet.create({
   textBlock: {
     marginBottom: 40,
   },
+  // SMALLER "Hallo! ich bin" text (was 32, now 26)
   title: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '800',
     color: colors.white,
     textAlign: 'left',

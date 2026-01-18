@@ -154,6 +154,16 @@ export default function ForgotPasswordScreen() {
             >
               <Text style={styles.link}>{t.forgotPassword.backToLogin}</Text>
             </Pressable>
+
+            {/* NEW: Create Account Link */}
+            <Pressable
+              onPress={() => handlePress(() => router.push('/register'))}
+              style={styles.linkContainer}
+            >
+              <Text style={styles.secondaryText}>
+                {t.login.noAccount}
+              </Text>
+            </Pressable>
           </View>
         </View>
       </ScrollView>
@@ -232,5 +242,10 @@ const styles = StyleSheet.create({
     color: colors.neonGreen,
     fontSize: 14,
     fontWeight: '700',
+  },
+  secondaryText: {
+    color: '#999',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
