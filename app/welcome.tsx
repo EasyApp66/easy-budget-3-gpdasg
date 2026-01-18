@@ -5,6 +5,8 @@ import {
   StyleSheet,
   Pressable,
   Platform,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import { colors } from '@/styles/commonStyles';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -13,16 +15,49 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withRepeat,
+  withTiming,
+  Easing,
 } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
 import { Stack, useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import * as Haptics from 'expo-haptics';
+import { BlurView } from 'expo-blur';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { signInWithGoogle, signInWithApple } = useAuth();
   const { t } = useLanguage();
+  const [legalModalVisible, setLegalModalVisible] = useState(false);
+  const [legalModalContent, setLegalModalContent] = useState({ title: '', content: '' });
+
+  // Animated blur circle
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    console.log('[Welcome] Starting animated blur circle');
+    // Horizontal movement
+    translateX.value = withRepeat(
+      withTiming(100, { duration: 8000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+    // Vertical movement
+    translateY.value = withRepeat(
+      withTiming(150, { duration: 10000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+  }, []);
+
+  const blurCircleStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+    ],
+  }));
 
   const AnimatedButton = ({
     title,
@@ -106,10 +141,47 @@ export default function WelcomeScreen() {
     }
   };
 
+  const handleLegalPress = (type: 'terms' | 'privacy' | 'agb') => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    console.log(`[Welcome] User tapped ${type} link`);
+    
+    let title = '';
+    let content = '';
+    
+    if (type === 'terms') {
+      title = t.legal.termsTitle;
+      content = t.legal.termsContent;
+    } else if (type === 'privacy') {
+      title = t.legal.privacyTitle;
+      content = t.legal.privacyContent;
+    } else if (type === 'agb') {
+      title = t.legal.agbTitle;
+      content = t.legal.agbContent;
+    }
+    
+    setLegalModalContent({ title, content });
+    setLegalModalVisible(true);
+  };
+
+  const closeLegalModal = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    console.log('[Welcome] Closing legal modal');
+    setLegalModalVisible(false);
+  };
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
+        {/* Animated blur green circle background */}
+        <Animated.View style={[styles.blurCircle, blurCircleStyle]}>
+          <BlurView intensity={80} style={styles.blurView} />
+        </Animated.View>
+
         <View style={styles.content}>
           <View style={styles.textBlock}>
             <Text style={styles.title}>
@@ -149,10 +221,63 @@ export default function WelcomeScreen() {
 
           <View style={styles.footerContainer}>
             <Text style={styles.footer}>
-              {t.welcome.footer}
+              Indem du fortfährst, bestätigst du, dass du die{' '}
+              <Text style={styles.footerLink} onPress={() => handleLegalPress('terms')}>
+                Nutzungsbedingungen
+              </Text>
+              {' '}und die{' '}
+              <Text style={styles.footerLink} onPress={() => handleLegalPress('privacy')}>
+                Datenschutzerklärung
+              </Text>
+              {' '}und die{' '}
+              <Text style={styles.footerLink} onPress={() => handleLegalPress('agb')}>
+                AGBs
+              </Text>
+              {' '}gelesen hast.
             </Text>
           </View>
         </View>
+
+        {/* Legal Modal */}
+        <Modal
+          visible={legalModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={closeLegalModal}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>{legalModalContent.title}</Text>
+                <Pressable onPress={closeLegalModal} style={styles.closeButton}>
+                  <MaterialIcons name="close" size={24} color={colors.white} />
+                </Pressable>
+              </View>
+              
+              <ScrollView 
+                style={styles.modalScrollView}
+                contentContainerStyle={styles.modalScrollContent}
+                showsVerticalScrollIndicator={true}
+              >
+                <Text style={styles.modalText}>{legalModalContent.content}</Text>
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <Pressable
+                  onPress={closeLegalModal}
+                  style={styles.modalButton}
+                  onPressIn={() => {
+                    if (Platform.OS === 'ios') {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    }
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>{t.common.ok}</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </>
   );
@@ -162,6 +287,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.black,
+  },
+  blurCircle: {
+    position: 'absolute',
+    top: '20%',
+    left: '10%',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: colors.neonGreen,
+    opacity: 0.3,
+  },
+  blurView: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 150,
   },
   content: {
     flex: 1,
@@ -221,5 +361,78 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     opacity: 0.7,
+  },
+  footerLink: {
+    color: colors.neonGreen,
+    textDecorationLine: 'underline',
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '80%',
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.white,
+    flex: 1,
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalScrollView: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    paddingBottom: 30,
+  },
+  modalText: {
+    fontSize: 14,
+    color: colors.white,
+    lineHeight: 22,
+    opacity: 0.9,
+  },
+  modalFooter: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalButton: {
+    backgroundColor: colors.neonGreen,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.black,
+    letterSpacing: 0.3,
   },
 });
