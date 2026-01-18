@@ -105,6 +105,8 @@ export default function ProfilScreen() {
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [editNameModalVisible, setEditNameModalVisible] = useState(false);
   const [promoCodeModalVisible, setPromoCodeModalVisible] = useState(false);
+  const [legalModalVisible, setLegalModalVisible] = useState(false);
+  const [legalContentType, setLegalContentType] = useState<'agb' | 'terms' | 'privacy'>('agb');
   
   // Form states
   const [bugDescription, setBugDescription] = useState('');
@@ -561,12 +563,26 @@ export default function ProfilScreen() {
     }
   };
 
-  const handleTextPage = (title: string, content: string) => {
+  const handleTextPage = (type: 'agb' | 'terms' | 'privacy') => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log(`[Profile] Opening legal page: ${title}`);
-    Alert.alert(title, content);
+    console.log(`[Profile] Opening legal page: ${type}`);
+    setLegalContentType(type);
+    setLegalModalVisible(true);
+  };
+
+  const getLegalContent = () => {
+    switch (legalContentType) {
+      case 'agb':
+        return { title: t.legal.agbTitle, content: t.legal.agbContent };
+      case 'terms':
+        return { title: t.legal.termsTitle, content: t.legal.termsContent };
+      case 'privacy':
+        return { title: t.legal.privacyTitle, content: t.legal.privacyContent };
+      default:
+        return { title: '', content: '' };
+    }
   };
 
   return (
@@ -660,28 +676,28 @@ export default function ProfilScreen() {
             androidIcon="description"
             iconColor={colors.white}
             title={t.profile.agb}
-            onPress={() => handleTextPage(t.legal.agbTitle, t.legal.agbContent)}
+            onPress={() => handleTextPage('agb')}
           />
           <SettingsItem
             iosIcon="shield"
             androidIcon="shield"
             iconColor={colors.white}
             title={t.profile.terms}
-            onPress={() => handleTextPage(t.legal.termsTitle, t.legal.termsContent)}
+            onPress={() => handleTextPage('terms')}
           />
           <SettingsItem
             iosIcon="lock.shield"
             androidIcon="lock"
             iconColor={colors.white}
             title={t.profile.privacy}
-            onPress={() => handleTextPage(t.legal.privacyTitle, t.legal.privacyContent)}
+            onPress={() => handleTextPage('privacy')}
           />
           <SettingsItem
             iosIcon="info.circle"
             androidIcon="info"
             iconColor={colors.white}
             title={t.profile.impressum}
-            onPress={() => handleTextPage(t.legal.impressumTitle, t.legal.impressumContent)}
+            onPress={() => handleTextPage('agb')}
           />
           <SettingsItem
             iosIcon="envelope"
@@ -892,6 +908,40 @@ export default function ProfilScreen() {
         </Pressable>
       </Modal>
 
+      {/* Legal Content Modal - FIXED: Added proper bottom padding */}
+      <Modal
+        visible={legalModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLegalModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setLegalModalVisible(false)}>
+          <Pressable style={styles.legalModal} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.legalModalTitle}>{getLegalContent().title}</Text>
+            <ScrollView 
+              style={styles.legalScrollView}
+              contentContainerStyle={styles.legalScrollContent}
+              showsVerticalScrollIndicator={true}
+            >
+              <Text style={styles.legalText}>{getLegalContent().content}</Text>
+            </ScrollView>
+            <View style={styles.legalButtonContainer}>
+              <Pressable 
+                style={styles.legalOkButton} 
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  setLegalModalVisible(false);
+                }}
+              >
+                <Text style={styles.legalOkButtonText}>{t.common.ok}</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       {/* Premium Purchase Modal */}
       <PremiumPaywallModal
         visible={premiumModalVisible}
@@ -1043,6 +1093,14 @@ const styles = StyleSheet.create({
     width: '85%',
     maxWidth: 400,
   },
+  legalModal: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
+    padding: 24,
+    width: '90%',
+    maxWidth: 500,
+    maxHeight: '80%',
+  },
   closeButton: {
     position: 'absolute',
     top: 15,
@@ -1079,6 +1137,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 10,
   },
+  legalModalTitle: {
+    color: colors.white,
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'left',
+    marginBottom: 16,
+  },
   donateSubtitle: {
     color: '#999',
     fontSize: 14,
@@ -1103,6 +1168,33 @@ const styles = StyleSheet.create({
     height: 120,
     marginBottom: 20,
     textAlignVertical: 'top',
+  },
+  legalScrollView: {
+    flex: 1,
+    marginBottom: 16,
+  },
+  legalScrollContent: {
+    paddingBottom: 10,
+  },
+  legalText: {
+    color: '#ccc',
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  legalButtonContainer: {
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  legalOkButton: {
+    backgroundColor: colors.neonGreen,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  legalOkButtonText: {
+    color: colors.black,
+    fontSize: 18,
+    fontWeight: '800',
   },
   primaryButton: {
     backgroundColor: colors.neonGreen,

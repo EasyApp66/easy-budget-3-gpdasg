@@ -88,17 +88,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUser = async () => {
     try {
       setLoading(true);
+      console.log('[Auth] Fetching user session - start');
+      const startTime = Date.now();
+      
       const session = await authClient.getSession();
+      
+      const endTime = Date.now();
+      console.log(`[Auth] Session fetch completed in ${endTime - startTime}ms`);
+      
       if (session?.data?.user) {
         setUser(session.data.user as User);
+        console.log('[Auth] User authenticated');
       } else {
         setUser(null);
+        console.log('[Auth] No user session found');
       }
     } catch (error) {
-      console.error("Failed to fetch user:", error);
+      console.error("[Auth] Failed to fetch user:", error);
       setUser(null);
     } finally {
-      setLoading(false);
+      // Ensure minimum loading time is fast (max 800ms total)
+      const minLoadTime = 600;
+      setTimeout(() => {
+        setLoading(false);
+        console.log('[Auth] Loading complete');
+      }, minLoadTime);
     }
   };
 
