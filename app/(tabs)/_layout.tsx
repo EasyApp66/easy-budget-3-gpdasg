@@ -18,8 +18,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
 import { Text } from 'react-native';
+import { colors } from '@/styles/commonStyles';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { usePremium } from '@/hooks/usePremium';
 
 const styles = StyleSheet.create({
@@ -46,6 +46,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
+    backgroundColor: colors.neonGreen,
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 10,
@@ -57,20 +58,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
+    backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 30,
     width: '85%',
     maxWidth: 400,
   },
   modalTitle: {
+    color: colors.white,
     fontSize: 24,
     fontWeight: '800',
     marginBottom: 20,
     textAlign: 'center',
   },
   input: {
+    backgroundColor: '#333',
     borderRadius: 12,
     padding: 15,
+    color: colors.white,
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 15,
@@ -82,19 +87,21 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
+    backgroundColor: colors.neonGreen,
     borderRadius: 12,
     padding: 15,
     alignItems: 'center',
   },
   cancelButton: {
-    // backgroundColor set dynamically
+    backgroundColor: '#333',
   },
   buttonText: {
+    color: colors.black,
     fontSize: 16,
     fontWeight: '800',
   },
   cancelButtonText: {
-    // color set dynamically
+    color: colors.white,
   },
   secretCodeModal: {
     backgroundColor: '#1a0f2e',
@@ -156,7 +163,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secretCodeButtonText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 18,
     fontWeight: '800',
   },
@@ -166,8 +173,7 @@ function CustomTabBar() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const { t, language } = useLanguage();
-  const { colors } = useTheme();
+  const { t } = useLanguage();
   const { redeemPromoCode, checkPremiumStatus } = usePremium();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -286,9 +292,7 @@ function CustomTabBar() {
     if (result.success) {
       Alert.alert(
         '🎉 Premium Aktiviert!',
-        language === 'DE' 
-          ? 'Du hast 1 Monat Premium freigeschaltet!' 
-          : 'You have unlocked 1 month of Premium!',
+        'Du hast 1 Monat Premium freigeschaltet!',
         [
           {
             text: 'OK',
@@ -301,7 +305,7 @@ function CustomTabBar() {
         ]
       );
     } else {
-      Alert.alert(language === 'DE' ? 'Fehler' : 'Error', result.message);
+      Alert.alert('Fehler', result.message);
     }
   };
 
@@ -341,7 +345,7 @@ function CustomTabBar() {
 
   const AddButton = () => (
     <Pressable onPress={handleAddPress}>
-      <Animated.View style={[styles.addButton, { backgroundColor: colors.neonGreen }, addStyle]}>
+      <Animated.View style={[styles.addButton, addStyle]}>
         <MaterialIcons name="add" size={32} color={colors.black} />
       </Animated.View>
     </Pressable>
@@ -391,11 +395,11 @@ function CustomTabBar() {
         onRequestClose={handleCancel}
       >
         <Pressable style={styles.modalOverlay} onPress={handleCancel}>
-          <Pressable style={[styles.modalContent, { backgroundColor: colors.cardBackground }]} onPress={(e) => e.stopPropagation()}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>{getModalTitle()}</Text>
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>{getModalTitle()}</Text>
             
             <TextInput
-              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
+              style={styles.input}
               value={itemName}
               onChangeText={setItemName}
               placeholder={getNamePlaceholder()}
@@ -404,7 +408,7 @@ function CustomTabBar() {
             />
             
             <TextInput
-              style={[styles.input, { backgroundColor: colors.background, color: colors.text }]}
+              style={styles.input}
               value={itemAmount}
               onChangeText={setItemAmount}
               placeholder={getAmountPlaceholder()}
@@ -413,11 +417,11 @@ function CustomTabBar() {
             />
 
             <View style={styles.buttonRow}>
-              <Pressable style={[styles.button, styles.cancelButton, { backgroundColor: colors.background }]} onPress={handleCancel}>
-                <Text style={[styles.buttonText, styles.cancelButtonText, { color: colors.text }]}>{t.common.cancel}</Text>
+              <Pressable style={[styles.button, styles.cancelButton]} onPress={handleCancel}>
+                <Text style={[styles.buttonText, styles.cancelButtonText]}>{t.common.cancel}</Text>
               </Pressable>
-              <Pressable style={[styles.button, { backgroundColor: colors.neonGreen }]} onPress={handleSave}>
-                <Text style={[styles.buttonText, { color: colors.black }]}>{t.common.save}</Text>
+              <Pressable style={styles.button} onPress={handleSave}>
+                <Text style={styles.buttonText}>{t.common.save}</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -433,27 +437,19 @@ function CustomTabBar() {
       >
         <Pressable style={styles.modalOverlay} onPress={() => setSecretCodeModalVisible(false)}>
           <Pressable style={styles.secretCodeModal} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.secretCodeTitle}>
-              {language === 'DE' ? '✨ Geheimcode gefunden! ✨' : '✨ Secret Code Found! ✨'}
-            </Text>
+            <Text style={styles.secretCodeTitle}>✨ Geheimcode gefunden! ✨</Text>
             
             <Text style={styles.secretCodeDescription}>
-              {language === 'DE' 
-                ? 'Löse den Geheimcode ein um einen Monat Premium zu erhalten!' 
-                : 'Redeem the secret code to get one month of Premium!'}
+              Löse den Geheimcode ein um einen Monat Premium zu erhalten!
             </Text>
 
             <View style={styles.secretCodeBox}>
-              <Text style={styles.secretCodeLabel}>
-                {language === 'DE' ? 'Code:' : 'Code:'}
-              </Text>
+              <Text style={styles.secretCodeLabel}>Code:</Text>
               <Text style={styles.secretCodeValue}>EASY2</Text>
             </View>
 
             <Pressable style={styles.secretCodeButton} onPress={handleRedeemSecretCode}>
-              <Text style={styles.secretCodeButtonText}>
-                {language === 'DE' ? 'Code einlösen' : 'Redeem Code'}
-              </Text>
+              <Text style={styles.secretCodeButtonText}>Code einlösen</Text>
             </Pressable>
           </Pressable>
         </Pressable>
