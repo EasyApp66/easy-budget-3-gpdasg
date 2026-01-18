@@ -11,19 +11,19 @@ import {
   TextInput,
   Dimensions,
 } from 'react-native';
-import { colors } from '@/styles/commonStyles';
 import React, { useState, useCallback, useEffect } from 'react';
-import { usePremium } from '@/hooks/usePremium';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useStorage } from '@/contexts/StorageContext';
-import { useLanguage } from '@/contexts/LanguageContext';
+import * as Haptics from 'expo-haptics';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
+import { useStorage } from '@/contexts/StorageContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { usePremium } from '@/hooks/usePremium';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
-import * as Haptics from 'expo-haptics';
 
 interface Expense {
   id: string;
@@ -44,6 +44,7 @@ export default function BudgetScreen() {
   const { isPremium, checkLimit } = usePremium();
   const storage = useStorage();
   const { t } = useLanguage();
+  const { colors } = useTheme();
   
   const [months, setMonths] = useState<Month[]>(storage.months);
   const [selectedMonthId, setSelectedMonthId] = useState(storage.selectedMonthId);
@@ -477,7 +478,7 @@ export default function BudgetScreen() {
     }));
 
     return (
-      <Animated.View style={[styles.topPill, animatedStyle]}>
+      <Animated.View style={[styles.topPill, { backgroundColor: colors.cardBackground }, animatedStyle]}>
         <Pressable
           onPress={() => {
             if (editable && onPressLabel) {
@@ -491,7 +492,7 @@ export default function BudgetScreen() {
             }
           }}
         >
-          <Text style={styles.topPillLabel}>{label}</Text>
+          <Text style={[styles.topPillLabel, { color: colors.text }]}>{label}</Text>
         </Pressable>
         <Pressable
           onPress={() => {
@@ -506,7 +507,7 @@ export default function BudgetScreen() {
             }
           }}
         >
-          <Text style={[styles.topPillValue, color && { color }]}>
+          <Text style={[styles.topPillValue, { color: colors.text }, color && { color }]}>
             {typeof value === 'number' ? formatNumber(value) : value}
           </Text>
         </Pressable>
@@ -540,12 +541,12 @@ export default function BudgetScreen() {
         <Animated.View
           style={[
             styles.monthPill,
-            isSelected && styles.monthPillSelected,
-            month.isPinned && styles.pinnedBorder,
+            { backgroundColor: isSelected ? colors.neonGreen : colors.cardBackground },
+            month.isPinned && { borderWidth: 2, borderColor: colors.neonGreen },
             animatedStyle,
           ]}
         >
-          <Text style={[styles.monthPillText, isSelected && styles.monthPillTextSelected]}>
+          <Text style={[styles.monthPillText, { color: isSelected ? colors.black : colors.text }]}>
             {month.name}
           </Text>
           <Pressable
@@ -578,12 +579,13 @@ export default function BudgetScreen() {
         <Animated.View
           style={[
             styles.expensePill,
-            expense.isPinned && styles.pinnedBorder,
+            { backgroundColor: colors.cardBackground },
+            expense.isPinned && { borderWidth: 2, borderColor: colors.neonGreen },
             animatedStyle,
           ]}
         >
           <View style={styles.expenseHeader}>
-            <Text style={styles.expenseName}>{expense.name}</Text>
+            <Text style={[styles.expenseName, { color: colors.text }]}>{expense.name}</Text>
             <Pressable
               onPress={() => {
                 if (Platform.OS === 'ios' || Platform.OS === 'android') {
@@ -597,7 +599,7 @@ export default function BudgetScreen() {
               <Text style={styles.deleteX}>✕</Text>
             </Pressable>
           </View>
-          <Text style={styles.expenseAmount}>
+          <Text style={[styles.expenseAmount, { color: colors.text }]}>
             {formatNumber(expense.amount)}
           </Text>
         </Animated.View>
@@ -606,7 +608,7 @@ export default function BudgetScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
@@ -625,13 +627,13 @@ export default function BudgetScreen() {
               openEditModal('cashValue', null, selectedMonth?.cash.toString() || '0')
             }
           />
-          <View style={styles.topPillDouble}>
+          <View style={[styles.topPillDouble, { backgroundColor: colors.cardBackground }]}>
             <View style={styles.topPillRow}>
-              <Text style={styles.topPillLabel}>TOTAL</Text>
-              <Text style={styles.topPillValue}>{formatNumber(totalExpenses)}</Text>
+              <Text style={[styles.topPillLabel, { color: colors.text }]}>TOTAL</Text>
+              <Text style={[styles.topPillValue, { color: colors.text }]}>{formatNumber(totalExpenses)}</Text>
             </View>
             <View style={styles.topPillRow}>
-              <Text style={styles.topPillLabel}>BLEIBT</Text>
+              <Text style={[styles.topPillLabel, { color: colors.text }]}>BLEIBT</Text>
               <Text style={[styles.topPillValue, { color: remaining >= 0 ? colors.neonGreen : colors.red }]}>
                 {remaining >= 0 ? formatNumber(remaining) : `-${formatNumber(Math.abs(remaining))}`}
               </Text>
@@ -644,7 +646,7 @@ export default function BudgetScreen() {
           {/* Sticky Add Month Button with rounded cross */}
           <Pressable 
             onPress={handleAddMonth} 
-            style={styles.addMonthButton}
+            style={[styles.addMonthButton, { backgroundColor: colors.neonGreen }]}
             onPressIn={() => {
               if (Platform.OS === 'ios' || Platform.OS === 'android') {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -652,8 +654,8 @@ export default function BudgetScreen() {
             }}
           >
             <View style={styles.plusIconContainer}>
-              <View style={styles.plusVertical} />
-              <View style={styles.plusHorizontal} />
+              <View style={[styles.plusVertical, { backgroundColor: colors.black }]} />
+              <View style={[styles.plusHorizontal, { backgroundColor: colors.black }]} />
             </View>
           </Pressable>
 
@@ -689,24 +691,24 @@ export default function BudgetScreen() {
           style={styles.modalOverlay}
           onPress={() => setNewMonthNameModalVisible(false)}
         >
-          <Pressable style={styles.editModal} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>{t.budget.newMonth || 'Neuer Monat'}</Text>
+          <Pressable style={[styles.editModal, { backgroundColor: colors.cardBackground }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t.budget.newMonth || 'Neuer Monat'}</Text>
             <TextInput
-              style={styles.editInput}
+              style={[styles.editInput, { backgroundColor: colors.background, color: colors.text }]}
               value={newMonthName}
               onChangeText={setNewMonthName}
               placeholder={t.budget.monthNamePlaceholder || 'Monatsname (z.B. JANUAR)'}
               autoFocus
-              placeholderTextColor={colors.darkGray}
+              placeholderTextColor="#666"
             />
-            <Pressable style={styles.saveButton} onPress={saveNewMonth}>
-              <Text style={styles.saveButtonText}>{t.budget.save}</Text>
+            <Pressable style={[styles.saveButton, { backgroundColor: colors.neonGreen }]} onPress={saveNewMonth}>
+              <Text style={[styles.saveButtonText, { color: colors.black }]}>{t.budget.save}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
 
-      {/* Context Menu Modal - REMOVED "Namen anpassen" for months */}
+      {/* Context Menu Modal - WITH "Namen anpassen" for months */}
       <Modal
         visible={contextMenu.visible}
         transparent
@@ -717,19 +719,19 @@ export default function BudgetScreen() {
           style={styles.modalOverlay}
           onPress={() => setContextMenu({ visible: false, type: null, itemId: null })}
         >
-          <View style={styles.contextMenu}>
-            {/* Only show "Namen anpassen" for expenses, NOT for months */}
-            {contextMenu.type === 'expense' && (
-              <Pressable
-                style={styles.menuItem}
-                onPress={() => {
-                  const item = selectedMonth?.expenses.find((e) => e.id === contextMenu.itemId);
-                  openEditModal('name', contextMenu.itemId, item?.name || '');
-                }}
-              >
-                <Text style={styles.menuItemText}>{t.budget.edit}</Text>
-              </Pressable>
-            )}
+          <View style={[styles.contextMenu, { backgroundColor: colors.cardBackground }]}>
+            {/* Show "Namen anpassen" for BOTH months and expenses */}
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => {
+                const item = contextMenu.type === 'month' 
+                  ? months.find((m) => m.id === contextMenu.itemId)
+                  : selectedMonth?.expenses.find((e) => e.id === contextMenu.itemId);
+                openEditModal('name', contextMenu.itemId, item?.name || '');
+              }}
+            >
+              <Text style={[styles.menuItemText, { color: colors.text }]}>{t.budget.edit}</Text>
+            </Pressable>
 
             {contextMenu.type === 'expense' && (
               <Pressable
@@ -741,16 +743,16 @@ export default function BudgetScreen() {
                   openEditModal('amount', contextMenu.itemId, expense?.amount.toString() || '0');
                 }}
               >
-                <Text style={styles.menuItemText}>{t.budget.editAmount}</Text>
+                <Text style={[styles.menuItemText, { color: colors.text }]}>{t.budget.editAmount}</Text>
               </Pressable>
             )}
 
             <Pressable style={styles.menuItem} onPress={handleDuplicate}>
-              <Text style={styles.menuItemText}>{t.budget.duplicate}</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>{t.budget.duplicate}</Text>
             </Pressable>
 
             <Pressable style={styles.menuItem} onPress={handlePinToggle}>
-              <Text style={styles.menuItemText}>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>
                 {getItemPinStatus() ? t.budget.unpin : t.budget.pin}
               </Text>
             </Pressable>
@@ -766,14 +768,14 @@ export default function BudgetScreen() {
                 }
               }}
             >
-              <Text style={[styles.menuItemText, styles.menuItemDanger]}>{t.budget.delete}</Text>
+              <Text style={[styles.menuItemText, styles.menuItemDanger, { color: colors.red }]}>{t.budget.delete}</Text>
             </Pressable>
 
             <Pressable
               style={styles.menuItem}
               onPress={() => setContextMenu({ visible: false, type: null, itemId: null })}
             >
-              <Text style={styles.menuItemText}>{t.budget.cancel}</Text>
+              <Text style={[styles.menuItemText, { color: colors.text }]}>{t.budget.cancel}</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -790,9 +792,9 @@ export default function BudgetScreen() {
           style={styles.modalOverlay}
           onPress={() => setEditModal({ visible: false, type: null, value: '', itemId: null })}
         >
-          <Pressable style={styles.editModal} onPress={(e) => e.stopPropagation()}>
+          <Pressable style={[styles.editModal, { backgroundColor: colors.cardBackground }]} onPress={(e) => e.stopPropagation()}>
             <TextInput
-              style={styles.editInput}
+              style={[styles.editInput, { backgroundColor: colors.background, color: colors.text }]}
               value={editModal.value}
               onChangeText={(text) => setEditModal({ ...editModal, value: text })}
               keyboardType={
@@ -808,10 +810,10 @@ export default function BudgetScreen() {
                   : ''
               }
               autoFocus
-              placeholderTextColor={colors.darkGray}
+              placeholderTextColor="#666"
             />
-            <Pressable style={styles.saveButton} onPress={saveEdit}>
-              <Text style={styles.saveButtonText}>{t.budget.save}</Text>
+            <Pressable style={[styles.saveButton, { backgroundColor: colors.neonGreen }]} onPress={saveEdit}>
+              <Text style={[styles.saveButtonText, { color: colors.black }]}>{t.budget.save}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -833,7 +835,6 @@ const pillWidth = (width - 48) / 2;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.black,
   },
   scrollView: {
     flex: 1,
@@ -847,7 +848,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   topPill: {
-    backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 20,
     flexDirection: 'row',
@@ -855,7 +855,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   topPillDouble: {
-    backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 20,
     gap: 16,
@@ -866,13 +865,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   topPillLabel: {
-    color: colors.white,
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 1,
   },
   topPillValue: {
-    color: colors.white,
     fontSize: 26,
     fontWeight: '800',
     letterSpacing: 1,
@@ -887,7 +884,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.neonGreen,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -903,14 +899,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 3,
     height: 20,
-    backgroundColor: colors.black,
     borderRadius: 2,
   },
   plusHorizontal: {
     position: 'absolute',
     width: 20,
     height: 3,
-    backgroundColor: colors.black,
     borderRadius: 2,
   },
   monthScrollView: {
@@ -922,7 +916,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   monthPill: {
-    backgroundColor: colors.darkGray,
     borderRadius: 18,
     paddingHorizontal: 16,
     height: 44,
@@ -931,27 +924,16 @@ const styles = StyleSheet.create({
     gap: 12,
     justifyContent: 'center',
   },
-  monthPillSelected: {
-    backgroundColor: colors.neonGreen,
-  },
   monthPillText: {
-    color: colors.white,
     fontSize: 14,
     fontWeight: '800',
     letterSpacing: 1,
-  },
-  monthPillTextSelected: {
-    color: colors.black,
-  },
-  pinnedBorder: {
-    borderWidth: 2,
-    borderColor: colors.neonGreen,
   },
   deleteIcon: {
     padding: 4,
   },
   deleteX: {
-    color: colors.red,
+    color: '#C43C3E',
     fontSize: 16,
     fontWeight: '800',
   },
@@ -965,7 +947,6 @@ const styles = StyleSheet.create({
     width: pillWidth,
   },
   expensePill: {
-    backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 16,
     height: pillWidth,
@@ -977,14 +958,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   expenseName: {
-    color: colors.white,
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 1,
     flex: 1,
   },
   expenseAmount: {
-    color: colors.white,
     fontSize: 26,
     fontWeight: '800',
     letterSpacing: 1,
@@ -997,7 +976,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contextMenu: {
-    backgroundColor: colors.darkGray,
     borderRadius: 20,
     width: '80%',
     overflow: 'hidden',
@@ -1008,46 +986,39 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   menuItemText: {
-    color: colors.white,
     fontSize: 18,
     fontWeight: '800',
     textAlign: 'center',
     letterSpacing: 0.5,
   },
   menuItemDanger: {
-    color: colors.red,
+    color: '#C43C3E',
   },
   editModal: {
-    backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 24,
     width: '80%',
     gap: 16,
   },
   modalTitle: {
-    color: colors.white,
     fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: 8,
   },
   editInput: {
-    backgroundColor: colors.black,
     borderRadius: 12,
     padding: 16,
-    color: colors.white,
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 1,
   },
   saveButton: {
-    backgroundColor: colors.neonGreen,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
   saveButtonText: {
-    color: colors.black,
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 1,

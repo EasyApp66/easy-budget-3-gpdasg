@@ -22,17 +22,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import * as MailComposer from 'expo-mail-composer';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { usePremium } from '@/hooks/usePremium';
-
-const colors = {
-  black: '#000000',
-  white: '#FFFFFF',
-  neonGreen: '#BFFE84',
-  darkGray: '#232323',
-  red: '#C43C3E',
-};
 
 const SUPPORT_EMAIL = 'ivanmirosnic006@gmail.com';
 
@@ -46,6 +39,7 @@ interface SettingsItemProps {
 
 const SettingsItem = ({ iosIcon, androidIcon, iconColor, title, onPress }: SettingsItemProps) => {
   const scale = useSharedValue(1);
+  const { colors } = useTheme();
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -63,7 +57,7 @@ const SettingsItem = ({ iosIcon, androidIcon, iconColor, title, onPress }: Setti
 
   return (
     <Pressable onPress={handlePress}>
-      <Animated.View style={[styles.settingsItem, animatedStyle]}>
+      <Animated.View style={[styles.settingsItem, { backgroundColor: colors.cardBackground }, animatedStyle]}>
         <View style={styles.settingsItemLeft}>
           <IconSymbol 
             ios_icon_name={iosIcon} 
@@ -71,7 +65,7 @@ const SettingsItem = ({ iosIcon, androidIcon, iconColor, title, onPress }: Setti
             size={24} 
             color={iconColor} 
           />
-          <Text style={styles.settingsItemText}>{title}</Text>
+          <Text style={[styles.settingsItemText, { color: colors.text }]}>{title}</Text>
         </View>
         <IconSymbol 
           ios_icon_name="chevron.right" 
@@ -89,6 +83,7 @@ export default function ProfilScreen() {
   const { signOut, user } = useAuth();
   const { isPremium } = usePremium();
   const { language, setLanguage, t } = useLanguage();
+  const { theme, toggleTheme, colors } = useTheme();
   const [username, setUsername] = useState('mirosnic.ivan');
   
   // Premium status state
@@ -237,6 +232,14 @@ export default function ProfilScreen() {
     const newLang = language === 'DE' ? 'EN' : 'DE';
     console.log(`[Profile] Changing language to: ${newLang}`);
     await setLanguage(newLang);
+  };
+
+  const handleThemeToggle = async () => {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    console.log('[Profile] Toggling theme');
+    await toggleTheme();
   };
 
   const handleBuyPremium = () => {
@@ -570,15 +573,28 @@ export default function ProfilScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Header with Theme Toggle */}
+        <View style={styles.header}>
+          <View style={{ flex: 1 }} />
+          <Pressable onPress={handleThemeToggle} style={styles.themeToggle}>
+            <IconSymbol
+              ios_icon_name={theme === 'dark' ? 'moon.fill' : 'sun.max.fill'}
+              android_material_icon_name={theme === 'dark' ? 'nightlight' : 'wb-sunny'}
+              size={24}
+              color={colors.neonGreen}
+            />
+          </Pressable>
+        </View>
+
         {/* User Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.userIconContainer}>
+        <View style={[styles.profileCard, { backgroundColor: colors.cardBackground }]}>
+          <View style={[styles.userIconContainer, { backgroundColor: colors.neonGreen }]}>
             <IconSymbol 
               ios_icon_name="person.fill" 
               android_material_icon_name="person"
@@ -587,7 +603,7 @@ export default function ProfilScreen() {
             />
           </View>
           <Pressable onPress={handleEditName}>
-            <Text style={styles.username}>{username}</Text>
+            <Text style={[styles.username, { color: colors.text }]}>{username}</Text>
             <Text style={styles.usernameHint}>
               {language === 'DE' ? 'Tippe um Namen zu ändern' : 'Tap to change name'}
             </Text>
@@ -595,12 +611,12 @@ export default function ProfilScreen() {
           
           {/* Premium Status */}
           <View style={styles.premiumStatusContainer}>
-            <Text style={styles.premiumStatusLabel}>
+            <Text style={[styles.premiumStatusLabel, { color: colors.text }]}>
               {t.profile.premiumStatus}:
             </Text>
             <Text style={[
               styles.premiumStatusValue,
-              { color: premiumStatus.isPremium ? colors.neonGreen : colors.white }
+              { color: premiumStatus.isPremium ? colors.neonGreen : colors.text }
             ]}>
               {premiumStatus.isPremium 
                 ? (premiumStatus.isLifetime 
@@ -615,7 +631,7 @@ export default function ProfilScreen() {
           {!premiumStatus.isPremium && (
             <View style={styles.promoCodeContainer}>
               <TextInput
-                style={styles.promoCodeInput}
+                style={[styles.promoCodeInput, { backgroundColor: theme === 'dark' ? '#333' : '#D0D0D0', color: colors.text }]}
                 value={promoCode}
                 onChangeText={setPromoCode}
                 placeholder={t.profile.promoCodePlaceholder}
@@ -623,10 +639,10 @@ export default function ProfilScreen() {
                 autoCapitalize="characters"
               />
               <Pressable 
-                style={styles.redeemButton}
+                style={[styles.redeemButton, { backgroundColor: colors.neonGreen }]}
                 onPress={handleRedeemCode}
               >
-                <Text style={styles.redeemButtonText}>{t.profile.redeemCode}</Text>
+                <Text style={[styles.redeemButtonText, { color: colors.black }]}>{t.profile.redeemCode}</Text>
               </Pressable>
             </View>
           )}
@@ -658,42 +674,42 @@ export default function ProfilScreen() {
           <SettingsItem
             iosIcon="doc.text"
             androidIcon="description"
-            iconColor={colors.white}
+            iconColor={colors.text}
             title={t.profile.agb}
             onPress={() => handleTextPage(t.legal.agbTitle, t.legal.agbContent)}
           />
           <SettingsItem
             iosIcon="shield"
             androidIcon="shield"
-            iconColor={colors.white}
+            iconColor={colors.text}
             title={t.profile.terms}
             onPress={() => handleTextPage(t.legal.termsTitle, t.legal.termsContent)}
           />
           <SettingsItem
             iosIcon="lock.shield"
             androidIcon="lock"
-            iconColor={colors.white}
+            iconColor={colors.text}
             title={t.profile.privacy}
             onPress={() => handleTextPage(t.legal.privacyTitle, t.legal.privacyContent)}
           />
           <SettingsItem
             iosIcon="info.circle"
             androidIcon="info"
-            iconColor={colors.white}
+            iconColor={colors.text}
             title={t.profile.impressum}
             onPress={() => handleTextPage(t.legal.impressumTitle, t.legal.impressumContent)}
           />
           <SettingsItem
             iosIcon="envelope"
             androidIcon="email"
-            iconColor={colors.white}
+            iconColor={colors.text}
             title={t.profile.support}
             onPress={handleSupport}
           />
           <SettingsItem
             iosIcon="lightbulb"
             androidIcon="lightbulb-outline"
-            iconColor={colors.white}
+            iconColor={colors.text}
             title={t.profile.suggestion}
             onPress={handleSuggestion}
           />
@@ -737,20 +753,20 @@ export default function ProfilScreen() {
         onRequestClose={() => setEditNameModalVisible(false)}
       >
         <Pressable style={styles.modalOverlay} onPress={() => setEditNameModalVisible(false)}>
-          <View style={styles.editModal}>
-            <Text style={styles.modalTitle}>
+          <View style={[styles.editModal, { backgroundColor: colors.cardBackground }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
               {language === 'DE' ? 'Namen ändern' : 'Change Name'}
             </Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: theme === 'dark' ? '#333' : '#D0D0D0', color: colors.text }]}
               value={newUsername}
               onChangeText={setNewUsername}
               placeholder={language === 'DE' ? 'Neuer Name' : 'New Name'}
               placeholderTextColor="#666"
               autoFocus
             />
-            <Pressable style={styles.primaryButton} onPress={saveNewUsername}>
-              <Text style={styles.primaryButtonText}>{t.common.save}</Text>
+            <Pressable style={[styles.primaryButton, { backgroundColor: colors.neonGreen }]} onPress={saveNewUsername}>
+              <Text style={[styles.primaryButtonText, { color: colors.black }]}>{t.common.save}</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -764,17 +780,17 @@ export default function ProfilScreen() {
         onRequestClose={() => setBugModalVisible(false)}
       >
         <Pressable style={styles.modalOverlay} onPress={() => setBugModalVisible(false)}>
-          <View style={styles.bugModal}>
+          <View style={[styles.bugModal, { backgroundColor: colors.cardBackground }]}>
             <Pressable style={styles.closeButton} onPress={() => setBugModalVisible(false)}>
               <IconSymbol 
                 ios_icon_name="xmark" 
                 android_material_icon_name="close"
                 size={24} 
-                color={colors.white} 
+                color={colors.text} 
               />
             </Pressable>
 
-            <View style={styles.bugIconContainer}>
+            <View style={[styles.bugIconContainer, { backgroundColor: theme === 'dark' ? '#2a2a2a' : '#D0D0D0' }]}>
               <IconSymbol 
                 ios_icon_name="ant" 
                 android_material_icon_name="bug-report"
@@ -783,10 +799,10 @@ export default function ProfilScreen() {
               />
             </View>
 
-            <Text style={styles.modalTitle}>{t.profile.bugReport}</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t.profile.bugReport}</Text>
 
             <TextInput
-              style={styles.bugInput}
+              style={[styles.bugInput, { backgroundColor: theme === 'dark' ? '#333' : '#D0D0D0', color: colors.text }]}
               value={bugDescription}
               onChangeText={setBugDescription}
               placeholder={language === 'DE' ? 'Beschreibe den Fehler...' : 'Describe the bug...'}
@@ -796,14 +812,14 @@ export default function ProfilScreen() {
               textAlignVertical="top"
             />
 
-            <Pressable style={styles.sendButton} onPress={sendBugReport}>
+            <Pressable style={[styles.sendButton, { backgroundColor: colors.neonGreen }]} onPress={sendBugReport}>
               <IconSymbol 
                 ios_icon_name="paperplane.fill" 
                 android_material_icon_name="send"
                 size={20} 
                 color={colors.black} 
               />
-              <Text style={styles.sendButtonText}>
+              <Text style={[styles.sendButtonText, { color: colors.black }]}>
                 {language === 'DE' ? 'Senden' : 'Send'}
               </Text>
             </Pressable>
@@ -819,13 +835,13 @@ export default function ProfilScreen() {
         onRequestClose={() => setDonateModalVisible(false)}
       >
         <Pressable style={styles.modalOverlay} onPress={() => setDonateModalVisible(false)}>
-          <View style={styles.donateModal}>
+          <View style={[styles.donateModal, { backgroundColor: colors.cardBackground }]}>
             <Pressable style={styles.closeButton} onPress={() => setDonateModalVisible(false)}>
               <IconSymbol 
                 ios_icon_name="xmark" 
                 android_material_icon_name="close"
                 size={24} 
-                color={colors.white} 
+                color={colors.text} 
               />
             </Pressable>
 
@@ -833,7 +849,7 @@ export default function ProfilScreen() {
               <Text style={styles.heartIcon}>❤️</Text>
             </View>
 
-            <Text style={styles.modalTitle}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
               {language === 'DE' ? 'Spenden' : 'Donate'}
             </Text>
             <Text style={styles.donateSubtitle}>
@@ -846,7 +862,8 @@ export default function ProfilScreen() {
                   key={amount}
                   style={[
                     styles.amountButton,
-                    selectedDonation === amount && styles.amountButtonSelected,
+                    { backgroundColor: theme === 'dark' ? '#333' : '#D0D0D0' },
+                    selectedDonation === amount && { backgroundColor: colors.neonGreen },
                   ]}
                   onPress={() => {
                     if (Platform.OS === 'ios') {
@@ -859,7 +876,8 @@ export default function ProfilScreen() {
                   <Text
                     style={[
                       styles.amountText,
-                      selectedDonation === amount && styles.amountTextSelected,
+                      { color: colors.text },
+                      selectedDonation === amount && { color: colors.black },
                     ]}
                   >
                     {amount}
@@ -869,7 +887,7 @@ export default function ProfilScreen() {
             </View>
 
             <TextInput
-              style={styles.customAmountInput}
+              style={[styles.customAmountInput, { backgroundColor: theme === 'dark' ? '#333' : '#D0D0D0', color: colors.text }]}
               value={customDonation}
               onChangeText={setCustomDonation}
               placeholder={language === 'DE' ? 'CHF Eigener Betrag' : 'CHF Custom amount'}
@@ -877,14 +895,14 @@ export default function ProfilScreen() {
               keyboardType="numeric"
             />
 
-            <Pressable style={styles.donateButton} onPress={processDonation}>
+            <Pressable style={[styles.donateButton, { backgroundColor: colors.red }]} onPress={processDonation}>
               <IconSymbol 
                 ios_icon_name="heart.fill" 
                 android_material_icon_name="favorite"
                 size={20} 
                 color={colors.white} 
               />
-              <Text style={styles.donateButtonText}>
+              <Text style={[styles.donateButtonText, { color: colors.white }]}>
                 {language === 'DE' ? 'Spenden' : 'Donate'} CHF {customDonation || selectedDonation}.00
               </Text>
             </Pressable>
@@ -905,7 +923,6 @@ export default function ProfilScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.black,
   },
   scrollView: {
     flex: 1,
@@ -915,8 +932,15 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 120,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  themeToggle: {
+    padding: 8,
+  },
   profileCard: {
-    backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 30,
     alignItems: 'center',
@@ -926,13 +950,11 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: colors.neonGreen,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 15,
   },
   username: {
-    color: colors.white,
     fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
@@ -951,12 +973,10 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   premiumStatusLabel: {
-    color: colors.white,
     fontSize: 16,
     fontWeight: '700',
   },
   premiumStatusValue: {
-    color: colors.white,
     fontSize: 16,
     fontWeight: '800',
   },
@@ -966,21 +986,17 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   promoCodeInput: {
-    backgroundColor: '#333',
     borderRadius: 12,
     padding: 15,
-    color: colors.white,
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
   },
   redeemButton: {
-    backgroundColor: colors.neonGreen,
     borderRadius: 12,
     padding: 15,
   },
   redeemButtonText: {
-    color: colors.black,
     fontSize: 16,
     fontWeight: '800',
     textAlign: 'center',
@@ -989,7 +1005,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   settingsItem: {
-    backgroundColor: colors.darkGray,
     borderRadius: 16,
     padding: 20,
     flexDirection: 'row',
@@ -1002,7 +1017,6 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   settingsItemText: {
-    color: colors.white,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -1023,21 +1037,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editModal: {
-    backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 30,
     width: '85%',
     maxWidth: 400,
   },
   bugModal: {
-    backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 30,
     width: '85%',
     maxWidth: 400,
   },
   donateModal: {
-    backgroundColor: colors.darkGray,
     borderRadius: 20,
     padding: 30,
     width: '85%',
@@ -1053,7 +1064,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#2a2a2a',
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
@@ -1073,7 +1083,6 @@ const styles = StyleSheet.create({
     fontSize: 40,
   },
   modalTitle: {
-    color: colors.white,
     fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
@@ -1086,37 +1095,30 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    backgroundColor: '#333',
     borderRadius: 12,
     padding: 15,
-    color: colors.white,
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 20,
   },
   bugInput: {
-    backgroundColor: '#333',
     borderRadius: 12,
     padding: 15,
-    color: colors.white,
     fontSize: 16,
     height: 120,
     marginBottom: 20,
     textAlignVertical: 'top',
   },
   primaryButton: {
-    backgroundColor: colors.neonGreen,
     borderRadius: 12,
     padding: 15,
   },
   primaryButtonText: {
-    color: colors.black,
     fontSize: 18,
     fontWeight: '800',
     textAlign: 'center',
   },
   sendButton: {
-    backgroundColor: colors.neonGreen,
     borderRadius: 12,
     padding: 15,
     flexDirection: 'row',
@@ -1125,7 +1127,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sendButtonText: {
-    color: colors.black,
     fontSize: 18,
     fontWeight: '800',
   },
@@ -1137,33 +1138,22 @@ const styles = StyleSheet.create({
   },
   amountButton: {
     flex: 1,
-    backgroundColor: '#333',
     borderRadius: 12,
     padding: 15,
     alignItems: 'center',
   },
-  amountButtonSelected: {
-    backgroundColor: colors.neonGreen,
-  },
   amountText: {
-    color: colors.white,
     fontSize: 18,
     fontWeight: '800',
   },
-  amountTextSelected: {
-    color: colors.black,
-  },
   customAmountInput: {
-    backgroundColor: '#333',
     borderRadius: 12,
     padding: 15,
-    color: colors.white,
     fontSize: 16,
     fontWeight: '700',
     marginBottom: 20,
   },
   donateButton: {
-    backgroundColor: colors.red,
     borderRadius: 12,
     padding: 15,
     flexDirection: 'row',
@@ -1172,7 +1162,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   donateButtonText: {
-    color: colors.white,
     fontSize: 18,
     fontWeight: '800',
   },
