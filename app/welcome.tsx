@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   View,
@@ -15,11 +15,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withRepeat,
-  withTiming,
-  Easing,
 } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
 import { Stack, useRouter } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -31,41 +27,6 @@ export default function WelcomeScreen() {
   const { t } = useLanguage();
   const [legalModalVisible, setLegalModalVisible] = useState(false);
   const [legalModalContent, setLegalModalContent] = useState({ title: '', content: '' });
-
-  // Animated blur circle - FASTER, BRIGHTER, MORE BLUR
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    console.log('[Welcome] Starting animated blur circle - faster and brighter');
-    // Horizontal movement - FASTER (4 seconds instead of 8)
-    translateX.value = withRepeat(
-      withTiming(150, { duration: 4000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-    // Vertical movement - FASTER (5 seconds instead of 10)
-    translateY.value = withRepeat(
-      withTiming(200, { duration: 5000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-    // Pulsing scale effect for more dynamic movement
-    scale.value = withRepeat(
-      withTiming(1.3, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-  }, []);
-
-  const blurCircleStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-      { scale: scale.value },
-    ],
-  }));
 
   const AnimatedButton = ({
     title,
@@ -185,14 +146,10 @@ export default function WelcomeScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        {/* Animated blur green circle background - BRIGHTER, MORE BLUR, FASTER */}
-        <Animated.View style={[styles.blurCircle, blurCircleStyle]}>
-          <BlurView intensity={100} style={styles.blurView} />
-        </Animated.View>
+        {/* Green circle animation removed as requested */}
 
         <View style={styles.content}>
           <View style={styles.textBlock}>
-            {/* SMALLER "Hallo! ich bin" text */}
             <Text style={styles.title}>
               {t.welcome.greeting} <Text style={styles.highlight}>{t.welcome.appName}</Text>
             </Text>
@@ -297,22 +254,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.black,
   },
-  blurCircle: {
-    position: 'absolute',
-    top: '15%',
-    left: '5%',
-    width: 350,
-    height: 350,
-    borderRadius: 175,
-    // BRIGHTER green with higher opacity
-    backgroundColor: colors.neonGreen,
-    opacity: 0.5,
-  },
-  blurView: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 175,
-  },
   content: {
     flex: 1,
     paddingHorizontal: 24,
@@ -323,7 +264,6 @@ const styles = StyleSheet.create({
   textBlock: {
     marginBottom: 40,
   },
-  // SMALLER "Hallo! ich bin" text (was 32, now 26)
   title: {
     fontSize: 26,
     fontWeight: '800',

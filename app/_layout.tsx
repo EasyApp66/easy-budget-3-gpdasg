@@ -44,6 +44,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
+      // Hide splash screen immediately after fonts load - maximum 0.5 seconds
+      console.log('[App] Fonts loaded, hiding splash screen immediately for fast startup');
       SplashScreen.hideAsync();
     }
   }, [loaded]);
@@ -104,7 +106,7 @@ export default function RootLayout() {
                     screenOptions={{
                       headerShown: false,
                       animation: 'default',
-                      animationDuration: 200,
+                      animationDuration: 150,
                     }}
                   >
                     <Stack.Screen 
@@ -112,6 +114,7 @@ export default function RootLayout() {
                       options={{ 
                         headerShown: false,
                         animation: 'fade',
+                        animationDuration: 150,
                       }} 
                     />
                     <Stack.Screen 
@@ -119,6 +122,7 @@ export default function RootLayout() {
                       options={{ 
                         headerShown: false,
                         animation: 'fade',
+                        animationDuration: 150,
                       }} 
                     />
                     <Stack.Screen 
@@ -126,6 +130,7 @@ export default function RootLayout() {
                       options={{ 
                         headerShown: false,
                         animation: 'slide_from_right',
+                        animationDuration: 150,
                       }} 
                     />
                     <Stack.Screen 
@@ -133,6 +138,7 @@ export default function RootLayout() {
                       options={{ 
                         headerShown: false,
                         animation: 'slide_from_right',
+                        animationDuration: 150,
                       }} 
                     />
                     <Stack.Screen 
@@ -140,6 +146,7 @@ export default function RootLayout() {
                       options={{ 
                         headerShown: false,
                         animation: 'slide_from_right',
+                        animationDuration: 150,
                       }} 
                     />
                     <Stack.Screen 
@@ -147,6 +154,7 @@ export default function RootLayout() {
                       options={{ 
                         headerShown: false,
                         animation: 'fade',
+                        animationDuration: 150,
                       }} 
                     />
                     <Stack.Screen
@@ -155,6 +163,7 @@ export default function RootLayout() {
                         presentation: "modal",
                         title: "Standard Modal",
                         animation: 'slide_from_bottom',
+                        animationDuration: 150,
                       }}
                     />
                     <Stack.Screen
@@ -166,6 +175,7 @@ export default function RootLayout() {
                         sheetAllowedDetents: [0.5, 0.8, 1.0],
                         sheetCornerRadius: 20,
                         animation: 'slide_from_bottom',
+                        animationDuration: 150,
                       }}
                     />
                     <Stack.Screen
@@ -174,6 +184,7 @@ export default function RootLayout() {
                         presentation: "transparentModal",
                         headerShown: false,
                         animation: 'fade',
+                        animationDuration: 150,
                       }}
                     />
                   </Stack>
