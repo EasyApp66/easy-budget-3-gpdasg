@@ -706,7 +706,7 @@ export default function BudgetScreen() {
         </Pressable>
       </Modal>
 
-      {/* Context Menu Modal - REMOVED "Namen anpassen" for months */}
+      {/* Context Menu Modal - NOW WITH "Namen anpassen" for months */}
       <Modal
         visible={contextMenu.visible}
         transparent
@@ -718,18 +718,21 @@ export default function BudgetScreen() {
           onPress={() => setContextMenu({ visible: false, type: null, itemId: null })}
         >
           <View style={styles.contextMenu}>
-            {/* Only show "Namen anpassen" for expenses, NOT for months */}
-            {contextMenu.type === 'expense' && (
-              <Pressable
-                style={styles.menuItem}
-                onPress={() => {
-                  const item = selectedMonth?.expenses.find((e) => e.id === contextMenu.itemId);
-                  openEditModal('name', contextMenu.itemId, item?.name || '');
-                }}
-              >
-                <Text style={styles.menuItemText}>{t.budget.edit}</Text>
-              </Pressable>
-            )}
+            {/* Show "Namen anpassen" for BOTH months AND expenses */}
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => {
+                if (contextMenu.type === 'month') {
+                  const month = months.find((m) => m.id === contextMenu.itemId);
+                  openEditModal('name', contextMenu.itemId, month?.name || '');
+                } else if (contextMenu.type === 'expense') {
+                  const expense = selectedMonth?.expenses.find((e) => e.id === contextMenu.itemId);
+                  openEditModal('name', contextMenu.itemId, expense?.name || '');
+                }
+              }}
+            >
+              <Text style={styles.menuItemText}>{t.budget.edit}</Text>
+            </Pressable>
 
             {contextMenu.type === 'expense' && (
               <Pressable
