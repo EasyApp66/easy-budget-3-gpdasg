@@ -21,7 +21,7 @@ export const translations = {
     },
     // Login Screen
     login: {
-      title: 'Willkommen zurück',
+      title: 'Willkommen',
       subtitle: 'Melde dich an, um fortzufahren',
       emailPlaceholder: 'deine@email.com',
       passwordPlaceholder: 'Passwort',
@@ -205,7 +205,7 @@ export const translations = {
     },
     // Login Screen
     login: {
-      title: 'Welcome Back',
+      title: 'Welcome',
       subtitle: 'Sign in to continue',
       emailPlaceholder: 'your@email.com',
       passwordPlaceholder: 'Password',

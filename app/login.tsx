@@ -33,6 +33,7 @@ export default function LoginScreen() {
   const { t } = useLanguage();
 
   const handleLogin = async () => {
+    console.log('[LoginScreen] User tapped login button');
     if (!email || !password) {
       Alert.alert(t.common.error, t.register.errorAllFields);
       return;
@@ -40,10 +41,13 @@ export default function LoginScreen() {
 
     try {
       setLoading(true);
+      console.log('[LoginScreen] Attempting login with email:', email);
       await signInWithEmail(email, password);
+      console.log('[LoginScreen] Login successful, redirecting to budget screen');
       // Redirect to budget screen after successful login
       router.replace('/(tabs)/budget');
     } catch (error: any) {
+      console.log('[LoginScreen] Login failed:', error.message);
       Alert.alert(t.common.error, error.message || t.register.errorRegistration);
       setLoading(false);
     }
@@ -113,6 +117,7 @@ export default function LoginScreen() {
       >
         <Pressable
           onPress={() => {
+            console.log('[LoginScreen] User tapped back button');
             handlePress(() => router.back());
           }}
           style={styles.backButton}
@@ -158,17 +163,23 @@ export default function LoginScreen() {
             />
 
             <Pressable
-              onPress={() => handlePress(() => router.push('/forgot-password'))}
+              onPress={() => {
+                console.log('[LoginScreen] User tapped forgot password link');
+                handlePress(() => router.push('/forgot-password'));
+              }}
               style={styles.linkContainer}
             >
               <Text style={styles.link}>{t.login.forgotPassword}</Text>
             </Pressable>
 
             <Pressable
-              onPress={() => handlePress(() => router.push('/register'))}
+              onPress={() => {
+                console.log('[LoginScreen] User tapped register link');
+                handlePress(() => router.push('/register'));
+              }}
               style={styles.linkContainer}
             >
-              <Text style={styles.secondaryText}>
+              <Text style={styles.registerLink}>
                 {t.login.noAccount}
               </Text>
             </Pressable>
@@ -253,9 +264,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textDecorationLine: 'underline',
   },
-  secondaryText: {
-    color: colors.lightGray,
+  registerLink: {
+    color: colors.white,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });
