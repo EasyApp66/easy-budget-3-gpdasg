@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUser } from 'expo-superwall';
 
 const ADMIN_EMAIL = 'mirosnic.ivan@icloud.com';
 const PREMIUM_EXPIRY_KEY = '@easy_budget_premium_expiry';
@@ -9,6 +10,7 @@ const VALID_PROMO_CODE = 'EASY2';
 
 export function usePremium() {
   const { user } = useAuth();
+  const { subscriptionStatus, user: superwallUser } = useUser();
   const [isPremium, setIsPremium] = useState(false);
   const [premiumStatus, setPremiumStatus] = useState<{
     isPremium: boolean;
@@ -19,7 +21,7 @@ export function usePremium() {
 
   useEffect(() => {
     checkPremiumStatus();
-  }, [user]);
+  }, [user, subscriptionStatus]);
 
   const checkPremiumStatus = async () => {
     console.log('[Premium] Checking premium status');
@@ -32,7 +34,18 @@ export function usePremium() {
       return;
     }
 
-    // Check offline promo code redemption first
+    // Check Superwall subscription status first (iOS in-app purchases)
+    if (subscriptionStatus?.status === 'ACTIVE') {
+      console.log('[Premium] Superwall subscription active');
+      setIsPremium(true);
+      setPremiumStatus({
+        isPremium: true,
+        isLifetime: false,
+      });
+      return;
+    }
+
+    // Check offline promo code redemption
     try {
       const expiryDateStr = await AsyncStorage.getItem(PREMIUM_EXPIRY_KEY);
       if (expiryDateStr) {
@@ -40,7 +53,6 @@ export function usePremium() {
         const now = new Date();
         
         if (expiryDate > now) {
-          // Premium is still valid
           const daysRemaining = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
           console.log('[Premium] Offline premium active, days remaining:', daysRemaining);
           setIsPremium(true);
@@ -52,7 +64,6 @@ export function usePremium() {
           });
           return;
         } else {
-          // Premium expired, remove from storage
           console.log('[Premium] Offline premium expired');
           await AsyncStorage.removeItem(PREMIUM_EXPIRY_KEY);
         }
@@ -66,7 +77,6 @@ export function usePremium() {
       if (user?.email) {
         console.log('[Premium] Checking backend premium status for:', user.email);
         
-        // Import API utilities
         const { authenticatedGet, BACKEND_URL } = await import('@/utils/api');
         
         if (!BACKEND_URL) {
@@ -76,7 +86,6 @@ export function usePremium() {
           return;
         }
 
-        // Call backend to check premium status
         const data = await authenticatedGet<{ 
           isPremium: boolean; 
           expiresAt?: string;
@@ -94,7 +103,6 @@ export function usePremium() {
       }
     } catch (error) {
       console.error('[Premium] Error checking backend premium status:', error);
-      // If endpoint doesn't exist yet (404), default to non-premium
       setIsPremium(false);
       setPremiumStatus({ isPremium: false });
     }

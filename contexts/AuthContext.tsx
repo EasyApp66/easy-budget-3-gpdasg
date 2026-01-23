@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Platform } from "react-native";
 import { authClient, storeWebBearerToken } from "@/lib/auth";
+import { useUser as useSuperwallUser } from "expo-superwall";
 
 interface User {
   id: string;
@@ -80,6 +81,7 @@ function openOAuthPopup(provider: string): Promise<string> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { identify: identifySuperwallUser } = useSuperwallUser();
 
   useEffect(() => {
     fetchUser();
@@ -94,7 +96,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (session?.data?.user) {
         console.log('[AuthContext] User found:', session.data.user);
-        setUser(session.data.user as User);
+        const userData = session.data.user as User;
+        setUser(userData);
+        
+        // Identify user with Superwall for in-app purchases
+        if (userData.id) {
+          console.log('[AuthContext] Identifying user with Superwall:', userData.id);
+          try {
+            await identifySuperwallUser(userData.id);
+            console.log('[AuthContext] Superwall user identified successfully');
+          } catch (error) {
+            console.error('[AuthContext] Failed to identify Superwall user:', error);
+          }
+        }
       } else {
         console.log('[AuthContext] No user session found');
         setUser(null);

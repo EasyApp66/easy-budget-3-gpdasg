@@ -159,6 +159,11 @@ export const translations = {
       close: 'Schließen',
       pay: 'Bezahlen',
       or: 'ODER',
+      processing: 'Verarbeitung...',
+      errorTitle: 'Fehler',
+      errorMessage: 'Zahlung fehlgeschlagen. Bitte versuche es erneut.',
+      successTitle: 'Erfolg',
+      successMessage: 'Premium erfolgreich aktiviert!',
     },
     // Common
     common: {
@@ -343,6 +348,11 @@ export const translations = {
       close: 'Close',
       pay: 'Pay',
       or: 'OR',
+      processing: 'Processing...',
+      errorTitle: 'Error',
+      errorMessage: 'Payment failed. Please try again.',
+      successTitle: 'Success',
+      successMessage: 'Premium activated successfully!',
     },
     // Common
     common: {

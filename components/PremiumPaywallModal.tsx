@@ -6,6 +6,7 @@ import {
   Modal,
   Pressable,
   Platform,
+  Alert,
 } from 'react-native';
 import { IconSymbol } from '@/components/IconSymbol';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -15,7 +16,8 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import React from 'react';
+import React, { useState } from 'react';
+import { usePlacement } from 'expo-superwall';
 
 interface PremiumPaywallModalProps {
   visible: boolean;
@@ -29,6 +31,7 @@ export function PremiumPaywallModal({
   onPurchase,
 }: PremiumPaywallModalProps) {
   const { t } = useLanguage();
+  const [isProcessing, setIsProcessing] = useState(false);
   const onetimeScale = useSharedValue(1);
   const monthlyScale = useSharedValue(1);
   const closeScale = useSharedValue(1);
@@ -45,6 +48,41 @@ export function PremiumPaywallModal({
     transform: [{ scale: closeScale.value }],
   }));
 
+  const { registerPlacement } = usePlacement({
+    onError: (error) => {
+      console.error('[Superwall] Paywall error:', error);
+      setIsProcessing(false);
+      Alert.alert(
+        t.premium.errorTitle || 'Error',
+        t.premium.errorMessage || 'Failed to process purchase. Please try again.',
+        [{ text: 'OK' }]
+      );
+    },
+    onPresent: (info) => {
+      console.log('[Superwall] Paywall presented:', info);
+    },
+    onDismiss: (info, result) => {
+      console.log('[Superwall] Paywall dismissed:', info, 'Result:', result);
+      setIsProcessing(false);
+      
+      if (result === 'purchased' || result === 'restored') {
+        console.log('[Superwall] Purchase successful!');
+        Alert.alert(
+          t.premium.successTitle || 'Success',
+          t.premium.successMessage || 'Premium activated successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                onClose();
+              },
+            },
+          ]
+        );
+      }
+    },
+  });
+
   const handlePress = (
     callback: () => void,
     scaleValue: Animated.SharedValue<number>
@@ -57,6 +95,57 @@ export function PremiumPaywallModal({
       scaleValue.value = withSpring(1, { damping: 10, stiffness: 400 });
       callback();
     }, 100);
+  };
+
+  const handlePurchase = async (type: 'onetime' | 'monthly') => {
+    console.log('[Superwall] ========================================');
+    console.log('[Superwall] Initiating purchase:', type);
+    console.log('[Superwall] Platform:', Platform.OS);
+    
+    if (isProcessing) {
+      console.log('[Superwall] Purchase already in progress, ignoring');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
+    try {
+      const placementName = type === 'onetime' ? 'premium_onetime' : 'premium_monthly';
+      console.log('[Superwall] Registering placement:', placementName);
+      
+      await registerPlacement({
+        placement: placementName,
+        feature: () => {
+          console.log('[Superwall] ✅ Feature unlocked! Purchase successful');
+          setIsProcessing(false);
+          onPurchase(type);
+        },
+      });
+      
+      console.log('[Superwall] Placement registration completed');
+    } catch (error: any) {
+      console.error('[Superwall] ❌ Purchase error:', error);
+      console.error('[Superwall] Error details:', {
+        message: error?.message,
+        code: error?.code,
+        name: error?.name,
+      });
+      setIsProcessing(false);
+      
+      const errorMessage = error?.message || t.premium.errorMessage || 'Failed to process purchase. Please try again.';
+      
+      Alert.alert(
+        t.premium.errorTitle || 'Error',
+        errorMessage,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      console.log('[Superwall] ========================================');
+    }
   };
 
   return (
@@ -107,15 +196,18 @@ export function PremiumPaywallModal({
           {/* One-time Payment Card */}
           <Animated.View style={onetimeAnimatedStyle}>
             <Pressable
-              onPress={() => handlePress(() => onPurchase('onetime'), onetimeScale)}
+              onPress={() => handlePress(() => handlePurchase('onetime'), onetimeScale)}
               style={styles.paymentCard}
+              disabled={isProcessing}
             >
               <View style={styles.paymentInfo}>
                 <Text style={styles.paymentTitle}>{t.premium.oneTime}</Text>
                 <Text style={styles.paymentPrice}>{t.premium.oneTimePrice}</Text>
               </View>
-              <View style={styles.payButton}>
-                <Text style={styles.payButtonText}>{t.premium.pay}</Text>
+              <View style={[styles.payButton, isProcessing && styles.payButtonDisabled]}>
+                <Text style={styles.payButtonText}>
+                  {isProcessing ? t.premium.processing || 'Processing...' : t.premium.pay}
+                </Text>
               </View>
             </Pressable>
           </Animated.View>
@@ -126,15 +218,18 @@ export function PremiumPaywallModal({
           {/* Monthly Payment Card */}
           <Animated.View style={monthlyAnimatedStyle}>
             <Pressable
-              onPress={() => handlePress(() => onPurchase('monthly'), monthlyScale)}
+              onPress={() => handlePress(() => handlePurchase('monthly'), monthlyScale)}
               style={styles.paymentCard}
+              disabled={isProcessing}
             >
               <View style={styles.paymentInfo}>
                 <Text style={styles.paymentTitle}>{t.premium.monthly}</Text>
                 <Text style={styles.paymentPrice}>{t.premium.monthlyPrice}</Text>
               </View>
-              <View style={styles.payButton}>
-                <Text style={styles.payButtonText}>{t.premium.pay}</Text>
+              <View style={[styles.payButton, isProcessing && styles.payButtonDisabled]}>
+                <Text style={styles.payButtonText}>
+                  {isProcessing ? t.premium.processing || 'Processing...' : t.premium.pay}
+                </Text>
               </View>
             </Pressable>
           </Animated.View>
@@ -251,6 +346,10 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     paddingVertical: 10,
     alignItems: 'center',
+  },
+  payButtonDisabled: {
+    backgroundColor: '#666666',
+    opacity: 0.6,
   },
   payButtonText: {
     fontSize: 14,

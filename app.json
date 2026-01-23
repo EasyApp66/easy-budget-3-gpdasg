@@ -12,7 +12,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.easybudget.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "SKAdNetworkItems": []
       }
     },
     "android": {
@@ -47,7 +48,8 @@
     "plugins": [
       "expo-font",
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-superwall"
     ],
     "scheme": "easybudget",
     "experiments": {
