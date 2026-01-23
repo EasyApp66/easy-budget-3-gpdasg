@@ -88,14 +88,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUser = async () => {
     try {
       setLoading(true);
+      console.log('[AuthContext] Fetching user session...');
       const session = await authClient.getSession();
+      console.log('[AuthContext] Session response:', session);
+      
       if (session?.data?.user) {
+        console.log('[AuthContext] User found:', session.data.user);
         setUser(session.data.user as User);
       } else {
+        console.log('[AuthContext] No user session found');
         setUser(null);
       }
     } catch (error) {
-      console.error("Failed to fetch user:", error);
+      console.error("[AuthContext] Failed to fetch user:", error);
       setUser(null);
     } finally {
       setLoading(false);
@@ -104,16 +109,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithEmail = async (email: string, password: string) => {
     try {
+      console.log('[AuthContext] Signing in with email:', email);
       await authClient.signIn.email({ email, password });
       await fetchUser();
     } catch (error) {
-      console.error("Email sign in failed:", error);
+      console.error("[AuthContext] Email sign in failed:", error);
       throw error;
     }
   };
 
   const signUpWithEmail = async (email: string, password: string, name?: string) => {
     try {
+      console.log('[AuthContext] Signing up with email:', email);
       await authClient.signUp.email({
         email,
         password,
@@ -121,77 +128,125 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       await fetchUser();
     } catch (error) {
-      console.error("Email sign up failed:", error);
+      console.error("[AuthContext] Email sign up failed:", error);
       throw error;
     }
   };
 
   const signInWithGoogle = async () => {
     try {
+      console.log('[AuthContext] Starting Google OAuth flow, platform:', Platform.OS);
+      
       if (Platform.OS === "web") {
+        console.log('[AuthContext] Web platform - opening OAuth popup');
         const token = await openOAuthPopup("google");
+        console.log('[AuthContext] OAuth popup returned token');
         storeWebBearerToken(token);
         await fetchUser();
       } else {
-        // Native OAuth flow
-        await authClient.signIn.social({
+        console.log('[AuthContext] Native platform - using Better Auth social sign in');
+        console.log('[AuthContext] Calling authClient.signIn.social with provider: google');
+        
+        const result = await authClient.signIn.social({
           provider: "google",
-          callbackURL: "/(tabs)/budget",
+          callbackURL: "easybudget://auth-callback",
         });
+        
+        console.log('[AuthContext] Social sign in result:', result);
         await fetchUser();
       }
-    } catch (error) {
-      console.error("Google sign in failed:", error);
+      
+      console.log('[AuthContext] Google sign in completed successfully');
+    } catch (error: any) {
+      console.error("[AuthContext] Google sign in failed:", error);
+      console.error("[AuthContext] Error details:", {
+        message: error?.message,
+        code: error?.code,
+        name: error?.name,
+        stack: error?.stack,
+      });
       throw error;
     }
   };
 
   const signInWithApple = async () => {
     try {
+      console.log('[AuthContext] Starting Apple OAuth flow, platform:', Platform.OS);
+      
       if (Platform.OS === "web") {
+        console.log('[AuthContext] Web platform - opening OAuth popup');
         const token = await openOAuthPopup("apple");
+        console.log('[AuthContext] OAuth popup returned token');
         storeWebBearerToken(token);
         await fetchUser();
       } else {
-        // Native OAuth flow
-        await authClient.signIn.social({
+        console.log('[AuthContext] Native platform - using Better Auth social sign in');
+        console.log('[AuthContext] Calling authClient.signIn.social with provider: apple');
+        
+        const result = await authClient.signIn.social({
           provider: "apple",
-          callbackURL: "/(tabs)/budget",
+          callbackURL: "easybudget://auth-callback",
         });
+        
+        console.log('[AuthContext] Social sign in result:', result);
         await fetchUser();
       }
-    } catch (error) {
-      console.error("Apple sign in failed:", error);
+      
+      console.log('[AuthContext] Apple sign in completed successfully');
+    } catch (error: any) {
+      console.error("[AuthContext] Apple sign in failed:", error);
+      console.error("[AuthContext] Error details:", {
+        message: error?.message,
+        code: error?.code,
+        name: error?.name,
+        stack: error?.stack,
+      });
       throw error;
     }
   };
 
   const signInWithGitHub = async () => {
     try {
+      console.log('[AuthContext] Starting GitHub OAuth flow, platform:', Platform.OS);
+      
       if (Platform.OS === "web") {
+        console.log('[AuthContext] Web platform - opening OAuth popup');
         const token = await openOAuthPopup("github");
+        console.log('[AuthContext] OAuth popup returned token');
         storeWebBearerToken(token);
         await fetchUser();
       } else {
-        // Native OAuth flow
-        await authClient.signIn.social({
+        console.log('[AuthContext] Native platform - using Better Auth social sign in');
+        const result = await authClient.signIn.social({
           provider: "github",
-          callbackURL: "/(tabs)/budget",
+          callbackURL: "easybudget://auth-callback",
         });
+        
+        console.log('[AuthContext] Social sign in result:', result);
         await fetchUser();
       }
-    } catch (error) {
-      console.error("GitHub sign in failed:", error);
+      
+      console.log('[AuthContext] GitHub sign in completed successfully');
+    } catch (error: any) {
+      console.error("[AuthContext] GitHub sign in failed:", error);
+      console.error("[AuthContext] Error details:", {
+        message: error?.message,
+        code: error?.code,
+        name: error?.name,
+        stack: error?.stack,
+      });
       throw error;
     }
   };
 
   const signOut = async () => {
     try {
+      console.log('[AuthContext] Signing out user');
       await authClient.signOut();
       setUser(null);
+      console.log('[AuthContext] Sign out successful');
     } catch (error) {
-      console.error("Sign out failed:", error);
+      console.error("[AuthContext] Sign out failed:", error);
       throw error;
     }
   };

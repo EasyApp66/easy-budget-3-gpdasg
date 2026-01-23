@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "Easy Budget 2.0",
@@ -44,7 +45,23 @@
         "xhdpi": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
         "xxhdpi": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
         "xxxhdpi": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png"
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "easybudget",
+              "host": "auth-callback"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
@@ -70,6 +87,5 @@
       "backendUrl": "https://wu7kwypubgksy89mk4h6tatrg56ateqy.app.specular.dev"
     },
     "owner": "anonymous"
-  },
-  "scheme": "Easy Budget 2.0"
+  }
 }

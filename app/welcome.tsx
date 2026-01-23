@@ -9,6 +9,7 @@ import {
   Platform,
   Modal,
   ScrollView,
+  Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -27,6 +28,7 @@ export default function WelcomeScreen() {
   const { t } = useLanguage();
   const [legalModalVisible, setLegalModalVisible] = useState(false);
   const [legalModalContent, setLegalModalContent] = useState({ title: '', content: '' });
+  const [isLoading, setIsLoading] = useState(false);
 
   const AnimatedButton = ({
     title,
@@ -34,31 +36,39 @@ export default function WelcomeScreen() {
     backgroundColor,
     textColor,
     iconName,
+    disabled,
   }: {
     title: string;
     onPress: () => void;
     backgroundColor: string;
     textColor: string;
     iconName?: string;
+    disabled?: boolean;
   }) => {
     const buttonScale = useSharedValue(1);
 
     const animatedStyle = useAnimatedStyle(() => ({
       transform: [{ scale: buttonScale.value }],
+      opacity: disabled ? 0.5 : 1,
     }));
 
     return (
       <Pressable
         onPressIn={() => {
-          buttonScale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
-          if (Platform.OS === 'ios') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          if (!disabled) {
+            buttonScale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
+            if (Platform.OS === 'ios') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
           }
         }}
         onPressOut={() => {
-          buttonScale.value = withSpring(1, { damping: 15, stiffness: 300 });
+          if (!disabled) {
+            buttonScale.value = withSpring(1, { damping: 15, stiffness: 300 });
+          }
         }}
-        onPress={onPress}
+        onPress={disabled ? undefined : onPress}
+        disabled={disabled}
       >
         <Animated.View
           style={[
@@ -88,12 +98,30 @@ export default function WelcomeScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    console.log('[Welcome] User tapped Apple sign in button');
+    console.log('[Welcome] User tapped Apple sign in button - starting OAuth flow');
+    setIsLoading(true);
+    
     try {
+      console.log('[Welcome] Calling signInWithApple()...');
       await signInWithApple();
+      console.log('[Welcome] Apple sign in successful, navigating to budget screen');
       router.replace('/(tabs)/budget');
-    } catch (error) {
-      console.error('Apple sign in error:', error);
+    } catch (error: any) {
+      console.error('[Welcome] Apple sign in error:', error);
+      console.error('[Welcome] Error details:', {
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack,
+      });
+      
+      const errorMessage = error?.message || 'Failed to sign in with Apple. Please try again.';
+      Alert.alert(
+        'Sign In Failed',
+        errorMessage,
+        [{ text: 'OK', style: 'default' }]
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -101,12 +129,30 @@ export default function WelcomeScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    console.log('[Welcome] User tapped Google sign in button');
+    console.log('[Welcome] User tapped Google sign in button - starting OAuth flow');
+    setIsLoading(true);
+    
     try {
+      console.log('[Welcome] Calling signInWithGoogle()...');
       await signInWithGoogle();
+      console.log('[Welcome] Google sign in successful, navigating to budget screen');
       router.replace('/(tabs)/budget');
-    } catch (error) {
-      console.error('Google sign in error:', error);
+    } catch (error: any) {
+      console.error('[Welcome] Google sign in error:', error);
+      console.error('[Welcome] Error details:', {
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack,
+      });
+      
+      const errorMessage = error?.message || 'Failed to sign in with Google. Please try again.';
+      Alert.alert(
+        'Sign In Failed',
+        errorMessage,
+        [{ text: 'OK', style: 'default' }]
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -142,12 +188,12 @@ export default function WelcomeScreen() {
     setLegalModalVisible(false);
   };
 
+  const loadingText = isLoading ? 'Signing in...' : '';
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        {/* Green circle animation removed as requested */}
-
         <View style={styles.content}>
           <View style={styles.textBlock}>
             <Text style={styles.title}>
@@ -161,6 +207,12 @@ export default function WelcomeScreen() {
             </Text>
           </View>
 
+          {isLoading && (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>{loadingText}</Text>
+            </View>
+          )}
+
           <View style={styles.buttonContainer}>
             <AnimatedButton
               title={t.welcome.continueEmail}
@@ -168,6 +220,7 @@ export default function WelcomeScreen() {
               backgroundColor={colors.neonGreen}
               textColor={colors.black}
               iconName="email"
+              disabled={isLoading}
             />
             <AnimatedButton
               title={t.welcome.continueApple}
@@ -175,6 +228,7 @@ export default function WelcomeScreen() {
               backgroundColor={colors.white}
               textColor={colors.black}
               iconName="apple"
+              disabled={isLoading}
             />
             <AnimatedButton
               title={t.welcome.continueGoogle}
@@ -182,6 +236,7 @@ export default function WelcomeScreen() {
               backgroundColor={colors.white}
               textColor={colors.black}
               iconName="login"
+              disabled={isLoading}
             />
           </View>
 
@@ -281,6 +336,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   highlight: {
+    color: colors.neonGreen,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '600',
     color: colors.neonGreen,
   },
   buttonContainer: {
