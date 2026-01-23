@@ -2,7 +2,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Platform } from "react-native";
 import { authClient, storeWebBearerToken } from "@/lib/auth";
-import { useUser as useSuperwallUser } from "expo-superwall";
+// NOTE: Superwall temporarily disabled due to build issues
+// import { useUser as useSuperwallUser } from "expo-superwall";
 
 interface User {
   id: string;
@@ -81,7 +82,8 @@ function openOAuthPopup(provider: string): Promise<string> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { identify: identifySuperwallUser } = useSuperwallUser();
+  // NOTE: Superwall temporarily disabled due to build issues
+  // const { identify: identifySuperwallUser } = useSuperwallUser();
 
   useEffect(() => {
     fetchUser();
@@ -99,16 +101,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = session.data.user as User;
         setUser(userData);
         
+        // NOTE: Superwall user identification temporarily disabled
         // Identify user with Superwall for in-app purchases
-        if (userData.id) {
-          console.log('[AuthContext] Identifying user with Superwall:', userData.id);
-          try {
-            await identifySuperwallUser(userData.id);
-            console.log('[AuthContext] Superwall user identified successfully');
-          } catch (error) {
-            console.error('[AuthContext] Failed to identify Superwall user:', error);
-          }
-        }
+        // if (userData.id) {
+        //   console.log('[AuthContext] Identifying user with Superwall:', userData.id);
+        //   try {
+        //     await identifySuperwallUser(userData.id);
+        //     console.log('[AuthContext] Superwall user identified successfully');
+        //   } catch (error) {
+        //     console.error('[AuthContext] Failed to identify Superwall user:', error);
+        //   }
+        // }
       } else {
         console.log('[AuthContext] No user session found');
         setUser(null);

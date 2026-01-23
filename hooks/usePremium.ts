@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useUser } from 'expo-superwall';
+// NOTE: Superwall temporarily disabled due to build issues
+// import { useUser } from 'expo-superwall';
 
 const ADMIN_EMAIL = 'mirosnic.ivan@icloud.com';
 const PREMIUM_EXPIRY_KEY = '@easy_budget_premium_expiry';
@@ -10,7 +11,8 @@ const VALID_PROMO_CODE = 'EASY2';
 
 export function usePremium() {
   const { user } = useAuth();
-  const { subscriptionStatus, user: superwallUser } = useUser();
+  // NOTE: Superwall temporarily disabled due to build issues
+  // const { subscriptionStatus, user: superwallUser } = useUser();
   const [isPremium, setIsPremium] = useState(false);
   const [premiumStatus, setPremiumStatus] = useState<{
     isPremium: boolean;
@@ -21,7 +23,7 @@ export function usePremium() {
 
   useEffect(() => {
     checkPremiumStatus();
-  }, [user, subscriptionStatus]);
+  }, [user]); // Removed subscriptionStatus dependency
 
   const checkPremiumStatus = async () => {
     console.log('[Premium] Checking premium status');
@@ -34,16 +36,17 @@ export function usePremium() {
       return;
     }
 
+    // NOTE: Superwall subscription check temporarily disabled
     // Check Superwall subscription status first (iOS in-app purchases)
-    if (subscriptionStatus?.status === 'ACTIVE') {
-      console.log('[Premium] Superwall subscription active');
-      setIsPremium(true);
-      setPremiumStatus({
-        isPremium: true,
-        isLifetime: false,
-      });
-      return;
-    }
+    // if (subscriptionStatus?.status === 'ACTIVE') {
+    //   console.log('[Premium] Superwall subscription active');
+    //   setIsPremium(true);
+    //   setPremiumStatus({
+    //     isPremium: true,
+    //     isLifetime: false,
+    //   });
+    //   return;
+    // }
 
     // Check offline promo code redemption
     try {

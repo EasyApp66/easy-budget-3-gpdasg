@@ -17,7 +17,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
-import { usePlacement } from 'expo-superwall';
+// NOTE: Superwall temporarily disabled due to build issues
+// import { usePlacement } from 'expo-superwall';
 
 interface PremiumPaywallModalProps {
   visible: boolean;
@@ -48,40 +49,41 @@ export function PremiumPaywallModal({
     transform: [{ scale: closeScale.value }],
   }));
 
-  const { registerPlacement } = usePlacement({
-    onError: (error) => {
-      console.error('[Superwall] Paywall error:', error);
-      setIsProcessing(false);
-      Alert.alert(
-        t.premium.errorTitle || 'Error',
-        t.premium.errorMessage || 'Failed to process purchase. Please try again.',
-        [{ text: 'OK' }]
-      );
-    },
-    onPresent: (info) => {
-      console.log('[Superwall] Paywall presented:', info);
-    },
-    onDismiss: (info, result) => {
-      console.log('[Superwall] Paywall dismissed:', info, 'Result:', result);
-      setIsProcessing(false);
-      
-      if (result === 'purchased' || result === 'restored') {
-        console.log('[Superwall] Purchase successful!');
-        Alert.alert(
-          t.premium.successTitle || 'Success',
-          t.premium.successMessage || 'Premium activated successfully!',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                onClose();
-              },
-            },
-          ]
-        );
-      }
-    },
-  });
+  // NOTE: Superwall temporarily disabled due to build issues
+  // const { registerPlacement } = usePlacement({
+  //   onError: (error) => {
+  //     console.error('[Superwall] Paywall error:', error);
+  //     setIsProcessing(false);
+  //     Alert.alert(
+  //       t.premium.errorTitle || 'Error',
+  //       t.premium.errorMessage || 'Failed to process purchase. Please try again.',
+  //       [{ text: 'OK' }]
+  //     );
+  //   },
+  //   onPresent: (info) => {
+  //     console.log('[Superwall] Paywall presented:', info);
+  //   },
+  //   onDismiss: (info, result) => {
+  //     console.log('[Superwall] Paywall dismissed:', info, 'Result:', result);
+  //     setIsProcessing(false);
+  //     
+  //     if (result === 'purchased' || result === 'restored') {
+  //       console.log('[Superwall] Purchase successful!');
+  //       Alert.alert(
+  //         t.premium.successTitle || 'Success',
+  //         t.premium.successMessage || 'Premium activated successfully!',
+  //         [
+  //           {
+  //             text: 'OK',
+  //             onPress: () => {
+  //               onClose();
+  //             },
+  //           },
+  //         ]
+  //       );
+  //     }
+  //   },
+  // });
 
   const handlePress = (
     callback: () => void,
@@ -98,12 +100,13 @@ export function PremiumPaywallModal({
   };
 
   const handlePurchase = async (type: 'onetime' | 'monthly') => {
-    console.log('[Superwall] ========================================');
-    console.log('[Superwall] Initiating purchase:', type);
-    console.log('[Superwall] Platform:', Platform.OS);
+    console.log('[Premium] ========================================');
+    console.log('[Premium] Purchase requested:', type);
+    console.log('[Premium] Platform:', Platform.OS);
+    console.log('[Premium] NOTE: Superwall is temporarily disabled');
     
     if (isProcessing) {
-      console.log('[Superwall] Purchase already in progress, ignoring');
+      console.log('[Premium] Purchase already in progress, ignoring');
       return;
     }
 
@@ -113,39 +116,49 @@ export function PremiumPaywallModal({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    try {
-      const placementName = type === 'onetime' ? 'premium_onetime' : 'premium_monthly';
-      console.log('[Superwall] Registering placement:', placementName);
-      
-      await registerPlacement({
-        placement: placementName,
-        feature: () => {
-          console.log('[Superwall] ✅ Feature unlocked! Purchase successful');
-          setIsProcessing(false);
-          onPurchase(type);
-        },
-      });
-      
-      console.log('[Superwall] Placement registration completed');
-    } catch (error: any) {
-      console.error('[Superwall] ❌ Purchase error:', error);
-      console.error('[Superwall] Error details:', {
-        message: error?.message,
-        code: error?.code,
-        name: error?.name,
-      });
-      setIsProcessing(false);
-      
-      const errorMessage = error?.message || t.premium.errorMessage || 'Failed to process purchase. Please try again.';
-      
-      Alert.alert(
-        t.premium.errorTitle || 'Error',
-        errorMessage,
-        [{ text: 'OK' }]
-      );
-    } finally {
-      console.log('[Superwall] ========================================');
-    }
+    // NOTE: Superwall temporarily disabled - show info alert instead
+    Alert.alert(
+      'In-App-Käufe vorübergehend deaktiviert',
+      'Die In-App-Kauf-Funktion wird gerade aktualisiert. Bitte verwenden Sie in der Zwischenzeit den Promo-Code "EASY2" im Profil, um Premium für 1 Monat kostenlos zu aktivieren.',
+      [{ text: 'OK', onPress: () => setIsProcessing(false) }]
+    );
+
+    // Original Superwall code (commented out):
+    // try {
+    //   const placementName = type === 'onetime' ? 'premium_onetime' : 'premium_monthly';
+    //   console.log('[Superwall] Registering placement:', placementName);
+    //   
+    //   await registerPlacement({
+    //     placement: placementName,
+    //     feature: () => {
+    //       console.log('[Superwall] ✅ Feature unlocked! Purchase successful');
+    //       setIsProcessing(false);
+    //       onPurchase(type);
+    //     },
+    //   });
+    //   
+    //   console.log('[Superwall] Placement registration completed');
+    // } catch (error: any) {
+    //   console.error('[Superwall] ❌ Purchase error:', error);
+    //   console.error('[Superwall] Error details:', {
+    //     message: error?.message,
+    //     code: error?.code,
+    //     name: error?.name,
+    //   });
+    //   setIsProcessing(false);
+    //   
+    //   const errorMessage = error?.message || t.premium.errorMessage || 'Failed to process purchase. Please try again.';
+    //   
+    //   Alert.alert(
+    //     t.premium.errorTitle || 'Error',
+    //     errorMessage,
+    //     [{ text: 'OK' }]
+    //   );
+    // } finally {
+    //   console.log('[Superwall] ========================================');
+    // }
+    
+    console.log('[Premium] ========================================');
   };
 
   return (

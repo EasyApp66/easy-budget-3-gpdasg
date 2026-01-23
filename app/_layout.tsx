@@ -25,7 +25,8 @@ import { StorageProvider } from "@/contexts/StorageContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { setupErrorLogging } from "@/utils/errorLogger";
 import Constants from "expo-constants";
-import { SuperwallProvider } from "expo-superwall";
+// NOTE: Superwall temporarily disabled due to build issues
+// import { SuperwallProvider } from "expo-superwall";
 
 // Setup error logging for production builds
 setupErrorLogging();
@@ -100,14 +101,15 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <SuperwallProvider
+      {/* NOTE: SuperwallProvider temporarily disabled due to build issues */}
+      {/* <SuperwallProvider
         apiKeys={{
           ios: "pk_d1efb1f8a9d3f6e7c5b4a3d2e1f0c9b8a7d6e5f4c3b2a1d0e9f8c7b6a5d4e3f2",
         }}
         onConfigurationError={(error) => {
           console.error('[Superwall] Configuration error:', error);
         }}
-      >
+      > */}
         <StatusBar style="light" animated />
         <ThemeProvider
           value={colorScheme === "dark" ? CustomDarkTheme : CustomDefaultTheme}
@@ -210,7 +212,7 @@ export default function RootLayout() {
             </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>
-      </SuperwallProvider>
+      {/* </SuperwallProvider> */}
     </ErrorBoundary>
   );
 }

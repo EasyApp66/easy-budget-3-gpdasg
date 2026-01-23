@@ -48,8 +48,7 @@
     "plugins": [
       "expo-font",
       "expo-router",
-      "expo-web-browser",
-      "expo-superwall"
+      "expo-web-browser"
     ],
     "scheme": "easybudget",
     "experiments": {
