@@ -1,4 +1,3 @@
-
 {
   "expo": {
     "name": "Easy Budget 2.0",
@@ -64,5 +63,6 @@
       "backendUrl": "https://wu7kwypubgksy89mk4h6tatrg56ateqy.app.specular.dev"
     },
     "owner": "anonymous"
-  }
+  },
+  "scheme": "Easy Budget 2.0"
 }

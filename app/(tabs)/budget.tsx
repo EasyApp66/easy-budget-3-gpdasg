@@ -23,6 +23,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
+import { FadeInView } from '@/components/FadeInView';
 import * as Haptics from 'expo-haptics';
 
 interface Expense {
@@ -73,13 +74,12 @@ export default function BudgetScreen() {
     type: 'cashLabel' | 'cashValue' | 'name' | 'amount' | null;
     value: string;
     itemId: string | null;
-    itemType: 'month' | 'expense' | null; // NEW: Track whether we're editing a month or expense
+    itemType: 'month' | 'expense' | null;
   }>({ visible: false, type: null, value: '', itemId: null, itemType: null });
 
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: 'expense' | 'month'; id?: string } | null>(null);
 
-  // New state for month name input when creating
   const [newMonthNameModalVisible, setNewMonthNameModalVisible] = useState(false);
   const [newMonthName, setNewMonthName] = useState('');
 
@@ -114,7 +114,6 @@ export default function BudgetScreen() {
     
     console.log('[Budget] User tapped add month button');
     
-    // Check premium limit
     const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
     if (checkLimit(totalExpenses, months.length + 1, 0)) {
       console.log('[Budget] Premium limit reached for months');
@@ -123,7 +122,6 @@ export default function BudgetScreen() {
       return;
     }
     
-    // Open modal to ask for month name first
     console.log('[Budget] Opening new month name modal');
     setNewMonthName('');
     setNewMonthNameModalVisible(true);
@@ -153,14 +151,12 @@ export default function BudgetScreen() {
     setNewMonthName('');
   };
 
-  // Function to add expense from the tab bar modal
   const addExpenseFromModal = useCallback((name: string, amount: number) => {
     if (!selectedMonth) {
       console.log('[Budget] No selected month for adding expense');
       return;
     }
 
-    // Check premium limit
     const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
     if (checkLimit(totalExpenses + 1, months.length, 0)) {
       console.log('[Budget] Premium limit reached for expenses');
@@ -186,13 +182,11 @@ export default function BudgetScreen() {
       )
     );
 
-    // Haptic feedback
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   }, [selectedMonth, selectedMonthId, months, checkLimit]);
 
-  // Expose add function globally for tab bar
   React.useEffect(() => {
     (global as any).addExpenseFromModal = addExpenseFromModal;
     return () => {
@@ -266,7 +260,6 @@ export default function BudgetScreen() {
     console.log(`[Budget] Duplicating ${type}:`, itemId);
 
     if (type === 'month' && itemId) {
-      // Check premium limit BEFORE duplicating
       const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
       if (checkLimit(totalExpenses, months.length + 1, 0)) {
         console.log('[Budget] Premium limit reached for month duplication');
@@ -287,7 +280,6 @@ export default function BudgetScreen() {
         setMonths([...months, newMonth]);
       }
     } else if (type === 'expense' && itemId) {
-      // Check premium limit BEFORE duplicating
       const totalExpenses = months.reduce((sum, m) => sum + m.expenses.length, 0);
       if (checkLimit(totalExpenses + 1, months.length, 0)) {
         console.log('[Budget] Premium limit reached for expense duplication');
@@ -320,7 +312,7 @@ export default function BudgetScreen() {
     type: 'cashLabel' | 'cashValue' | 'name' | 'amount',
     itemId: string | null,
     currentValue: string,
-    itemType?: 'month' | 'expense' // NEW: Pass the item type
+    itemType?: 'month' | 'expense'
   ) => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -348,9 +340,7 @@ export default function BudgetScreen() {
       );
       setMonths(newMonths);
     } else if (type === 'name' && itemId) {
-      // FIX: Use itemType instead of contextMenu.type
       if (itemType === 'month') {
-        // Update month name and save
         const newMonths = months.map((m) => (m.id === itemId ? { ...m, name: value.toUpperCase() } : m));
         console.log('[Budget] Updating month name:', { itemId, newName: value.toUpperCase() });
         setMonths(newMonths);
@@ -396,7 +386,6 @@ export default function BudgetScreen() {
     console.log(`[Budget] Initiating premium purchase: ${type}`);
     
     try {
-      // Import API utilities
       const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
       
       if (!BACKEND_URL) {
@@ -407,7 +396,6 @@ export default function BudgetScreen() {
 
       console.log(`[Budget] Calling premium purchase endpoint`);
 
-      // Call backend to purchase premium
       const response = await authenticatedPost<{
         success: boolean;
         isPremium: boolean;
@@ -424,7 +412,6 @@ export default function BudgetScreen() {
         setPremiumModalVisible(false);
         setPendingAction(null);
         
-        // Refresh premium status
         window.location.reload();
       } else {
         Alert.alert(t.common.error, response.message || 'Zahlung fehlgeschlagen');
@@ -432,7 +419,6 @@ export default function BudgetScreen() {
     } catch (error: any) {
       console.error('[Budget] Premium purchase error:', error);
       
-      // Check if it's a 404 (endpoint doesn't exist yet)
       if (error.message?.includes('404')) {
         Alert.alert(
           'In Entwicklung',
@@ -449,7 +435,6 @@ export default function BudgetScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     console.log('[Budget] Closing premium modal');
-    // Delete the pending item when closing without purchase
     if (pendingAction?.type === 'expense' && pendingAction.id) {
       handleDeleteExpense(pendingAction.id);
     } else if (pendingAction?.type === 'month' && pendingAction.id) {
@@ -459,7 +444,6 @@ export default function BudgetScreen() {
     setPendingAction(null);
   };
 
-  // Get the pin status of the selected item
   const getItemPinStatus = () => {
     const { type, itemId } = contextMenu;
     if (type === 'month' && itemId) {
@@ -614,73 +598,77 @@ export default function BudgetScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top Pills */}
-        <View style={styles.topSection}>
-          <TopPill
-            label={cashLabel}
-            value={selectedMonth?.cash || 0}
-            editable
-            onPressLabel={() =>
-              openEditModal('cashLabel', null, cashLabel)
-            }
-            onPressValue={() =>
-              openEditModal('cashValue', null, selectedMonth?.cash.toString() || '0')
-            }
-          />
-          <View style={styles.topPillDouble}>
-            <View style={styles.topPillRow}>
-              <Text style={styles.topPillLabel}>TOTAL</Text>
-              <Text style={styles.topPillValue}>{formatNumber(totalExpenses)}</Text>
-            </View>
-            <View style={styles.topPillRow}>
-              <Text style={styles.topPillLabel}>BLEIBT</Text>
-              <Text style={[styles.topPillValue, { color: remaining >= 0 ? colors.neonGreen : colors.red }]}>
-                {remaining >= 0 ? formatNumber(remaining) : `-${formatNumber(Math.abs(remaining))}`}
-              </Text>
+        {/* Top Pills with cascading animation */}
+        <FadeInView delay={0} duration={600} animationType="fadeIn">
+          <View style={styles.topSection}>
+            <TopPill
+              label={cashLabel}
+              value={selectedMonth?.cash || 0}
+              editable
+              onPressLabel={() =>
+                openEditModal('cashLabel', null, cashLabel)
+              }
+              onPressValue={() =>
+                openEditModal('cashValue', null, selectedMonth?.cash.toString() || '0')
+              }
+            />
+            <View style={styles.topPillDouble}>
+              <View style={styles.topPillRow}>
+                <Text style={styles.topPillLabel}>TOTAL</Text>
+                <Text style={styles.topPillValue}>{formatNumber(totalExpenses)}</Text>
+              </View>
+              <View style={styles.topPillRow}>
+                <Text style={styles.topPillLabel}>BLEIBT</Text>
+                <Text style={[styles.topPillValue, { color: remaining >= 0 ? colors.neonGreen : colors.red }]}>
+                  {remaining >= 0 ? formatNumber(remaining) : `-${formatNumber(Math.abs(remaining))}`}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
+        </FadeInView>
 
-        {/* Month Row with Sticky Add Button */}
-        <View style={styles.monthRowContainer}>
-          {/* Sticky Add Month Button with rounded cross */}
-          <Pressable 
-            onPress={handleAddMonth} 
-            style={styles.addMonthButton}
-            onPressIn={() => {
-              if (Platform.OS === 'ios' || Platform.OS === 'android') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }
-            }}
-          >
-            <View style={styles.plusIconContainer}>
-              <View style={styles.plusVertical} />
-              <View style={styles.plusHorizontal} />
-            </View>
-          </Pressable>
+        {/* Month Row with cascading animation */}
+        <FadeInView delay={200} duration={600} animationType="fadeInDown">
+          <View style={styles.monthRowContainer}>
+            <Pressable 
+              onPress={handleAddMonth} 
+              style={styles.addMonthButton}
+              onPressIn={() => {
+                if (Platform.OS === 'ios' || Platform.OS === 'android') {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+              }}
+            >
+              <View style={styles.plusIconContainer}>
+                <View style={styles.plusVertical} />
+                <View style={styles.plusHorizontal} />
+              </View>
+            </Pressable>
 
-          {/* Scrollable Month Pills */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.monthScrollView}
-            contentContainerStyle={styles.monthScrollContent}
-          >
-            {sortedMonths.map((month) => (
-              <MonthPill key={month.id} month={month} />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.monthScrollView}
+              contentContainerStyle={styles.monthScrollContent}
+            >
+              {sortedMonths.map((month) => (
+                <MonthPill key={month.id} month={month} />
+              ))}
+            </ScrollView>
+          </View>
+        </FadeInView>
+
+        {/* Expenses Grid with cascading animation */}
+        <FadeInView delay={400} duration={600} animationType="fadeInDown">
+          <View style={styles.expensesGrid}>
+            {sortedExpenses.map((expense) => (
+              <ExpensePill key={expense.id} expense={expense} />
             ))}
-          </ScrollView>
-        </View>
-
-        {/* Expenses Grid */}
-        <View style={styles.expensesGrid}>
-          {sortedExpenses.map((expense) => (
-            <ExpensePill key={expense.id} expense={expense} />
-          ))}
-        </View>
+          </View>
+        </FadeInView>
       </ScrollView>
 
-      {/* New Month Name Modal */}
+      {/* Modals remain unchanged */}
       <Modal
         visible={newMonthNameModalVisible}
         transparent
@@ -708,7 +696,6 @@ export default function BudgetScreen() {
         </Pressable>
       </Modal>
 
-      {/* Context Menu Modal - NOW WITH "Namen anpassen" for months */}
       <Modal
         visible={contextMenu.visible}
         transparent
@@ -720,16 +707,15 @@ export default function BudgetScreen() {
           onPress={() => setContextMenu({ visible: false, type: null, itemId: null })}
         >
           <View style={styles.contextMenu}>
-            {/* Show "Namen anpassen" for BOTH months AND expenses */}
             <Pressable
               style={styles.menuItem}
               onPress={() => {
                 if (contextMenu.type === 'month') {
                   const month = months.find((m) => m.id === contextMenu.itemId);
-                  openEditModal('name', contextMenu.itemId, month?.name || '', 'month'); // Pass 'month' as itemType
+                  openEditModal('name', contextMenu.itemId, month?.name || '', 'month');
                 } else if (contextMenu.type === 'expense') {
                   const expense = selectedMonth?.expenses.find((e) => e.id === contextMenu.itemId);
-                  openEditModal('name', contextMenu.itemId, expense?.name || '', 'expense'); // Pass 'expense' as itemType
+                  openEditModal('name', contextMenu.itemId, expense?.name || '', 'expense');
                 }
               }}
             >
@@ -784,7 +770,6 @@ export default function BudgetScreen() {
         </Pressable>
       </Modal>
 
-      {/* Edit Modal */}
       <Modal
         visible={editModal.visible}
         transparent
@@ -822,7 +807,6 @@ export default function BudgetScreen() {
         </Pressable>
       </Modal>
 
-      {/* Premium Paywall Modal */}
       <PremiumPaywallModal
         visible={premiumModalVisible}
         onClose={handlePremiumClose}
