@@ -8,10 +8,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-  FadeIn,
-  FadeOut,
-  Easing,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,7 +21,7 @@ import { usePremium } from '@/hooks/usePremium';
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 0,
     left: 20,
     right: 20,
     height: 70,
@@ -224,14 +220,12 @@ function CustomTabBar() {
       addScale.value = withSpring(1);
     });
 
-    // Check if we're on the profile page
     if (pathname === '/profil' || pathname.startsWith('/profil')) {
       console.log('[TabBar] Opening secret code modal on profile page');
       setSecretCodeModalVisible(true);
       return;
     }
 
-    // Open modal for adding expense or subscription
     setItemName('');
     setItemAmount('');
     setModalVisible(true);
@@ -255,7 +249,6 @@ function CustomTabBar() {
 
     console.log('[TabBar] Saving item:', { name: itemName, amount, route: pathname });
 
-    // Call the appropriate add function based on current route
     if (pathname === '/budget' || pathname.startsWith('/budget')) {
       if (typeof (global as any).addExpenseFromModal === 'function') {
         (global as any).addExpenseFromModal(itemName.toUpperCase(), amount);
@@ -298,7 +291,6 @@ function CustomTabBar() {
             text: 'OK',
             onPress: () => {
               setSecretCodeModalVisible(false);
-              // Refresh premium status
               checkPremiumStatus();
             },
           },
@@ -378,16 +370,17 @@ function CustomTabBar() {
     return t.budget.amountPlaceholder;
   };
 
+  const bottomPadding = insets.bottom;
+
   return (
     <>
-      <BlurView intensity={80} tint="dark" style={[styles.tabBar, { marginBottom: insets.bottom }]}>
+      <BlurView intensity={80} tint="dark" style={[styles.tabBar, { marginBottom: bottomPadding }]}>
         <TabButton androidIcon="attach-money" route="/budget" label="Budget" scaleValue={budgetScale} />
         <TabButton androidIcon="subscriptions" route="/abos" label="Abos" scaleValue={abosScale} />
         <AddButton />
         <TabButton androidIcon="person" route="/profil" label="Profil" scaleValue={profilScale} />
       </BlurView>
 
-      {/* Add Item Modal */}
       <Modal
         visible={modalVisible}
         transparent
@@ -428,7 +421,6 @@ function CustomTabBar() {
         </Pressable>
       </Modal>
 
-      {/* Secret Code Modal */}
       <Modal
         visible={secretCodeModalVisible}
         transparent

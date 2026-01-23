@@ -10,8 +10,6 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  withTiming,
-  Easing,
 } from 'react-native-reanimated';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter, usePathname } from 'expo-router';
@@ -25,7 +23,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 20,
-    paddingBottom: 20,
     zIndex: 1000,
   },
   tabBarInner: {
@@ -189,48 +186,10 @@ function CustomTabBar() {
   const abosScale = useSharedValue(1);
   const profilScale = useSharedValue(1);
   const addScale = useSharedValue(1);
-  
-  // Animated bubble indicator
-  const bubblePosition = useSharedValue(0);
-  const bubbleWidth = useSharedValue(70);
 
   const isActive = (route: string) => {
     return pathname.includes(route);
   };
-
-  // Update bubble position based on active tab with smooth iOS-style animation
-  React.useEffect(() => {
-    if (pathname.includes('budget')) {
-      bubblePosition.value = withSpring(0, { 
-        damping: 20, 
-        stiffness: 180,
-        mass: 0.8,
-      });
-    } else if (pathname.includes('abos')) {
-      bubblePosition.value = withSpring(1, { 
-        damping: 20, 
-        stiffness: 180,
-        mass: 0.8,
-      });
-    } else if (pathname.includes('profil')) {
-      bubblePosition.value = withSpring(2, { 
-        damping: 20, 
-        stiffness: 180,
-        mass: 0.8,
-      });
-    }
-  }, [pathname, bubblePosition]);
-
-  const bubbleStyle = useAnimatedStyle(() => {
-    return {
-      transform: [
-        {
-          translateX: bubblePosition.value * (bubbleWidth.value + 20),
-        },
-      ],
-      width: bubbleWidth.value,
-    };
-  });
 
   const handleTabPress = (route: string) => {
     console.log(`[TabBar iOS] Navigating to: ${route}`);
@@ -271,7 +230,6 @@ function CustomTabBar() {
   const handleSave = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
-    // Validate input
     if (!name.trim()) {
       Alert.alert('Fehler', 'Bitte geben Sie einen Namen ein.');
       return;
@@ -285,20 +243,16 @@ function CustomTabBar() {
     
     console.log(`[TabBar iOS] Saving ${modalType}: ${name}, ${numericAmount}`);
     
-    // Call the appropriate global function to add the item
     if (modalType === 'expense') {
-      // Call the budget screen's add function
       if ((global as any).addExpenseFromModal) {
         (global as any).addExpenseFromModal(name.toUpperCase(), numericAmount);
       }
     } else if (modalType === 'subscription') {
-      // Call the abos screen's add function
       if ((global as any).addSubscriptionFromModal) {
         (global as any).addSubscriptionFromModal(name.toUpperCase(), numericAmount);
       }
     }
     
-    // Close modal and reset
     setModalVisible(false);
     setName('');
     setAmount('');
@@ -332,20 +286,6 @@ function CustomTabBar() {
     return (
       <Pressable
         onPress={() => handleTabPress(route)}
-        onPressIn={() => {
-          scaleValue.value = withSpring(0.88, { 
-            damping: 15, 
-            stiffness: 300,
-            mass: 0.5,
-          });
-        }}
-        onPressOut={() => {
-          scaleValue.value = withSpring(1, { 
-            damping: 15, 
-            stiffness: 300,
-            mass: 0.5,
-          });
-        }}
         style={styles.tabButton}
       >
         <Animated.View style={[animatedStyle, { alignItems: 'center' }]}>
@@ -372,20 +312,6 @@ function CustomTabBar() {
       <View style={styles.addButtonContainer}>
         <Pressable
           onPress={handleAddPress}
-          onPressIn={() => {
-            addScale.value = withSpring(0.88, { 
-              damping: 15, 
-              stiffness: 300,
-              mass: 0.5,
-            });
-          }}
-          onPressOut={() => {
-            addScale.value = withSpring(1, { 
-              damping: 15, 
-              stiffness: 300,
-              mass: 0.5,
-            });
-          }}
         >
           <Animated.View style={[styles.addButton, animatedStyle]}>
             <View style={styles.plusIconContainer}>
@@ -398,9 +324,11 @@ function CustomTabBar() {
     );
   };
 
+  const bottomPadding = insets.bottom;
+
   return (
     <>
-      <View style={[styles.tabBarContainer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+      <View style={[styles.tabBarContainer, { paddingBottom: bottomPadding }]}>
         <View style={styles.tabBarInner}>
           <BlurView intensity={80} style={styles.blurView} tint="dark" />
           
