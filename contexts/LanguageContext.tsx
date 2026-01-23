@@ -15,7 +15,9 @@ const LANGUAGE_STORAGE_KEY = '@easy_budget_language';
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>('DE');
-  const [t, setT] = useState(getTranslation('DE'));
+
+  // Compute t directly from language state to ensure it updates
+  const t = getTranslation(language);
 
   useEffect(() => {
     loadLanguage();
@@ -23,23 +25,27 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const loadLanguage = async () => {
     try {
+      console.log('[LanguageContext] Loading saved language from AsyncStorage');
       const savedLanguage = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
+      console.log('[LanguageContext] Saved language:', savedLanguage);
       if (savedLanguage === 'DE' || savedLanguage === 'EN') {
+        console.log('[LanguageContext] Setting language to:', savedLanguage);
         setLanguageState(savedLanguage);
-        setT(getTranslation(savedLanguage));
       }
     } catch (error) {
-      console.error('Failed to load language:', error);
+      console.error('[LanguageContext] Failed to load language:', error);
     }
   };
 
   const setLanguage = async (lang: Language) => {
     try {
+      console.log('[LanguageContext] Changing language to:', lang);
       await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+      console.log('[LanguageContext] Language saved to AsyncStorage');
       setLanguageState(lang);
-      setT(getTranslation(lang));
+      console.log('[LanguageContext] Language state updated to:', lang);
     } catch (error) {
-      console.error('Failed to save language:', error);
+      console.error('[LanguageContext] Failed to save language:', error);
       throw error;
     }
   };

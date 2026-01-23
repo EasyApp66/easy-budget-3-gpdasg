@@ -91,6 +91,10 @@ export default function ProfilScreen() {
   const { language, setLanguage, t } = useLanguage();
   const [username, setUsername] = useState('mirosnic.ivan');
   
+  // Log current language on every render
+  console.log('[Profile] Current language:', language);
+  console.log('[Profile] Current translations sample:', t.profile.language);
+  
   // Premium status state
   const [premiumStatus, setPremiumStatus] = useState<{
     isPremium: boolean;
@@ -263,8 +267,34 @@ export default function ProfilScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     const newLang = language === 'DE' ? 'EN' : 'DE';
+    console.log(`[Profile] ========================================`);
+    console.log(`[Profile] User tapped language change button`);
+    console.log(`[Profile] Current language: ${language}`);
     console.log(`[Profile] Changing language to: ${newLang}`);
-    await setLanguage(newLang);
+    
+    try {
+      await setLanguage(newLang);
+      console.log(`[Profile] Language changed successfully to: ${newLang}`);
+      console.log(`[Profile] New translation sample:`, t.profile.language);
+      
+      // Show confirmation
+      Alert.alert(
+        newLang === 'DE' ? 'Sprache geändert' : 'Language Changed',
+        newLang === 'DE' 
+          ? 'Die App-Sprache wurde auf Deutsch geändert.' 
+          : 'The app language has been changed to English.'
+      );
+    } catch (error) {
+      console.error('[Profile] Error changing language:', error);
+      Alert.alert(
+        t.common.error,
+        language === 'DE' 
+          ? 'Sprache konnte nicht geändert werden' 
+          : 'Could not change language'
+      );
+    } finally {
+      console.log(`[Profile] ========================================`);
+    }
   };
 
   const handleBuyPremium = () => {
@@ -597,6 +627,9 @@ export default function ProfilScreen() {
     Alert.alert(title, content);
   };
 
+  // Display current language in the UI
+  const languageDisplayText = `${t.profile.language}: ${language}`;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
@@ -673,7 +706,7 @@ export default function ProfilScreen() {
             iosIcon="globe"
             androidIcon="language"
             iconColor={colors.neonGreen}
-            title={`${t.profile.language}: ${language}`}
+            title={languageDisplayText}
             onPress={handleLanguageChange}
           />
           <SettingsItem
