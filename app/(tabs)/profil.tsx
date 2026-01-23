@@ -116,6 +116,8 @@ export default function ProfilScreen() {
   const [customDonation, setCustomDonation] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [promoCode, setPromoCode] = useState('');
+  const [legalModalVisible, setLegalModalVisible] = useState(false);
+  const [legalModalContent, setLegalModalContent] = useState({ title: '', content: '' });
 
   // Load premium status on mount
   useEffect(() => {
@@ -624,7 +626,16 @@ export default function ProfilScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     console.log(`[Profile] Opening legal page: ${title}`);
-    Alert.alert(title, content);
+    setLegalModalContent({ title, content });
+    setLegalModalVisible(true);
+  };
+
+  const closeLegalModal = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    console.log('[Profile] Closing legal modal');
+    setLegalModalVisible(false);
   };
 
   // Display current language in the UI
@@ -959,6 +970,52 @@ export default function ProfilScreen() {
         onClose={handlePremiumClose}
         onPurchase={handlePurchasePremium}
       />
+
+      {/* Legal Modal */}
+      <Modal
+        visible={legalModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeLegalModal}
+      >
+        <Pressable style={styles.legalModalOverlay} onPress={closeLegalModal}>
+          <View style={styles.legalModalContainer}>
+            <View style={styles.legalModalHeader}>
+              <Text style={styles.legalModalTitle}>{legalModalContent.title}</Text>
+              <Pressable onPress={closeLegalModal} style={styles.legalCloseButton}>
+                <IconSymbol 
+                  ios_icon_name="xmark" 
+                  android_material_icon_name="close"
+                  size={24} 
+                  color={colors.white} 
+                />
+              </Pressable>
+            </View>
+            
+            <ScrollView 
+              style={styles.legalModalScrollView}
+              contentContainerStyle={styles.legalModalScrollContent}
+              showsVerticalScrollIndicator={true}
+            >
+              <Text style={styles.legalModalText}>{legalModalContent.content}</Text>
+            </ScrollView>
+
+            <View style={styles.legalModalFooter}>
+              <Pressable
+                onPress={closeLegalModal}
+                style={styles.legalModalButton}
+                onPressIn={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  }
+                }}
+              >
+                <Text style={styles.legalModalButtonText}>{t.common.ok}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1236,5 +1293,73 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 18,
     fontWeight: '800',
+  },
+  legalModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  legalModalContainer: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '80%',
+    overflow: 'hidden',
+  },
+  legalModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  legalModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.white,
+    flex: 1,
+  },
+  legalCloseButton: {
+    padding: 4,
+  },
+  legalModalScrollView: {
+    flex: 1,
+  },
+  legalModalScrollContent: {
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    paddingBottom: 30,
+  },
+  legalModalText: {
+    fontSize: 14,
+    color: colors.white,
+    lineHeight: 22,
+    opacity: 0.9,
+  },
+  legalModalFooter: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  legalModalButton: {
+    backgroundColor: colors.neonGreen,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  legalModalButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.black,
+    letterSpacing: 0.3,
   },
 });
