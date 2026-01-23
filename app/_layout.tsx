@@ -24,9 +24,23 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { StorageProvider } from "@/contexts/StorageContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { setupErrorLogging } from "@/utils/errorLogger";
+import Constants from "expo-constants";
 
 // Setup error logging for production builds
 setupErrorLogging();
+
+// Log backend configuration at app startup
+const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl;
+console.log('========================================');
+console.log('[App] 🚀 Easy Budget 2.0 Starting...');
+console.log('[App] 📱 Platform:', Platform.OS);
+console.log('[App] 🌐 Backend URL:', BACKEND_URL || 'NOT CONFIGURED');
+if (BACKEND_URL) {
+  console.log('[App] ✅ Backend is configured and ready');
+} else {
+  console.log('[App] ⚠️  Backend not configured - app will run in offline mode');
+}
+console.log('========================================');
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();

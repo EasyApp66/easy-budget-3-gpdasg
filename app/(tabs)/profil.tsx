@@ -152,17 +152,28 @@ export default function ProfilScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    console.log('[Profile] Redeeming promo code:', promoCode);
+    console.log('[Profile] ========================================');
+    console.log('[Profile] Starting promo code redemption');
+    console.log('[Profile] Code:', promoCode.trim().toUpperCase());
+    console.log('[Profile] Platform:', Platform.OS);
+    console.log('[Profile] User:', user?.email);
 
     try {
-      const { authenticatedPost, BACKEND_URL } = await import('@/utils/api');
+      const { authenticatedPost, BACKEND_URL, getSessionToken } = await import('@/utils/api');
+      
+      console.log('[Profile] Backend URL:', BACKEND_URL);
       
       if (!BACKEND_URL) {
-        console.warn('[Profile] Backend URL not configured');
+        console.error('[Profile] Backend URL not configured!');
         Alert.alert(t.common.error, language === 'DE' ? 'Backend nicht konfiguriert' : 'Backend not configured');
         return;
       }
 
+      // Check if we have a session token
+      const sessionToken = await getSessionToken();
+      console.log('[Profile] Session token available:', !!sessionToken);
+
+      console.log('[Profile] Calling API endpoint: POST /api/premium/redeem-code');
       const response = await authenticatedPost<{
         success: boolean;
         message: string;
@@ -172,9 +183,10 @@ export default function ProfilScreen() {
         code: promoCode.trim().toUpperCase(),
       });
 
-      console.log('[Profile] Redeem code response:', response);
+      console.log('[Profile] API Response:', JSON.stringify(response, null, 2));
 
       if (response.success) {
+        console.log('[Profile] ✅ Promo code redeemed successfully!');
         Alert.alert(
           t.profile.codeRedeemed,
           t.profile.codeRedeemedMessage
@@ -182,22 +194,36 @@ export default function ProfilScreen() {
         setPromoCodeModalVisible(false);
         setPromoCode('');
         // Reload premium status
+        console.log('[Profile] Reloading premium status...');
         await loadPremiumStatus();
       } else {
+        console.log('[Profile] ❌ Promo code redemption failed:', response.message);
         Alert.alert(
           t.profile.invalidCode,
           response.message || t.profile.invalidCodeMessage
         );
       }
     } catch (error: any) {
-      console.error('[Profile] Error redeeming code:', error);
+      console.error('[Profile] ❌ Error redeeming code:', error);
+      console.error('[Profile] Error details:', {
+        message: error.message,
+        status: error.status,
+        stack: error.stack,
+      });
       
       if (error.message?.includes('404')) {
+        console.log('[Profile] Endpoint not found (404)');
         Alert.alert(
           language === 'DE' ? 'In Entwicklung' : 'In Development',
           language === 'DE' 
             ? 'Promo-Codes werden bald verfügbar sein.' 
             : 'Promo codes will be available soon.'
+        );
+      } else if (error.message?.includes('401') || error.message?.includes('403')) {
+        console.log('[Profile] Authentication error');
+        Alert.alert(
+          t.common.error,
+          language === 'DE' ? 'Bitte melde dich erneut an' : 'Please sign in again'
         );
       } else {
         Alert.alert(
@@ -205,6 +231,8 @@ export default function ProfilScreen() {
           language === 'DE' ? 'Code konnte nicht eingelöst werden' : 'Could not redeem code'
         );
       }
+    } finally {
+      console.log('[Profile] ========================================');
     }
   };
 
