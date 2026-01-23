@@ -24,30 +24,30 @@ async function seed() {
   try {
     console.log('Starting seed process...');
 
-    // Check if EASY2 promo code already exists
+    // Check if EASY promo code already exists
     const existing = await db
       .select()
       .from(appSchema.promoCodes)
-      .where(sql`code = 'EASY2'`)
+      .where(sql`code = 'EASY'`)
       .limit(1);
 
     if (existing.length > 0) {
-      console.log('EASY2 promo code already exists, skipping...');
+      console.log('EASY promo code already exists, skipping...');
       return;
     }
 
-    // Create default promo code EASY2
+    // Create default promo code EASY
     // 30 days of premium access, unlimited redemptions
     const promoId = randomUUID();
     await db.insert(appSchema.promoCodes).values({
       id: promoId,
-      code: 'EASY2',
+      code: 'EASY',
       durationDays: 30,
       maxRedemptions: null, // unlimited
       currentRedemptions: 0,
     });
 
-    console.log('✅ Successfully seeded default promo code: EASY2 (30 days premium)');
+    console.log('✅ Successfully seeded default promo code: EASY (30 days premium)');
   } catch (error) {
     console.error('❌ Seed failed:', error);
     process.exit(1);
