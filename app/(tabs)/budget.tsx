@@ -73,7 +73,8 @@ export default function BudgetScreen() {
     type: 'cashLabel' | 'cashValue' | 'name' | 'amount' | null;
     value: string;
     itemId: string | null;
-  }>({ visible: false, type: null, value: '', itemId: null });
+    itemType: 'month' | 'expense' | null; // NEW: Track whether we're editing a month or expense
+  }>({ visible: false, type: null, value: '', itemId: null, itemType: null });
 
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ type: 'expense' | 'month'; id?: string } | null>(null);
@@ -318,13 +319,14 @@ export default function BudgetScreen() {
   const openEditModal = (
     type: 'cashLabel' | 'cashValue' | 'name' | 'amount',
     itemId: string | null,
-    currentValue: string
+    currentValue: string,
+    itemType?: 'month' | 'expense' // NEW: Pass the item type
   ) => {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log(`[Budget] Opening edit modal for ${type}:`, itemId);
-    setEditModal({ visible: true, type, value: currentValue, itemId });
+    console.log(`[Budget] Opening edit modal for ${type}:`, itemId, 'itemType:', itemType);
+    setEditModal({ visible: true, type, value: currentValue, itemId, itemType: itemType || null });
     setContextMenu({ visible: false, type: null, itemId: null });
   };
 
@@ -332,9 +334,9 @@ export default function BudgetScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    const { type, value, itemId } = editModal;
+    const { type, value, itemId, itemType } = editModal;
 
-    console.log(`[Budget] Saving edit for ${type}:`, { itemId, value });
+    console.log(`[Budget] Saving edit for ${type}:`, { itemId, value, itemType });
 
     if (type === 'cashLabel') {
       setCashLabel(value);
@@ -346,12 +348,13 @@ export default function BudgetScreen() {
       );
       setMonths(newMonths);
     } else if (type === 'name' && itemId) {
-      if (contextMenu.type === 'month') {
+      // FIX: Use itemType instead of contextMenu.type
+      if (itemType === 'month') {
         // Update month name and save
         const newMonths = months.map((m) => (m.id === itemId ? { ...m, name: value.toUpperCase() } : m));
         console.log('[Budget] Updating month name:', { itemId, newName: value.toUpperCase() });
         setMonths(newMonths);
-      } else {
+      } else if (itemType === 'expense') {
         const newMonths = months.map((m) =>
           m.id === selectedMonthId
             ? {
@@ -378,8 +381,7 @@ export default function BudgetScreen() {
       setMonths(newMonths);
     }
 
-    setEditModal({ visible: false, type: null, value: '', itemId: null });
-    setContextMenu({ visible: false, type: null, itemId: null });
+    setEditModal({ visible: false, type: null, value: '', itemId: null, itemType: null });
   };
 
   const formatNumber = (num: number): string => {
@@ -724,10 +726,10 @@ export default function BudgetScreen() {
               onPress={() => {
                 if (contextMenu.type === 'month') {
                   const month = months.find((m) => m.id === contextMenu.itemId);
-                  openEditModal('name', contextMenu.itemId, month?.name || '');
+                  openEditModal('name', contextMenu.itemId, month?.name || '', 'month'); // Pass 'month' as itemType
                 } else if (contextMenu.type === 'expense') {
                   const expense = selectedMonth?.expenses.find((e) => e.id === contextMenu.itemId);
-                  openEditModal('name', contextMenu.itemId, expense?.name || '');
+                  openEditModal('name', contextMenu.itemId, expense?.name || '', 'expense'); // Pass 'expense' as itemType
                 }
               }}
             >
@@ -741,7 +743,7 @@ export default function BudgetScreen() {
                   const expense = selectedMonth?.expenses.find(
                     (e) => e.id === contextMenu.itemId
                   );
-                  openEditModal('amount', contextMenu.itemId, expense?.amount.toString() || '0');
+                  openEditModal('amount', contextMenu.itemId, expense?.amount.toString() || '0', 'expense');
                 }}
               >
                 <Text style={styles.menuItemText}>{t.budget.editAmount}</Text>
@@ -787,11 +789,11 @@ export default function BudgetScreen() {
         visible={editModal.visible}
         transparent
         animationType="fade"
-        onRequestClose={() => setEditModal({ visible: false, type: null, value: '', itemId: null })}
+        onRequestClose={() => setEditModal({ visible: false, type: null, value: '', itemId: null, itemType: null })}
       >
         <Pressable
           style={styles.modalOverlay}
-          onPress={() => setEditModal({ visible: false, type: null, value: '', itemId: null })}
+          onPress={() => setEditModal({ visible: false, type: null, value: '', itemId: null, itemType: null })}
         >
           <Pressable style={styles.editModal} onPress={(e) => e.stopPropagation()}>
             <TextInput
