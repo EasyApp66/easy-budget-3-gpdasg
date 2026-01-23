@@ -8,25 +8,11 @@
     "icon": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.easybudget.app",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "UILaunchScreen": {
-          "UIImageName": "SplashScreen",
-          "UIColorName": "SplashScreenBackground"
-        }
-      },
-      "splash": {
-        "image": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#000000"
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -36,16 +22,6 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.easybudget.app",
-      "splash": {
-        "image": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#000000",
-        "mdpi": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
-        "hdpi": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
-        "xhdpi": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
-        "xxhdpi": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
-        "xxxhdpi": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png"
-      },
       "intentFilters": [
         {
           "action": "VIEW",

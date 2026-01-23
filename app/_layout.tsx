@@ -42,8 +42,8 @@ if (BACKEND_URL) {
 }
 console.log('========================================');
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+// Hide splash screen immediately - no loading animation
+SplashScreen.hideAsync();
 
 export const unstable_settings = {
   initialRouteName: "index",
@@ -55,14 +55,6 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
-
-  useEffect(() => {
-    if (loaded) {
-      // Hide splash screen immediately after fonts load - maximum 0.5 seconds
-      console.log('[App] Fonts loaded, hiding splash screen immediately for fast startup');
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
 
   React.useEffect(() => {
     if (
@@ -119,24 +111,24 @@ export default function RootLayout() {
                   <Stack
                     screenOptions={{
                       headerShown: false,
-                      animation: 'default',
-                      animationDuration: 150,
+                      animation: 'none',
+                      animationDuration: 0,
                     }}
                   >
                     <Stack.Screen 
                       name="index" 
                       options={{ 
                         headerShown: false,
-                        animation: 'fade',
-                        animationDuration: 150,
+                        animation: 'none',
+                        animationDuration: 0,
                       }} 
                     />
                     <Stack.Screen 
                       name="welcome" 
                       options={{ 
                         headerShown: false,
-                        animation: 'fade',
-                        animationDuration: 150,
+                        animation: 'none',
+                        animationDuration: 0,
                       }} 
                     />
                     <Stack.Screen 
