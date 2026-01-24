@@ -27,6 +27,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { usePremium } from '@/hooks/usePremium';
+import { FadeInView } from '@/components/FadeInView';
 
 const colors = {
   black: '#000000',
@@ -327,11 +328,11 @@ export default function AbosScreen() {
           // Swipe left to delete - smoother slide out animation with cubic easing
           translateX.value = withTiming(-500, { 
             duration: 300, 
-            easing: Easing.out(Easing.cubic) 
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1)
           });
           opacity.value = withTiming(0, { 
             duration: 300, 
-            easing: Easing.out(Easing.cubic) 
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1)
           }, () => {
             runOnJS(handleDeleteSub)(subscription.id);
           });
@@ -339,25 +340,25 @@ export default function AbosScreen() {
           // Swipe right to pin/unpin - smoother slide animation with spring
           runOnJS(handlePinToggle)(subscription.id);
           translateX.value = withSpring(0, { 
-            damping: 25, 
-            stiffness: 250,
+            damping: 20, 
+            stiffness: 200,
             mass: 0.5,
           });
           opacity.value = withSpring(1, { 
-            damping: 25, 
-            stiffness: 250,
+            damping: 20, 
+            stiffness: 200,
             mass: 0.5,
           });
         } else {
           // Snap back with smoother spring
           translateX.value = withSpring(0, { 
-            damping: 25, 
-            stiffness: 250,
+            damping: 20, 
+            stiffness: 200,
             mass: 0.5,
           });
           opacity.value = withSpring(1, { 
-            damping: 25, 
-            stiffness: 250,
+            damping: 20, 
+            stiffness: 200,
             mass: 0.5,
           });
         }
@@ -408,30 +409,36 @@ export default function AbosScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Top Pills */}
-          <View style={styles.topPillsContainer}>
-            <View style={styles.topPillLarge}>
-              <Text style={styles.topPillLabel}>{t.abos.totalMonthly}</Text>
-              <Text style={styles.topPillValue}>{totalCost}</Text>
+          {/* Top Pills with cascading animation */}
+          <FadeInView delay={0} duration={600} animationType="fadeIn">
+            <View style={styles.topPillsContainer}>
+              <View style={styles.topPillLarge}>
+                <Text style={styles.topPillLabel}>{t.abos.totalMonthly}</Text>
+                <Text style={styles.topPillValue}>{totalCost}</Text>
+              </View>
+
+              <View style={styles.topPill}>
+                <Text style={styles.topPillLabel}>{t.abos.totalCount}</Text>
+                <Text style={styles.topPillValue}>{totalCount}</Text>
+              </View>
             </View>
+          </FadeInView>
 
-            <View style={styles.topPill}>
-              <Text style={styles.topPillLabel}>{t.abos.totalCount}</Text>
-              <Text style={styles.topPillValue}>{totalCount}</Text>
+          {/* Subscription List with cascading animation */}
+          <FadeInView delay={200} duration={600} animationType="fadeInDown">
+            <View style={styles.subscriptionList}>
+              {sortedSubscriptions.map((sub) => (
+                <SubscriptionPill key={sub.id} subscription={sub} />
+              ))}
             </View>
-          </View>
+          </FadeInView>
 
-          {/* Subscription List */}
-          <View style={styles.subscriptionList}>
-            {sortedSubscriptions.map((sub) => (
-              <SubscriptionPill key={sub.id} subscription={sub} />
-            ))}
-          </View>
-
-          {/* Swipe Hint */}
-          <Text style={styles.swipeHint}>
-            {t.abos.swipeHint}
-          </Text>
+          {/* Swipe Hint with cascading animation */}
+          <FadeInView delay={400} duration={600} animationType="fadeInDown">
+            <Text style={styles.swipeHint}>
+              {t.abos.swipeHint}
+            </Text>
+          </FadeInView>
         </ScrollView>
 
         {/* Context Menu Modal */}

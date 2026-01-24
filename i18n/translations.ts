@@ -14,7 +14,7 @@ export const translations = {
       continueEmail: 'Mit E-Mail fortfahren',
       continueApple: 'Mit Apple fortfahren',
       continueGoogle: 'Mit Google anmelden',
-      footer: 'Indem du fortfährst, bestätigst du, dass du die Nutzungsbedingungen und die Datenschutzerklärung und die AGBs gelesen hast.',
+      legalFooter: 'By continuing you accept our Terms of Use (AGB), Privacy Policy and legal conditions',
       terms: 'Nutzungsbedingungen',
       privacy: 'Datenschutzerklärung',
       agb: 'AGBs',
@@ -179,16 +179,408 @@ export const translations = {
       error: 'Fehler',
       success: 'Erfolg',
     },
-    // Legal Pages
+    // Legal Pages - Swiss Law Compliant
     legal: {
-      termsTitle: 'Nutzungsbedingungen',
-      termsContent: 'Nutzungsbedingungen\n\n1. Allgemeine Bestimmungen\nDiese Nutzungsbedingungen regeln die Nutzung der EASY BUDGET App.\n\n2. Nutzungsrechte\nDurch die Nutzung der App erhalten Sie ein nicht-exklusives, nicht übertragbares Recht zur Nutzung.\n\n3. Datenschutz\nWir verpflichten uns, Ihre Daten gemäß unserer Datenschutzerklärung zu schützen.\n\n4. Haftungsausschluss\nDie App wird "wie besehen" bereitgestellt. Wir übernehmen keine Garantie für die Verfügbarkeit oder Fehlerfreiheit.\n\n5. Änderungen\nWir behalten uns das Recht vor, diese Bedingungen jederzeit zu ändern.\n\nKontakt: ivanmirosnic006@gmail.com',
-      privacyTitle: 'Datenschutzerklärung',
-      privacyContent: 'Datenschutzerklärung\n\n1. Datenerhebung\nWir erheben nur die notwendigsten Daten für die Funktionalität der App.\n\n2. Verwendung der Daten\nIhre Daten werden ausschließlich zur Bereitstellung unserer Dienste verwendet.\n\n3. Datenspeicherung\nAlle Daten werden sicher und verschlüsselt gespeichert.\n\n4. Weitergabe von Daten\nWir geben Ihre Daten nicht an Dritte weiter, außer wenn gesetzlich erforderlich.\n\n5. Ihre Rechte\nSie haben das Recht auf Auskunft, Berichtigung und Löschung Ihrer Daten.\n\n6. Kontakt\nBei Fragen zum Datenschutz kontaktieren Sie uns unter: ivanmirosnic006@gmail.com',
-      agbTitle: 'Allgemeine Geschäftsbedingungen',
-      agbContent: 'Allgemeine Geschäftsbedingungen (AGB)\n\n1. Geltungsbereich\nDiese AGB gelten für alle Verträge zwischen dem Nutzer und EASY BUDGET.\n\n2. Vertragsschluss\nDer Vertrag kommt mit der Registrierung in der App zustande.\n\n3. Leistungen\nWir bieten eine Budget- und Abo-Tracking-App mit verschiedenen Funktionen.\n\n4. Preise und Zahlung\nDie Preise für Premium-Funktionen sind in der App angegeben. Die Zahlung erfolgt über die jeweiligen App-Store-Zahlungsmethoden.\n\n5. Widerrufsrecht\nSie haben ein 14-tägiges Widerrufsrecht gemäß den gesetzlichen Bestimmungen.\n\n6. Gewährleistung\nEs gelten die gesetzlichen Gewährleistungsrechte.\n\nKontakt: ivanmirosnic006@gmail.com',
-      impressumTitle: 'Impressum',
-      impressumContent: 'Impressum\n\nEASY BUDGET 3.0\nVersion 1.0.0\n\nVerantwortlich für den Inhalt:\nEASY BUDGET Team\n\nKontakt:\nE-Mail: ivanmirosnic006@gmail.com\nSupport: ivanmirosnic006@gmail.com\n\nHaftungsausschluss:\nTrotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.',
+      termsTitle: 'Nutzungsbedingungen (Terms of Use)',
+      termsContent: `NUTZUNGSBEDINGUNGEN / TERMS OF USE
+EASY BUDGET 3.0
+
+Gültig ab: Januar 2025
+
+1. ALLGEMEINE BESTIMMUNGEN
+
+Diese Nutzungsbedingungen regeln die Nutzung der EASY BUDGET 3.0 Mobile-App (nachfolgend "App" genannt) gemäß Schweizer Recht.
+
+Verantwortlich:
+Ivan Mirosnic (auch bekannt als Nugat / Ivan Mirosnic Nugat)
+Ahornstrasse
+8600 Dübendorf
+Schweiz
+E-Mail: ivanmirosnic006@gmail.com
+
+2. VERTRAGSSCHLUSS
+
+Der Nutzungsvertrag kommt durch die Installation und erste Nutzung der App zustande. Mit der Nutzung akzeptieren Sie diese Nutzungsbedingungen vollständig.
+
+3. LEISTUNGSUMFANG
+
+Die App bietet folgende Funktionen:
+- Budget-Tracking und Verwaltung
+- Abonnement-Verwaltung
+- Ausgaben-Kategorisierung
+- Monatliche Übersichten
+
+4. NUTZUNGSRECHTE
+
+Sie erhalten ein nicht-exklusives, nicht übertragbares, widerrufliches Recht zur Nutzung der App für private, nicht-kommerzielle Zwecke.
+
+5. PFLICHTEN DES NUTZERS
+
+Der Nutzer verpflichtet sich:
+- Die App nur für rechtmäßige Zwecke zu nutzen
+- Keine missbräuchliche Nutzung vorzunehmen
+- Die Zugangsdaten vertraulich zu behandeln
+
+6. PREMIUM-FUNKTIONEN
+
+Premium-Funktionen können gegen Bezahlung freigeschaltet werden. Die Preise sind in der App ersichtlich. Zahlungen erfolgen über die jeweiligen App-Store-Zahlungsmethoden.
+
+7. WIDERRUFSRECHT
+
+Gemäß Schweizer Konsumentenschutzgesetz haben Sie ein 14-tägiges Widerrufsrecht. Bei digitalen Inhalten erlischt dieses Recht mit Beginn der Nutzung.
+
+8. HAFTUNGSAUSSCHLUSS
+
+Die App wird "wie besehen" bereitgestellt. Wir übernehmen keine Garantie für:
+- Ununterbrochene Verfügbarkeit
+- Fehlerfreien Betrieb
+- Vollständigkeit der Daten
+
+Die Haftung ist auf Vorsatz und grobe Fahrlässigkeit beschränkt, soweit gesetzlich zulässig.
+
+9. DATENSCHUTZ
+
+Siehe separate Datenschutzerklärung.
+
+10. ÄNDERUNGEN
+
+Wir behalten uns das Recht vor, diese Nutzungsbedingungen jederzeit zu ändern. Änderungen werden in der App bekannt gegeben.
+
+11. ANWENDBARES RECHT
+
+Es gilt ausschließlich Schweizer Recht unter Ausschluss des UN-Kaufrechts.
+
+12. GERICHTSSTAND
+
+Gerichtsstand ist Dübendorf, Schweiz.
+
+Kontakt:
+Ivan Mirosnic
+E-Mail: ivanmirosnic006@gmail.com
+Ahornstrasse, 8600 Dübendorf, Schweiz`,
+
+      privacyTitle: 'Datenschutzerklärung (Privacy Policy)',
+      privacyContent: `DATENSCHUTZERKLÄRUNG / PRIVACY POLICY
+EASY BUDGET 3.0
+
+Gültig ab: Januar 2025
+
+Verantwortlich für die Datenverarbeitung:
+Ivan Mirosnic (auch bekannt als Nugat / Ivan Mirosnic Nugat)
+Ahornstrasse
+8600 Dübendorf
+Schweiz
+E-Mail: ivanmirosnic006@gmail.com
+
+Diese Datenschutzerklärung entspricht den Anforderungen des Schweizer Datenschutzgesetzes (DSG) und der EU-DSGVO.
+
+1. GRUNDSATZ DER DATENMINIMIERUNG
+
+Wir nehmen den Schutz Ihrer Privatsphäre sehr ernst und erheben nur die absolut notwendigen Daten.
+
+2. WELCHE DATEN WIR ERHEBEN
+
+Wir erheben ausschließlich:
+- Benutzer-ID (User ID) für die Authentifizierung
+
+WIR ERHEBEN NICHT:
+- Keinen Namen
+- Keine E-Mail-Adresse
+- Keine Telefonnummer
+- Keine Standortdaten
+- Keine anderen persönlichen Daten
+
+3. VERWENDUNG DER DATEN
+
+Die Benutzer-ID wird ausschließlich verwendet für:
+- Authentifizierung und Zugriffsverwaltung
+- Synchronisation Ihrer App-Daten
+- Bereitstellung der App-Funktionen
+
+4. ANONYMISIERTE VERHALTENSANALYSE
+
+Wir können allgemeine Nutzungsmuster in anonymisierter oder aggregierter Form beobachten und analysieren, um:
+- Die App-Performance zu verbessern
+- Fehler zu identifizieren und zu beheben
+- Neue Funktionen zu entwickeln
+
+Diese Analysen erfolgen ausschließlich in anonymisierter Form ohne Personenbezug.
+
+5. WEITERGABE VON DATEN
+
+Wir geben KEINE persönlichen Daten an Dritte weiter.
+
+Ausnahmen:
+- Gesetzliche Verpflichtung
+- Gerichtliche Anordnung
+
+6. DATENSPEICHERUNG
+
+Ihre Daten werden sicher und verschlüsselt gespeichert auf Servern in der Schweiz oder EU.
+
+7. IHRE RECHTE
+
+Sie haben das Recht auf:
+- Auskunft über Ihre gespeicherten Daten
+- Berichtigung unrichtiger Daten
+- Löschung Ihrer Daten
+- Datenübertragbarkeit
+- Widerspruch gegen die Datenverarbeitung
+
+8. DATENSICHERHEIT
+
+Wir setzen technische und organisatorische Maßnahmen ein, um Ihre Daten vor:
+- Unbefugtem Zugriff
+- Verlust
+- Missbrauch
+- Manipulation
+zu schützen.
+
+9. COOKIES UND TRACKING
+
+Die App verwendet keine Cookies oder Tracking-Technologien für Werbezwecke.
+
+10. ÄNDERUNGEN
+
+Wir behalten uns das Recht vor, diese Datenschutzerklärung zu aktualisieren. Änderungen werden in der App bekannt gegeben.
+
+11. KONTAKT
+
+Bei Fragen zum Datenschutz kontaktieren Sie uns:
+
+Ivan Mirosnic
+E-Mail: ivanmirosnic006@gmail.com
+Ahornstrasse, 8600 Dübendorf, Schweiz
+
+12. BESCHWERDERECHT
+
+Sie haben das Recht, sich bei der zuständigen Datenschutzbehörde zu beschweren:
+
+Eidgenössischer Datenschutz- und Öffentlichkeitsbeauftragter (EDÖB)
+Feldeggweg 1
+3003 Bern
+Schweiz
+www.edoeb.admin.ch`,
+
+      agbTitle: 'Allgemeine Geschäftsbedingungen (AGB)',
+      agbContent: `ALLGEMEINE GESCHÄFTSBEDINGUNGEN (AGB)
+EASY BUDGET 3.0
+
+Gültig ab: Januar 2025
+
+Anbieter:
+Ivan Mirosnic (auch bekannt als Nugat / Ivan Mirosnic Nugat)
+Ahornstrasse
+8600 Dübendorf
+Schweiz
+E-Mail: ivanmirosnic006@gmail.com
+
+1. GELTUNGSBEREICH
+
+Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Verträge zwischen dem Nutzer und EASY BUDGET bezüglich der Nutzung der App.
+
+2. VERTRAGSSCHLUSS
+
+Der Vertrag kommt mit der Registrierung und ersten Nutzung der App zustande. Mit der Nutzung akzeptieren Sie diese AGB vollständig.
+
+3. LEISTUNGEN
+
+Wir bieten eine Budget- und Abonnement-Tracking-App mit folgenden Funktionen:
+- Budget-Verwaltung
+- Ausgaben-Tracking
+- Abonnement-Übersicht
+- Monatliche Berichte
+- Premium-Funktionen (optional)
+
+4. KOSTENLOSE BASISVERSION
+
+Die Basisversion der App ist kostenlos nutzbar mit eingeschränktem Funktionsumfang.
+
+5. PREMIUM-FUNKTIONEN
+
+Premium-Funktionen können erworben werden:
+- Einmalige Zahlung: CHF 10.00 (lebenslanger Zugang)
+- Monatliches Abo: CHF 1.00/Monat
+
+Die Preise verstehen sich inklusive der gesetzlichen Mehrwertsteuer.
+
+6. ZAHLUNGSBEDINGUNGEN
+
+Zahlungen erfolgen über:
+- Apple App Store (iOS)
+- Google Play Store (Android)
+
+Es gelten die jeweiligen Zahlungsbedingungen der App-Stores.
+
+7. WIDERRUFSRECHT
+
+Gemäß Schweizer Konsumentenschutzgesetz haben Sie ein 14-tägiges Widerrufsrecht.
+
+Bei digitalen Inhalten erlischt das Widerrufsrecht mit Beginn der Nutzung, sofern Sie ausdrücklich zugestimmt haben und zur Kenntnis genommen haben, dass Sie Ihr Widerrufsrecht verlieren.
+
+8. GEWÄHRLEISTUNG
+
+Es gelten die gesetzlichen Gewährleistungsrechte gemäß Schweizer Obligationenrecht (OR).
+
+Wir gewährleisten:
+- Funktionsfähigkeit der App im Rahmen der Beschreibung
+- Behebung von Mängeln innerhalb angemessener Frist
+
+9. HAFTUNG
+
+Unsere Haftung ist beschränkt auf:
+- Vorsatz und grobe Fahrlässigkeit
+- Verletzung wesentlicher Vertragspflichten
+
+Die Haftung für leichte Fahrlässigkeit ist ausgeschlossen, soweit gesetzlich zulässig.
+
+10. VERFÜGBARKEIT
+
+Wir bemühen uns um eine hohe Verfügbarkeit der App, können jedoch keine 100%ige Verfügbarkeit garantieren.
+
+Wartungsarbeiten werden nach Möglichkeit angekündigt.
+
+11. KÜNDIGUNG
+
+Sie können die Nutzung der App jederzeit beenden durch:
+- Deinstallation der App
+- Löschung Ihres Accounts
+
+Premium-Abonnements können gemäß den Bedingungen des jeweiligen App-Stores gekündigt werden.
+
+12. ÄNDERUNGEN DER AGB
+
+Wir behalten uns das Recht vor, diese AGB zu ändern. Änderungen werden in der App bekannt gegeben und treten 30 Tage nach Bekanntgabe in Kraft.
+
+13. SCHLUSSBESTIMMUNGEN
+
+Sollten einzelne Bestimmungen dieser AGB unwirksam sein, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt.
+
+14. ANWENDBARES RECHT
+
+Es gilt ausschließlich Schweizer Recht unter Ausschluss des UN-Kaufrechts.
+
+15. GERICHTSSTAND
+
+Gerichtsstand für alle Streitigkeiten ist Dübendorf, Schweiz.
+
+16. KONTAKT
+
+Bei Fragen zu diesen AGB kontaktieren Sie uns:
+
+Ivan Mirosnic
+E-Mail: ivanmirosnic006@gmail.com
+Ahornstrasse, 8600 Dübendorf, Schweiz`,
+
+      impressumTitle: 'Impressum (Legal Notice)',
+      impressumContent: `IMPRESSUM / LEGAL NOTICE
+EASY BUDGET 3.0
+
+═══════════════════════════════════════
+
+ANGABEN ZUM ANBIETER
+
+App-Name: EASY BUDGET 3.0
+Version: 1.0.0
+Plattformen: iOS, Android
+
+═══════════════════════════════════════
+
+VERANTWORTLICH FÜR DEN INHALT
+
+Name: Ivan Mirosnic
+Auch bekannt als: Nugat / Ivan Mirosnic Nugat
+
+Adresse:
+Ahornstrasse
+8600 Dübendorf
+Schweiz
+
+Kontakt:
+E-Mail: ivanmirosnic006@gmail.com
+Support: ivanmirosnic006@gmail.com
+
+═══════════════════════════════════════
+
+RECHTLICHE HINWEISE
+
+Urheberrecht:
+Alle Inhalte dieser App (Texte, Bilder, Grafiken, Design) sind urheberrechtlich geschützt. Jede Verwendung außerhalb der Grenzen des Urheberrechts bedarf der schriftlichen Zustimmung.
+
+Markenrecht:
+EASY BUDGET ist eine Marke von Ivan Mirosnic.
+
+═══════════════════════════════════════
+
+HAFTUNGSAUSSCHLUSS
+
+Haftung für Inhalte:
+Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Richtigkeit, Vollständigkeit und Aktualität der bereitgestellten Informationen.
+
+Haftung für Links:
+Unsere App kann Links zu externen Websites enthalten. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich. Wir übernehmen keine Haftung für externe Inhalte.
+
+Technische Verfügbarkeit:
+Wir bemühen uns um eine hohe Verfügbarkeit der App, können jedoch keine ununterbrochene Verfügbarkeit garantieren.
+
+═══════════════════════════════════════
+
+DATENSCHUTZ
+
+Für Informationen zur Datenverarbeitung siehe unsere separate Datenschutzerklärung.
+
+Datenschutzbeauftragter:
+Ivan Mirosnic
+E-Mail: ivanmirosnic006@gmail.com
+
+═══════════════════════════════════════
+
+STREITBEILEGUNG
+
+Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
+
+Bei Streitigkeiten wenden Sie sich bitte direkt an:
+E-Mail: ivanmirosnic006@gmail.com
+
+═══════════════════════════════════════
+
+ANWENDBARES RECHT
+
+Es gilt ausschließlich Schweizer Recht.
+
+Gerichtsstand:
+Dübendorf, Schweiz
+
+═══════════════════════════════════════
+
+KONTAKT UND SUPPORT
+
+Allgemeine Anfragen:
+E-Mail: ivanmirosnic006@gmail.com
+
+Technischer Support:
+E-Mail: ivanmirosnic006@gmail.com
+
+Bug Reports:
+E-Mail: ivanmirosnic006@gmail.com
+
+Feedback und Vorschläge:
+E-Mail: ivanmirosnic006@gmail.com
+
+═══════════════════════════════════════
+
+WEITERE INFORMATIONEN
+
+Entwicklung: Ivan Mirosnic
+Design: Ivan Mirosnic
+Copyright © 2025 Ivan Mirosnic
+Alle Rechte vorbehalten.
+
+═══════════════════════════════════════
+
+Stand: Januar 2025
+
+Änderungen vorbehalten.`,
     },
   },
   EN: {
@@ -203,7 +595,7 @@ export const translations = {
       continueEmail: 'Continue with Email',
       continueApple: 'Continue with Apple',
       continueGoogle: 'Sign in with Google',
-      footer: 'By continuing, you confirm that you have read the Terms of Service, Privacy Policy, and Terms and Conditions.',
+      legalFooter: 'By continuing you accept our Terms of Use (AGB), Privacy Policy and legal conditions',
       terms: 'Terms of Service',
       privacy: 'Privacy Policy',
       agb: 'Terms and Conditions',
@@ -368,16 +760,407 @@ export const translations = {
       error: 'Error',
       success: 'Success',
     },
-    // Legal Pages
+    // Legal Pages - Swiss Law Compliant (English version)
     legal: {
-      termsTitle: 'Terms of Service',
-      termsContent: 'Terms of Service\n\n1. General Provisions\nThese Terms of Service govern the use of the EASY BUDGET app.\n\n2. Usage Rights\nBy using the app, you receive a non-exclusive, non-transferable right to use it.\n\n3. Privacy\nWe are committed to protecting your data in accordance with our Privacy Policy.\n\n4. Disclaimer\nThe app is provided "as is". We do not guarantee availability or error-free operation.\n\n5. Changes\nWe reserve the right to change these terms at any time.\n\nContact: ivanmirosnic006@gmail.com',
+      termsTitle: 'Terms of Use',
+      termsContent: `TERMS OF USE
+EASY BUDGET 3.0
+
+Effective: January 2025
+
+1. GENERAL PROVISIONS
+
+These Terms of Use govern the use of the EASY BUDGET 3.0 mobile app (hereinafter "App") in accordance with Swiss law.
+
+Responsible:
+Ivan Mirosnic (also known as Nugat / Ivan Mirosnic Nugat)
+Ahornstrasse
+8600 Dübendorf
+Switzerland
+Email: ivanmirosnic006@gmail.com
+
+2. CONTRACT FORMATION
+
+The usage contract is formed upon installation and first use of the App. By using the App, you fully accept these Terms of Use.
+
+3. SCOPE OF SERVICES
+
+The App offers the following features:
+- Budget tracking and management
+- Subscription management
+- Expense categorization
+- Monthly overviews
+
+4. USAGE RIGHTS
+
+You receive a non-exclusive, non-transferable, revocable right to use the App for private, non-commercial purposes.
+
+5. USER OBLIGATIONS
+
+The user agrees to:
+- Use the App only for lawful purposes
+- Not engage in abusive use
+- Keep access credentials confidential
+
+6. PREMIUM FEATURES
+
+Premium features can be unlocked for a fee. Prices are displayed in the App. Payments are processed through the respective app store payment methods.
+
+7. RIGHT OF WITHDRAWAL
+
+In accordance with Swiss consumer protection law, you have a 14-day right of withdrawal. For digital content, this right expires upon commencement of use.
+
+8. DISCLAIMER
+
+The App is provided "as is". We do not guarantee:
+- Uninterrupted availability
+- Error-free operation
+- Completeness of data
+
+Liability is limited to intent and gross negligence, to the extent legally permissible.
+
+9. PRIVACY
+
+See separate Privacy Policy.
+
+10. CHANGES
+
+We reserve the right to change these Terms of Use at any time. Changes will be announced in the App.
+
+11. APPLICABLE LAW
+
+Swiss law applies exclusively, excluding the UN Convention on Contracts for the International Sale of Goods.
+
+12. JURISDICTION
+
+Place of jurisdiction is Dübendorf, Switzerland.
+
+Contact:
+Ivan Mirosnic
+Email: ivanmirosnic006@gmail.com
+Ahornstrasse, 8600 Dübendorf, Switzerland`,
+
       privacyTitle: 'Privacy Policy',
-      privacyContent: 'Privacy Policy\n\n1. Data Collection\nWe only collect the minimum necessary data for the app\'s functionality.\n\n2. Use of Data\nYour data is used exclusively to provide our services.\n\n3. Data Storage\nAll data is stored securely and encrypted.\n\n4. Data Sharing\nWe do not share your data with third parties unless legally required.\n\n5. Your Rights\nYou have the right to access, correct, and delete your data.\n\n6. Contact\nFor privacy questions, contact us at: ivanmirosnic006@gmail.com',
-      agbTitle: 'Terms and Conditions',
-      agbContent: 'Terms and Conditions\n\n1. Scope\nThese Terms and Conditions apply to all contracts between the user and EASY BUDGET.\n\n2. Contract Formation\nThe contract is formed upon registration in the app.\n\n3. Services\nWe provide a budget and subscription tracking app with various features.\n\n4. Prices and Payment\nPrices for premium features are displayed in the app. Payment is processed through the respective app store payment methods.\n\n5. Right of Withdrawal\nYou have a 14-day right of withdrawal in accordance with legal provisions.\n\n6. Warranty\nStatutory warranty rights apply.\n\nContact: ivanmirosnic006@gmail.com',
-      impressumTitle: 'Imprint',
-      impressumContent: 'Imprint\n\nEASY BUDGET 3.0\nVersion 1.0.0\n\nResponsible for content:\nEASY BUDGET Team\n\nContact:\nEmail: ivanmirosnic006@gmail.com\nSupport: ivanmirosnic006@gmail.com\n\nDisclaimer:\nDespite careful content control, we assume no liability for the content of external links. The operators of the linked pages are solely responsible for their content.',
+      privacyContent: `PRIVACY POLICY
+EASY BUDGET 3.0
+
+Effective: January 2025
+
+Responsible for data processing:
+Ivan Mirosnic (also known as Nugat / Ivan Mirosnic Nugat)
+Ahornstrasse
+8600 Dübendorf
+Switzerland
+Email: ivanmirosnic006@gmail.com
+
+This Privacy Policy complies with the requirements of the Swiss Data Protection Act (DSG) and the EU GDPR.
+
+1. PRINCIPLE OF DATA MINIMIZATION
+
+We take the protection of your privacy very seriously and only collect absolutely necessary data.
+
+2. WHAT DATA WE COLLECT
+
+We exclusively collect:
+- User ID for authentication
+
+WE DO NOT COLLECT:
+- No name
+- No email address
+- No phone number
+- No location data
+- No other personal data
+
+3. USE OF DATA
+
+The User ID is used exclusively for:
+- Authentication and access management
+- Synchronization of your app data
+- Provision of app features
+
+4. ANONYMIZED BEHAVIORAL ANALYSIS
+
+We may observe and analyze general usage patterns in anonymized or aggregated form to:
+- Improve app performance
+- Identify and fix errors
+- Develop new features
+
+These analyses are conducted exclusively in anonymized form without personal reference.
+
+5. DATA SHARING
+
+We do NOT share personal data with third parties.
+
+Exceptions:
+- Legal obligation
+- Court order
+
+6. DATA STORAGE
+
+Your data is stored securely and encrypted on servers in Switzerland or the EU.
+
+7. YOUR RIGHTS
+
+You have the right to:
+- Information about your stored data
+- Correction of incorrect data
+- Deletion of your data
+- Data portability
+- Object to data processing
+
+8. DATA SECURITY
+
+We implement technical and organizational measures to protect your data from:
+- Unauthorized access
+- Loss
+- Misuse
+- Manipulation
+
+9. COOKIES AND TRACKING
+
+The App does not use cookies or tracking technologies for advertising purposes.
+
+10. CHANGES
+
+We reserve the right to update this Privacy Policy. Changes will be announced in the App.
+
+11. CONTACT
+
+For privacy questions, contact us:
+
+Ivan Mirosnic
+Email: ivanmirosnic006@gmail.com
+Ahornstrasse, 8600 Dübendorf, Switzerland
+
+12. RIGHT TO COMPLAIN
+
+You have the right to lodge a complaint with the competent data protection authority:
+
+Federal Data Protection and Information Commissioner (FDPIC)
+Feldeggweg 1
+3003 Bern
+Switzerland
+www.edoeb.admin.ch`,
+
+      agbTitle: 'Terms and Conditions (AGB)',
+      agbContent: `TERMS AND CONDITIONS (AGB)
+EASY BUDGET 3.0
+
+Effective: January 2025
+
+Provider:
+Ivan Mirosnic (also known as Nugat / Ivan Mirosnic Nugat)
+Ahornstrasse
+8600 Dübendorf
+Switzerland
+Email: ivanmirosnic006@gmail.com
+
+1. SCOPE
+
+These Terms and Conditions (AGB) apply to all contracts between the user and EASY BUDGET regarding the use of the App.
+
+2. CONTRACT FORMATION
+
+The contract is formed upon registration and first use of the App. By using the App, you fully accept these Terms and Conditions.
+
+3. SERVICES
+
+We provide a budget and subscription tracking app with the following features:
+- Budget management
+- Expense tracking
+- Subscription overview
+- Monthly reports
+- Premium features (optional)
+
+4. FREE BASIC VERSION
+
+The basic version of the App is free to use with limited functionality.
+
+5. PREMIUM FEATURES
+
+Premium features can be purchased:
+- One-time payment: CHF 10.00 (lifetime access)
+- Monthly subscription: CHF 1.00/month
+
+Prices include statutory VAT.
+
+6. PAYMENT TERMS
+
+Payments are processed through:
+- Apple App Store (iOS)
+- Google Play Store (Android)
+
+The respective payment terms of the app stores apply.
+
+7. RIGHT OF WITHDRAWAL
+
+In accordance with Swiss consumer protection law, you have a 14-day right of withdrawal.
+
+For digital content, the right of withdrawal expires upon commencement of use, provided you have expressly agreed and acknowledged that you lose your right of withdrawal.
+
+8. WARRANTY
+
+Statutory warranty rights apply in accordance with Swiss Code of Obligations (OR).
+
+We warrant:
+- Functionality of the App as described
+- Remedy of defects within a reasonable period
+
+9. LIABILITY
+
+Our liability is limited to:
+- Intent and gross negligence
+- Breach of essential contractual obligations
+
+Liability for slight negligence is excluded to the extent legally permissible.
+
+10. AVAILABILITY
+
+We strive for high availability of the App but cannot guarantee 100% availability.
+
+Maintenance work will be announced when possible.
+
+11. TERMINATION
+
+You can terminate use of the App at any time by:
+- Uninstalling the App
+- Deleting your account
+
+Premium subscriptions can be canceled according to the terms of the respective app store.
+
+12. CHANGES TO TERMS AND CONDITIONS
+
+We reserve the right to change these Terms and Conditions. Changes will be announced in the App and take effect 30 days after announcement.
+
+13. FINAL PROVISIONS
+
+Should individual provisions of these Terms and Conditions be invalid, the validity of the remaining provisions remains unaffected.
+
+14. APPLICABLE LAW
+
+Swiss law applies exclusively, excluding the UN Convention on Contracts for the International Sale of Goods.
+
+15. JURISDICTION
+
+Place of jurisdiction for all disputes is Dübendorf, Switzerland.
+
+16. CONTACT
+
+For questions about these Terms and Conditions, contact us:
+
+Ivan Mirosnic
+Email: ivanmirosnic006@gmail.com
+Ahornstrasse, 8600 Dübendorf, Switzerland`,
+
+      impressumTitle: 'Imprint (Legal Notice)',
+      impressumContent: `IMPRINT / LEGAL NOTICE
+EASY BUDGET 3.0
+
+═══════════════════════════════════════
+
+PROVIDER INFORMATION
+
+App Name: EASY BUDGET 3.0
+Version: 1.0.0
+Platforms: iOS, Android
+
+═══════════════════════════════════════
+
+RESPONSIBLE FOR CONTENT
+
+Name: Ivan Mirosnic
+Also known as: Nugat / Ivan Mirosnic Nugat
+
+Address:
+Ahornstrasse
+8600 Dübendorf
+Switzerland
+
+Contact:
+Email: ivanmirosnic006@gmail.com
+Support: ivanmirosnic006@gmail.com
+
+═══════════════════════════════════════
+
+LEGAL NOTICES
+
+Copyright:
+All content of this App (texts, images, graphics, design) is protected by copyright. Any use outside the limits of copyright law requires written consent.
+
+Trademark:
+EASY BUDGET is a trademark of Ivan Mirosnic.
+
+═══════════════════════════════════════
+
+DISCLAIMER
+
+Liability for Content:
+Despite careful content control, we assume no liability for the accuracy, completeness, and timeliness of the information provided.
+
+Liability for Links:
+Our App may contain links to external websites. The operators of the linked pages are solely responsible for their content. We assume no liability for external content.
+
+Technical Availability:
+We strive for high availability of the App but cannot guarantee uninterrupted availability.
+
+═══════════════════════════════════════
+
+PRIVACY
+
+For information on data processing, see our separate Privacy Policy.
+
+Data Protection Officer:
+Ivan Mirosnic
+Email: ivanmirosnic006@gmail.com
+
+═══════════════════════════════════════
+
+DISPUTE RESOLUTION
+
+We are not obligated and not willing to participate in a dispute resolution procedure before a consumer arbitration board.
+
+For disputes, please contact us directly:
+Email: ivanmirosnic006@gmail.com
+
+═══════════════════════════════════════
+
+APPLICABLE LAW
+
+Swiss law applies exclusively.
+
+Jurisdiction:
+Dübendorf, Switzerland
+
+═══════════════════════════════════════
+
+CONTACT AND SUPPORT
+
+General Inquiries:
+Email: ivanmirosnic006@gmail.com
+
+Technical Support:
+Email: ivanmirosnic006@gmail.com
+
+Bug Reports:
+Email: ivanmirosnic006@gmail.com
+
+Feedback and Suggestions:
+Email: ivanmirosnic006@gmail.com
+
+═══════════════════════════════════════
+
+ADDITIONAL INFORMATION
+
+Development: Ivan Mirosnic
+Design: Ivan Mirosnic
+Copyright © 2025 Ivan Mirosnic
+All rights reserved.
+
+═══════════════════════════════════════
+
+Status: January 2025
+
+Subject to change.`,
     },
   },
 };

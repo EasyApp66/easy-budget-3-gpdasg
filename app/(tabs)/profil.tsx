@@ -25,6 +25,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import * as MailComposer from 'expo-mail-composer';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { usePremium } from '@/hooks/usePremium';
+import { FadeInView } from '@/components/FadeInView';
 
 const colors = {
   black: '#000000',
@@ -648,157 +649,163 @@ export default function ProfilScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* User Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.userIconContainer}>
-            <IconSymbol 
-              ios_icon_name="person.fill" 
-              android_material_icon_name="person"
-              size={60} 
-              color={colors.black} 
+        {/* User Profile Card with cascading animation */}
+        <FadeInView delay={0} duration={600} animationType="fadeIn">
+          <View style={styles.profileCard}>
+            <View style={styles.userIconContainer}>
+              <IconSymbol 
+                ios_icon_name="person.fill" 
+                android_material_icon_name="person"
+                size={60} 
+                color={colors.black} 
+              />
+            </View>
+            <Pressable onPress={handleEditName}>
+              <Text style={styles.username}>{username}</Text>
+              <Text style={styles.usernameHint}>
+                {language === 'DE' ? 'Tippe um Namen zu ändern' : 'Tap to change name'}
+              </Text>
+            </Pressable>
+            
+            {/* Premium Status */}
+            <View style={styles.premiumStatusContainer}>
+              <Text style={styles.premiumStatusLabel}>
+                {t.profile.premiumStatus}:
+              </Text>
+              <Text style={[
+                styles.premiumStatusValue,
+                { color: premiumStatus.isPremium ? colors.neonGreen : colors.white }
+              ]}>
+                {premiumStatus.isPremium 
+                  ? (premiumStatus.isLifetime 
+                      ? t.profile.premiumYes 
+                      : `${t.profile.premiumYes} (${premiumStatus.daysRemaining} ${t.profile.premiumDays})`)
+                  : t.profile.premiumNo
+                }
+              </Text>
+            </View>
+
+            {/* Promo Code Input */}
+            {!premiumStatus.isPremium && (
+              <View style={styles.promoCodeContainer}>
+                <TextInput
+                  style={styles.promoCodeInput}
+                  value={promoCode}
+                  onChangeText={setPromoCode}
+                  placeholder={t.profile.promoCodePlaceholder}
+                  placeholderTextColor="#666"
+                  autoCapitalize="characters"
+                />
+                <Pressable 
+                  style={styles.redeemButton}
+                  onPress={handleRedeemCode}
+                >
+                  <Text style={styles.redeemButtonText}>{t.profile.redeemCode}</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        </FadeInView>
+
+        {/* Settings Items with cascading animation */}
+        <FadeInView delay={200} duration={600} animationType="fadeInDown">
+          <View style={styles.settingsList}>
+            <SettingsItem
+              iosIcon="arrow.right.square"
+              androidIcon="exit-to-app"
+              iconColor={colors.neonGreen}
+              title={t.profile.logout}
+              onPress={handleLogout}
+            />
+            <SettingsItem
+              iosIcon="globe"
+              androidIcon="language"
+              iconColor={colors.neonGreen}
+              title={languageDisplayText}
+              onPress={handleLanguageChange}
+            />
+            <SettingsItem
+              iosIcon="star.fill"
+              androidIcon="star"
+              iconColor={colors.neonGreen}
+              title={t.profile.premium}
+              onPress={handleBuyPremium}
+            />
+            <SettingsItem
+              iosIcon="doc.text"
+              androidIcon="description"
+              iconColor={colors.white}
+              title={t.profile.agb}
+              onPress={() => handleTextPage(t.legal.agbTitle, t.legal.agbContent)}
+            />
+            <SettingsItem
+              iosIcon="shield"
+              androidIcon="shield"
+              iconColor={colors.white}
+              title={t.profile.terms}
+              onPress={() => handleTextPage(t.legal.termsTitle, t.legal.termsContent)}
+            />
+            <SettingsItem
+              iosIcon="lock.shield"
+              androidIcon="lock"
+              iconColor={colors.white}
+              title={t.profile.privacy}
+              onPress={() => handleTextPage(t.legal.privacyTitle, t.legal.privacyContent)}
+            />
+            <SettingsItem
+              iosIcon="info.circle"
+              androidIcon="info"
+              iconColor={colors.white}
+              title={t.profile.impressum}
+              onPress={() => handleTextPage(t.legal.impressumTitle, t.legal.impressumContent)}
+            />
+            <SettingsItem
+              iosIcon="envelope"
+              androidIcon="email"
+              iconColor={colors.white}
+              title={t.profile.support}
+              onPress={handleSupport}
+            />
+            <SettingsItem
+              iosIcon="lightbulb"
+              androidIcon="lightbulb-outline"
+              iconColor={colors.white}
+              title={t.profile.suggestion}
+              onPress={handleSuggestion}
+            />
+            <SettingsItem
+              iosIcon="ant"
+              androidIcon="bug-report"
+              iconColor={colors.neonGreen}
+              title={t.profile.bugReport}
+              onPress={handleBugReport}
+            />
+            <SettingsItem
+              iosIcon="heart.fill"
+              androidIcon="favorite"
+              iconColor={colors.red}
+              title={t.profile.donation}
+              onPress={handleDonation}
+            />
+            <SettingsItem
+              iosIcon="trash"
+              androidIcon="delete"
+              iconColor={colors.red}
+              title={t.profile.deleteAccount}
+              onPress={handleDeleteAccount}
             />
           </View>
-          <Pressable onPress={handleEditName}>
-            <Text style={styles.username}>{username}</Text>
-            <Text style={styles.usernameHint}>
-              {language === 'DE' ? 'Tippe um Namen zu ändern' : 'Tap to change name'}
-            </Text>
-          </Pressable>
-          
-          {/* Premium Status */}
-          <View style={styles.premiumStatusContainer}>
-            <Text style={styles.premiumStatusLabel}>
-              {t.profile.premiumStatus}:
-            </Text>
-            <Text style={[
-              styles.premiumStatusValue,
-              { color: premiumStatus.isPremium ? colors.neonGreen : colors.white }
-            ]}>
-              {premiumStatus.isPremium 
-                ? (premiumStatus.isLifetime 
-                    ? t.profile.premiumYes 
-                    : `${t.profile.premiumYes} (${premiumStatus.daysRemaining} ${t.profile.premiumDays})`)
-                : t.profile.premiumNo
-              }
+        </FadeInView>
+
+        {/* Footer with cascading animation */}
+        <FadeInView delay={400} duration={600} animationType="fadeInDown">
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Version 1.0.0</Text>
+            <Text style={styles.footerText}>
+              Made with <Text style={{ color: colors.red }}>❤️</Text>
             </Text>
           </View>
-
-          {/* Promo Code Input */}
-          {!premiumStatus.isPremium && (
-            <View style={styles.promoCodeContainer}>
-              <TextInput
-                style={styles.promoCodeInput}
-                value={promoCode}
-                onChangeText={setPromoCode}
-                placeholder={t.profile.promoCodePlaceholder}
-                placeholderTextColor="#666"
-                autoCapitalize="characters"
-              />
-              <Pressable 
-                style={styles.redeemButton}
-                onPress={handleRedeemCode}
-              >
-                <Text style={styles.redeemButtonText}>{t.profile.redeemCode}</Text>
-              </Pressable>
-            </View>
-          )}
-        </View>
-
-        {/* Settings Items */}
-        <View style={styles.settingsList}>
-          <SettingsItem
-            iosIcon="arrow.right.square"
-            androidIcon="exit-to-app"
-            iconColor={colors.neonGreen}
-            title={t.profile.logout}
-            onPress={handleLogout}
-          />
-          <SettingsItem
-            iosIcon="globe"
-            androidIcon="language"
-            iconColor={colors.neonGreen}
-            title={languageDisplayText}
-            onPress={handleLanguageChange}
-          />
-          <SettingsItem
-            iosIcon="star.fill"
-            androidIcon="star"
-            iconColor={colors.neonGreen}
-            title={t.profile.premium}
-            onPress={handleBuyPremium}
-          />
-          <SettingsItem
-            iosIcon="doc.text"
-            androidIcon="description"
-            iconColor={colors.white}
-            title={t.profile.agb}
-            onPress={() => handleTextPage(t.legal.agbTitle, t.legal.agbContent)}
-          />
-          <SettingsItem
-            iosIcon="shield"
-            androidIcon="shield"
-            iconColor={colors.white}
-            title={t.profile.terms}
-            onPress={() => handleTextPage(t.legal.termsTitle, t.legal.termsContent)}
-          />
-          <SettingsItem
-            iosIcon="lock.shield"
-            androidIcon="lock"
-            iconColor={colors.white}
-            title={t.profile.privacy}
-            onPress={() => handleTextPage(t.legal.privacyTitle, t.legal.privacyContent)}
-          />
-          <SettingsItem
-            iosIcon="info.circle"
-            androidIcon="info"
-            iconColor={colors.white}
-            title={t.profile.impressum}
-            onPress={() => handleTextPage(t.legal.impressumTitle, t.legal.impressumContent)}
-          />
-          <SettingsItem
-            iosIcon="envelope"
-            androidIcon="email"
-            iconColor={colors.white}
-            title={t.profile.support}
-            onPress={handleSupport}
-          />
-          <SettingsItem
-            iosIcon="lightbulb"
-            androidIcon="lightbulb-outline"
-            iconColor={colors.white}
-            title={t.profile.suggestion}
-            onPress={handleSuggestion}
-          />
-          <SettingsItem
-            iosIcon="ant"
-            androidIcon="bug-report"
-            iconColor={colors.neonGreen}
-            title={t.profile.bugReport}
-            onPress={handleBugReport}
-          />
-          <SettingsItem
-            iosIcon="heart.fill"
-            androidIcon="favorite"
-            iconColor={colors.red}
-            title={t.profile.donation}
-            onPress={handleDonation}
-          />
-          <SettingsItem
-            iosIcon="trash"
-            androidIcon="delete"
-            iconColor={colors.red}
-            title={t.profile.deleteAccount}
-            onPress={handleDeleteAccount}
-          />
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Version 1.0.0</Text>
-          <Text style={styles.footerText}>
-            Made with <Text style={{ color: colors.red }}>❤️</Text>
-          </Text>
-        </View>
+        </FadeInView>
       </ScrollView>
 
       {/* Edit Name Modal */}

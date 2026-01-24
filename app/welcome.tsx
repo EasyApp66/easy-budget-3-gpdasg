@@ -27,7 +27,6 @@ export default function WelcomeScreen() {
   const { signInWithGoogle, signInWithApple } = useAuth();
   const { t } = useLanguage();
   const [legalModalVisible, setLegalModalVisible] = useState(false);
-  const [legalModalContent, setLegalModalContent] = useState({ title: '', content: '' });
   const [isLoading, setIsLoading] = useState(false);
 
   const AnimatedButton = ({
@@ -156,27 +155,11 @@ export default function WelcomeScreen() {
     }
   };
 
-  const handleLegalPress = (type: 'terms' | 'privacy' | 'agb') => {
+  const handleLegalPress = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log(`[Welcome] User tapped ${type} link - opening popup with full legal text`);
-    
-    let title = '';
-    let content = '';
-    
-    if (type === 'terms') {
-      title = t.legal.termsTitle;
-      content = t.legal.termsContent;
-    } else if (type === 'privacy') {
-      title = t.legal.privacyTitle;
-      content = t.legal.privacyContent;
-    } else if (type === 'agb') {
-      title = t.legal.agbTitle;
-      content = t.legal.agbContent;
-    }
-    
-    setLegalModalContent({ title, content });
+    console.log('[Welcome] User tapped legal link - opening full legal modal');
     setLegalModalVisible(true);
   };
 
@@ -241,25 +224,15 @@ export default function WelcomeScreen() {
           </View>
 
           <View style={styles.footerContainer}>
-            <Text style={styles.footer}>
-              Indem du fortfährst, bestätigst du, dass du die{' '}
-              <Text style={styles.footerLink} onPress={() => handleLegalPress('terms')}>
-                Nutzungsbedingungen
+            <Pressable onPress={handleLegalPress}>
+              <Text style={styles.footer}>
+                <Text style={styles.footerLink}>{t.welcome.legalFooter}</Text>
               </Text>
-              {' '}und die{' '}
-              <Text style={styles.footerLink} onPress={() => handleLegalPress('privacy')}>
-                Datenschutzerklärung
-              </Text>
-              {' '}und die{' '}
-              <Text style={styles.footerLink} onPress={() => handleLegalPress('agb')}>
-                AGBs
-              </Text>
-              {' '}gelesen hast.
-            </Text>
+            </Pressable>
           </View>
         </View>
 
-        {/* Legal Modal - FULL TEXT VISIBLE ON iOS */}
+        {/* Legal Modal - Full Legal Documents */}
         <Modal
           visible={legalModalVisible}
           transparent={true}
@@ -269,7 +242,7 @@ export default function WelcomeScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{legalModalContent.title}</Text>
+                <Text style={styles.modalTitle}>Legal Documents</Text>
                 <Pressable onPress={closeLegalModal} style={styles.closeButton}>
                   <MaterialIcons name="close" size={24} color={colors.white} />
                 </Pressable>
@@ -280,7 +253,27 @@ export default function WelcomeScreen() {
                 contentContainerStyle={styles.modalScrollContent}
                 showsVerticalScrollIndicator={true}
               >
-                <Text style={styles.modalText}>{legalModalContent.content}</Text>
+                {/* Terms of Use */}
+                <Text style={styles.sectionTitle}>{t.legal.termsTitle}</Text>
+                <Text style={styles.modalText}>{t.legal.termsContent}</Text>
+
+                <View style={styles.divider} />
+
+                {/* Privacy Policy */}
+                <Text style={styles.sectionTitle}>{t.legal.privacyTitle}</Text>
+                <Text style={styles.modalText}>{t.legal.privacyContent}</Text>
+
+                <View style={styles.divider} />
+
+                {/* AGB */}
+                <Text style={styles.sectionTitle}>{t.legal.agbTitle}</Text>
+                <Text style={styles.modalText}>{t.legal.agbContent}</Text>
+
+                <View style={styles.divider} />
+
+                {/* Impressum - At the bottom */}
+                <Text style={styles.sectionTitle}>{t.legal.impressumTitle}</Text>
+                <Text style={styles.modalText}>{t.legal.impressumContent}</Text>
               </ScrollView>
 
               <View style={styles.modalFooter}>
@@ -384,7 +377,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -393,8 +386,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.darkGray,
     borderRadius: 20,
     width: '100%',
-    maxWidth: 500,
-    maxHeight: '80%',
+    maxWidth: 600,
+    maxHeight: '85%',
     overflow: 'hidden',
   },
   modalHeader: {
@@ -424,11 +417,24 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingBottom: 30,
   },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.neonGreen,
+    marginTop: 20,
+    marginBottom: 12,
+    letterSpacing: 0.5,
+  },
   modalText: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.white,
-    lineHeight: 22,
+    lineHeight: 20,
     opacity: 0.9,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginVertical: 24,
   },
   modalFooter: {
     paddingHorizontal: 24,

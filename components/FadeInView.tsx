@@ -9,7 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 
-// Cascading animation component for fade-in effects
+// Cascading animation component for smooth fade-in effects
 interface FadeInViewProps {
   children: React.ReactNode;
   delay?: number;
@@ -26,23 +26,25 @@ export function FadeInView({
   style,
 }: FadeInViewProps) {
   const opacity = useSharedValue(0);
-  const translateY = useSharedValue(animationType === 'fadeInDown' ? -20 : 0);
+  const translateY = useSharedValue(animationType === 'fadeInDown' ? -15 : 0);
 
   useEffect(() => {
+    // Smoother cubic easing for opacity
     opacity.value = withDelay(
       delay,
       withTiming(1, {
         duration,
-        easing: Easing.out(Easing.cubic),
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1), // Smoother cubic bezier
       })
     );
 
     if (animationType === 'fadeInDown') {
+      // Smoother cubic easing for translateY
       translateY.value = withDelay(
         delay,
         withTiming(0, {
           duration,
-          easing: Easing.out(Easing.cubic),
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1), // Smoother cubic bezier
         })
       );
     }
