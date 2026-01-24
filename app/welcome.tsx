@@ -242,7 +242,7 @@ export default function WelcomeScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Rechtliches</Text>
+                <Text style={styles.modalTitle}>{t.legal.modalTitle || 'Rechtliches'}</Text>
                 <Pressable onPress={closeLegalModal} style={styles.closeButton}>
                   <MaterialIcons name="close" size={24} color={colors.white} />
                 </Pressable>
@@ -364,11 +364,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   footer: {
-    fontSize: 11,
-    color: '#666666',
+    fontSize: 10,
+    color: '#444444',
     textAlign: 'center',
-    lineHeight: 16,
-    opacity: 0.4,
+    lineHeight: 14,
+    opacity: 0.3,
   },
   modalOverlay: {
     flex: 1,
@@ -382,7 +382,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     width: '100%',
     maxWidth: 600,
-    height: '80%',
+    height: '90%',
+    maxHeight: '90%',
     overflow: 'hidden',
   },
   modalHeader: {
@@ -406,24 +407,25 @@ const styles = StyleSheet.create({
   },
   modalScrollView: {
     flex: 1,
+    backgroundColor: colors.darkGray,
   },
   modalScrollContent: {
     paddingHorizontal: 24,
-    paddingVertical: 20,
-    paddingBottom: 40,
+    paddingTop: 20,
+    paddingBottom: 60,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
-    color: colors.neonGreen,
+    color: colors.white,
     marginTop: 20,
     marginBottom: 12,
     letterSpacing: 0.5,
   },
   modalText: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.white,
-    lineHeight: 22,
+    lineHeight: 24,
     opacity: 1,
   },
   divider: {

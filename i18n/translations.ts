@@ -181,6 +181,7 @@ export const translations = {
     },
     // Legal Pages - Swiss Law Compliant
     legal: {
+      modalTitle: 'Rechtliches',
       termsTitle: 'Nutzungsbedingungen',
       termsContent: `NUTZUNGSBEDINGUNGEN / TERMS OF USE
 EASY BUDGET 3.0
@@ -762,6 +763,7 @@ Stand: Januar 2025
     },
     // Legal Pages - Swiss Law Compliant (English version)
     legal: {
+      modalTitle: 'Legal Information',
       termsTitle: 'Terms of Use',
       termsContent: `TERMS OF USE
 EASY BUDGET 3.0
