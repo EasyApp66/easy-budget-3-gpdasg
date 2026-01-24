@@ -14,7 +14,7 @@ export const translations = {
       continueEmail: 'Mit E-Mail fortfahren',
       continueApple: 'Mit Apple fortfahren',
       continueGoogle: 'Mit Google anmelden',
-      legalFooter: 'By continuing you accept our Terms of Use (AGB), Privacy Policy and legal conditions',
+      legalFooter: 'Indem du fortfährst, akzeptierst du unsere Nutzungsbedingungen (AGB), Datenschutzerklärung und rechtlichen Bedingungen',
       terms: 'Nutzungsbedingungen',
       privacy: 'Datenschutzerklärung',
       agb: 'AGBs',

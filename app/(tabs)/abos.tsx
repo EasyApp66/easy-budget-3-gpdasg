@@ -405,12 +405,13 @@ export default function AbosScreen() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView
+          key={`abos-${subscriptions.length}`}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           {/* Top Pills with cascading animation */}
-          <FadeInView delay={0} duration={600} animationType="fadeIn">
+          <FadeInView delay={0} duration={900} animationType="fadeIn">
             <View style={styles.topPillsContainer}>
               <View style={styles.topPillLarge}>
                 <Text style={styles.topPillLabel}>{t.abos.totalMonthly}</Text>
@@ -425,7 +426,7 @@ export default function AbosScreen() {
           </FadeInView>
 
           {/* Subscription List with cascading animation */}
-          <FadeInView delay={200} duration={600} animationType="fadeInDown">
+          <FadeInView delay={300} duration={900} animationType="fadeInDown">
             <View style={styles.subscriptionList}>
               {sortedSubscriptions.map((sub) => (
                 <SubscriptionPill key={sub.id} subscription={sub} />
@@ -434,7 +435,7 @@ export default function AbosScreen() {
           </FadeInView>
 
           {/* Swipe Hint with cascading animation */}
-          <FadeInView delay={400} duration={600} animationType="fadeInDown">
+          <FadeInView delay={600} duration={900} animationType="fadeInDown">
             <Text style={styles.swipeHint}>
               {t.abos.swipeHint}
             </Text>

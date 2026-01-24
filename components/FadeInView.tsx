@@ -1,6 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { ViewStyle } from 'react-native';
+import { usePathname } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -21,15 +22,20 @@ interface FadeInViewProps {
 export function FadeInView({
   children,
   delay = 0,
-  duration = 600,
+  duration = 800, // Increased from 600 to 800 for slower animation
   animationType = 'fadeIn',
   style,
 }: FadeInViewProps) {
+  const pathname = usePathname();
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(animationType === 'fadeInDown' ? -15 : 0);
 
   useEffect(() => {
-    // Smoother cubic easing for opacity
+    // Reset animation on every page navigation
+    opacity.value = 0;
+    translateY.value = animationType === 'fadeInDown' ? -15 : 0;
+
+    // Smoother cubic easing for opacity with slower duration
     opacity.value = withDelay(
       delay,
       withTiming(1, {
@@ -39,7 +45,7 @@ export function FadeInView({
     );
 
     if (animationType === 'fadeInDown') {
-      // Smoother cubic easing for translateY
+      // Smoother cubic easing for translateY with slower duration
       translateY.value = withDelay(
         delay,
         withTiming(0, {
@@ -48,7 +54,7 @@ export function FadeInView({
         })
       );
     }
-  }, []);
+  }, [pathname]); // Re-run animation when pathname changes
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

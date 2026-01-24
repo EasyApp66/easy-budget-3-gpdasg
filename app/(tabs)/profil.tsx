@@ -645,12 +645,13 @@ export default function ProfilScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
+        key={`profil-${username}`}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* User Profile Card with cascading animation */}
-        <FadeInView delay={0} duration={600} animationType="fadeIn">
+        <FadeInView delay={0} duration={900} animationType="fadeIn">
           <View style={styles.profileCard}>
             <View style={styles.userIconContainer}>
               <IconSymbol 
@@ -708,7 +709,7 @@ export default function ProfilScreen() {
         </FadeInView>
 
         {/* Settings Items with cascading animation */}
-        <FadeInView delay={200} duration={600} animationType="fadeInDown">
+        <FadeInView delay={300} duration={900} animationType="fadeInDown">
           <View style={styles.settingsList}>
             <SettingsItem
               iosIcon="arrow.right.square"
@@ -798,7 +799,7 @@ export default function ProfilScreen() {
         </FadeInView>
 
         {/* Footer with cascading animation */}
-        <FadeInView delay={400} duration={600} animationType="fadeInDown">
+        <FadeInView delay={600} duration={900} animationType="fadeInDown">
           <View style={styles.footer}>
             <Text style={styles.footerText}>Version 1.0.0</Text>
             <Text style={styles.footerText}>

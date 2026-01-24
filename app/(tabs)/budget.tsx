@@ -594,12 +594,13 @@ export default function BudgetScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
+        key={`budget-${selectedMonthId}`}
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
         {/* Top Pills with cascading animation */}
-        <FadeInView delay={0} duration={600} animationType="fadeIn">
+        <FadeInView delay={0} duration={900} animationType="fadeIn">
           <View style={styles.topSection}>
             <TopPill
               label={cashLabel}
@@ -628,7 +629,7 @@ export default function BudgetScreen() {
         </FadeInView>
 
         {/* Month Row with cascading animation */}
-        <FadeInView delay={200} duration={600} animationType="fadeInDown">
+        <FadeInView delay={300} duration={900} animationType="fadeInDown">
           <View style={styles.monthRowContainer}>
             <Pressable 
               onPress={handleAddMonth} 
@@ -659,7 +660,7 @@ export default function BudgetScreen() {
         </FadeInView>
 
         {/* Expenses Grid with cascading animation */}
-        <FadeInView delay={400} duration={600} animationType="fadeInDown">
+        <FadeInView delay={600} duration={900} animationType="fadeInDown">
           <View style={styles.expensesGrid}>
             {sortedExpenses.map((expense) => (
               <ExpensePill key={expense.id} expense={expense} />
