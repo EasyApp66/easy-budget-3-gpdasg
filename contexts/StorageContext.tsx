@@ -54,19 +54,14 @@ export function StorageProvider({ children }: { children: ReactNode }) {
   const [months, setMonthsState] = useState<Month[]>([
     {
       id: '1',
-      name: 'JHZFJH',
-      isPinned: true,
-      cash: 93838,
-      expenses: [
-        { id: '1', name: 'ESSEN', amount: 250, isPinned: true },
-        { id: '2', name: 'MIETE', amount: 2005, isPinned: false },
-        { id: '3', name: 'PARKPLATZ', amount: 150, isPinned: false },
-        { id: '4', name: 'KLEIDER', amount: 120, isPinned: false },
-      ],
+      name: 'JAN',
+      isPinned: false,
+      cash: 0,
+      expenses: [],
     },
     {
       id: '2',
-      name: 'KEJNEND',
+      name: 'FEB',
       isPinned: false,
       cash: 0,
       expenses: [],

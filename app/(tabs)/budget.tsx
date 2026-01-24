@@ -195,6 +195,16 @@ export default function BudgetScreen() {
   }, [addExpenseFromModal]);
 
   const handleDeleteMonth = (monthId: string) => {
+    // Prevent deletion if only one month remains
+    if (months.length <= 1) {
+      Alert.alert(
+        t.common.error,
+        'Du musst mindestens einen Monat behalten. Der letzte Monat kann nicht gelöscht werden.'
+      );
+      setContextMenu({ visible: false, type: null, itemId: null });
+      return;
+    }
+
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
@@ -594,7 +604,6 @@ export default function BudgetScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
-        key={`budget-${selectedMonthId}`}
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}

@@ -226,7 +226,7 @@ export default function WelcomeScreen() {
           <View style={styles.footerContainer}>
             <Pressable onPress={handleLegalPress}>
               <Text style={styles.footer}>
-                <Text style={styles.footerLink}>{t.welcome.legalFooter}</Text>
+                {t.welcome.legalFooter}
               </Text>
             </Pressable>
           </View>
@@ -242,7 +242,7 @@ export default function WelcomeScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Legal Documents</Text>
+                <Text style={styles.modalTitle}>Rechtliches</Text>
                 <Pressable onPress={closeLegalModal} style={styles.closeButton}>
                   <MaterialIcons name="close" size={24} color={colors.white} />
                 </Pressable>
@@ -364,30 +364,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   footer: {
-    fontSize: 12,
-    color: colors.white,
+    fontSize: 11,
+    color: '#666666',
     textAlign: 'center',
-    lineHeight: 18,
-    opacity: 0.7,
-  },
-  footerLink: {
-    color: colors.neonGreen,
-    textDecorationLine: 'underline',
-    fontWeight: '600',
+    lineHeight: 16,
+    opacity: 0.4,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
   },
   modalContainer: {
     backgroundColor: colors.darkGray,
     borderRadius: 20,
     width: '100%',
     maxWidth: 600,
-    maxHeight: '85%',
+    height: '80%',
     overflow: 'hidden',
   },
   modalHeader: {
@@ -415,7 +410,7 @@ const styles = StyleSheet.create({
   modalScrollContent: {
     paddingHorizontal: 24,
     paddingVertical: 20,
-    paddingBottom: 30,
+    paddingBottom: 40,
   },
   sectionTitle: {
     fontSize: 18,
@@ -426,10 +421,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   modalText: {
-    fontSize: 13,
+    fontSize: 14,
     color: colors.white,
-    lineHeight: 20,
-    opacity: 0.9,
+    lineHeight: 22,
+    opacity: 1,
   },
   divider: {
     height: 1,

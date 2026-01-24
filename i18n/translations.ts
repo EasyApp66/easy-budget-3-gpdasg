@@ -181,7 +181,7 @@ export const translations = {
     },
     // Legal Pages - Swiss Law Compliant
     legal: {
-      termsTitle: 'Nutzungsbedingungen (Terms of Use)',
+      termsTitle: 'Nutzungsbedingungen',
       termsContent: `NUTZUNGSBEDINGUNGEN / TERMS OF USE
 EASY BUDGET 3.0
 
@@ -259,7 +259,7 @@ Ivan Mirosnic
 E-Mail: ivanmirosnic006@gmail.com
 Ahornstrasse, 8600 Dübendorf, Schweiz`,
 
-      privacyTitle: 'Datenschutzerklärung (Privacy Policy)',
+      privacyTitle: 'Datenschutzerklärung',
       privacyContent: `DATENSCHUTZERKLÄRUNG / PRIVACY POLICY
 EASY BUDGET 3.0
 
@@ -472,7 +472,7 @@ Ivan Mirosnic
 E-Mail: ivanmirosnic006@gmail.com
 Ahornstrasse, 8600 Dübendorf, Schweiz`,
 
-      impressumTitle: 'Impressum (Legal Notice)',
+      impressumTitle: 'Impressum',
       impressumContent: `IMPRESSUM / LEGAL NOTICE
 EASY BUDGET 3.0
 
