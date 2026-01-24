@@ -12,7 +12,7 @@ export const translations = {
       trackSubs: 'Und Deine',
       subs: 'ABOS',
       continueEmail: 'Mit E-Mail fortfahren',
-      continueApple: 'Mit Apple fortfahren',
+      continueApple: 'Mit Apple anmelden',
       continueGoogle: 'Mit Google anmelden',
       legalFooter: 'Indem du fortfährst, akzeptierst du unsere Nutzungsbedingungen (AGB), Datenschutzerklärung und rechtlichen Bedingungen',
       terms: 'Nutzungsbedingungen',
@@ -82,6 +82,8 @@ export const translations = {
       amountPlaceholder: 'Betrag (z.B. 100)',
       monthNamePlaceholder: 'Monatsname (z.B. JANUAR)',
       errorMonthName: 'Bitte gib einen Monatsnamen ein',
+      errorAllFields: 'Bitte fülle alle Felder aus',
+      errorInvalidAmount: 'Ungültiger Betrag',
     },
     // Abos Screen
     abos: {
@@ -148,7 +150,7 @@ export const translations = {
       title: 'Premium Holen',
       subtitle: 'Erhalte unbegrenzte App-Funktionen:',
       features: [
-        'Unbegrenzte Abo Counter',
+        'Unbegrenzte Abos',
         'Unbegrenzte Ausgabenliste',
         'Unbegrenzte Monate',
       ],
@@ -594,7 +596,7 @@ Stand: Januar 2025
       trackSubs: 'And your',
       subs: 'SUBSCRIPTIONS',
       continueEmail: 'Continue with Email',
-      continueApple: 'Continue with Apple',
+      continueApple: 'Sign in with Apple',
       continueGoogle: 'Sign in with Google',
       legalFooter: 'By continuing you accept our Terms of Use (AGB), Privacy Policy and legal conditions',
       terms: 'Terms of Service',
@@ -664,6 +666,8 @@ Stand: Januar 2025
       amountPlaceholder: 'Amount (e.g. 100)',
       monthNamePlaceholder: 'Month name (e.g. JANUARY)',
       errorMonthName: 'Please enter a month name',
+      errorAllFields: 'Please fill in all fields',
+      errorInvalidAmount: 'Invalid amount',
     },
     // Abos Screen
     abos: {
@@ -730,7 +734,7 @@ Stand: Januar 2025
       title: 'Get Premium',
       subtitle: 'Get unlimited app features:',
       features: [
-        'Unlimited Subscription Counter',
+        'Unlimited Subscriptions',
         'Unlimited Expense List',
         'Unlimited Months',
       ],

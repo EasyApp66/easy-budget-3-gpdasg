@@ -365,10 +365,9 @@ const styles = StyleSheet.create({
   },
   footer: {
     fontSize: 10,
-    color: '#444444',
+    color: '#666666',
     textAlign: 'center',
     lineHeight: 14,
-    opacity: 0.3,
   },
   modalOverlay: {
     flex: 1,
