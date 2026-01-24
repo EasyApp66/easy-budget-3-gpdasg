@@ -20,6 +20,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/IconSymbol';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import * as MailComposer from 'expo-mail-composer';
@@ -118,7 +119,6 @@ export default function ProfilScreen() {
   const [newUsername, setNewUsername] = useState('');
   const [promoCode, setPromoCode] = useState('');
   const [legalModalVisible, setLegalModalVisible] = useState(false);
-  const [legalModalContent, setLegalModalContent] = useState({ title: '', content: '' });
 
   // Load premium status on mount
   useEffect(() => {
@@ -150,7 +150,9 @@ export default function ProfilScreen() {
   };
 
   const handleRedeemCode = async () => {
-    if (!promoCode.trim()) {
+    const codeToRedeem = promoCode.trim().toUpperCase();
+    
+    if (!codeToRedeem) {
       Alert.alert(t.common.error, language === 'DE' ? 'Bitte gib einen Code ein' : 'Please enter a code');
       return;
     }
@@ -161,10 +163,50 @@ export default function ProfilScreen() {
 
     console.log('[Profile] ========================================');
     console.log('[Profile] Starting promo code redemption');
-    console.log('[Profile] Code:', promoCode.trim().toUpperCase());
+    console.log('[Profile] Code:', codeToRedeem);
     console.log('[Profile] Platform:', Platform.OS);
     console.log('[Profile] User:', user?.email);
 
+    // Special offline code: easy2 gives 1 month premium
+    if (codeToRedeem === 'EASY2') {
+      console.log('[Profile] ✅ Offline promo code EASY2 detected!');
+      
+      // Calculate expiry date (1 month from now)
+      const expiryDate = new Date();
+      expiryDate.setMonth(expiryDate.getMonth() + 1);
+      
+      // Store premium status locally
+      try {
+        const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
+        await AsyncStorage.setItem('offline_premium_expiry', expiryDate.toISOString());
+        await AsyncStorage.setItem('offline_premium_code', codeToRedeem);
+        
+        console.log('[Profile] Offline premium activated until:', expiryDate.toISOString());
+        
+        Alert.alert(
+          language === 'DE' ? 'Code eingelöst!' : 'Code Redeemed!',
+          language === 'DE' 
+            ? '1 Monat Premium wurde aktiviert!' 
+            : '1 month of Premium has been activated!'
+        );
+        
+        setPromoCode('');
+        
+        // Update premium status
+        setPremiumStatus({
+          isPremium: true,
+          expiresAt: expiryDate.toISOString(),
+          daysRemaining: 30,
+          isLifetime: false,
+        });
+        
+        return;
+      } catch (error) {
+        console.error('[Profile] Error storing offline premium:', error);
+      }
+    }
+
+    // Try online redemption
     try {
       const { authenticatedPost, BACKEND_URL, getSessionToken } = await import('@/utils/api');
       
@@ -187,7 +229,7 @@ export default function ProfilScreen() {
         expiresAt?: string;
         daysRemaining?: number;
       }>('/api/premium/redeem-code', {
-        code: promoCode.trim().toUpperCase(),
+        code: codeToRedeem,
       });
 
       console.log('[Profile] API Response:', JSON.stringify(response, null, 2));
@@ -198,7 +240,6 @@ export default function ProfilScreen() {
           t.profile.codeRedeemed,
           t.profile.codeRedeemedMessage
         );
-        setPromoCodeModalVisible(false);
         setPromoCode('');
         // Reload premium status
         console.log('[Profile] Reloading premium status...');
@@ -248,12 +289,12 @@ export default function ProfilScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
     Alert.alert(
-      t.profile.logout,
-      t.profile.logoutConfirm,
+      language === 'DE' ? 'Abmelden' : 'Sign Out',
+      language === 'DE' ? 'Möchtest du dich wirklich abmelden?' : 'Are you sure you want to sign out?',
       [
         { text: t.common.cancel, style: 'cancel' },
         {
-          text: t.profile.logout,
+          text: language === 'DE' ? 'Abmelden' : 'Sign Out',
           style: 'destructive',
           onPress: async () => {
             console.log('[Profile] User logging out');
@@ -622,12 +663,11 @@ export default function ProfilScreen() {
     }
   };
 
-  const handleTextPage = (title: string, content: string) => {
+  const handleLegalPress = () => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log(`[Profile] Opening legal page: ${title}`);
-    setLegalModalContent({ title, content });
+    console.log('[Profile] Opening full legal modal (same as Welcome page)');
     setLegalModalVisible(true);
   };
 
@@ -715,7 +755,7 @@ export default function ProfilScreen() {
               iosIcon="arrow.right.square"
               androidIcon="exit-to-app"
               iconColor={colors.neonGreen}
-              title={t.profile.logout}
+              title={language === 'DE' ? 'Abmelden' : 'Sign Out'}
               onPress={handleLogout}
             />
             <SettingsItem
@@ -736,29 +776,8 @@ export default function ProfilScreen() {
               iosIcon="doc.text"
               androidIcon="description"
               iconColor={colors.white}
-              title={t.profile.agb}
-              onPress={() => handleTextPage(t.legal.agbTitle, t.legal.agbContent)}
-            />
-            <SettingsItem
-              iosIcon="shield"
-              androidIcon="shield"
-              iconColor={colors.white}
-              title={t.profile.terms}
-              onPress={() => handleTextPage(t.legal.termsTitle, t.legal.termsContent)}
-            />
-            <SettingsItem
-              iosIcon="lock.shield"
-              androidIcon="lock"
-              iconColor={colors.white}
-              title={t.profile.privacy}
-              onPress={() => handleTextPage(t.legal.privacyTitle, t.legal.privacyContent)}
-            />
-            <SettingsItem
-              iosIcon="info.circle"
-              androidIcon="info"
-              iconColor={colors.white}
-              title={t.profile.impressum}
-              onPress={() => handleTextPage(t.legal.impressumTitle, t.legal.impressumContent)}
+              title={language === 'DE' ? 'Rechtliches' : 'Legal'}
+              onPress={handleLegalPress}
             />
             <SettingsItem
               iosIcon="envelope"
@@ -979,24 +998,19 @@ export default function ProfilScreen() {
         onPurchase={handlePurchasePremium}
       />
 
-      {/* Legal Modal */}
+      {/* Legal Modal - Same as Welcome Page */}
       <Modal
         visible={legalModalVisible}
         transparent={true}
         animationType="fade"
         onRequestClose={closeLegalModal}
       >
-        <Pressable style={styles.legalModalOverlay} onPress={closeLegalModal}>
+        <View style={styles.legalModalOverlay}>
           <View style={styles.legalModalContainer}>
             <View style={styles.legalModalHeader}>
-              <Text style={styles.legalModalTitle}>{legalModalContent.title}</Text>
+              <Text style={styles.legalModalTitle}>{t.legal.modalTitle || 'Rechtliches'}</Text>
               <Pressable onPress={closeLegalModal} style={styles.legalCloseButton}>
-                <IconSymbol 
-                  ios_icon_name="xmark" 
-                  android_material_icon_name="close"
-                  size={24} 
-                  color={colors.white} 
-                />
+                <MaterialIcons name="close" size={24} color={colors.white} />
               </Pressable>
             </View>
             
@@ -1005,7 +1019,27 @@ export default function ProfilScreen() {
               contentContainerStyle={styles.legalModalScrollContent}
               showsVerticalScrollIndicator={true}
             >
-              <Text style={styles.legalModalText}>{legalModalContent.content}</Text>
+              {/* Terms of Use */}
+              <Text style={styles.legalSectionTitle}>{t.legal.termsTitle}</Text>
+              <Text style={styles.legalModalText}>{t.legal.termsContent}</Text>
+
+              <View style={styles.legalDivider} />
+
+              {/* Privacy Policy */}
+              <Text style={styles.legalSectionTitle}>{t.legal.privacyTitle}</Text>
+              <Text style={styles.legalModalText}>{t.legal.privacyContent}</Text>
+
+              <View style={styles.legalDivider} />
+
+              {/* AGB */}
+              <Text style={styles.legalSectionTitle}>{t.legal.agbTitle}</Text>
+              <Text style={styles.legalModalText}>{t.legal.agbContent}</Text>
+
+              <View style={styles.legalDivider} />
+
+              {/* Impressum - At the bottom */}
+              <Text style={styles.legalSectionTitle}>{t.legal.impressumTitle}</Text>
+              <Text style={styles.legalModalText}>{t.legal.impressumContent}</Text>
             </ScrollView>
 
             <View style={styles.legalModalFooter}>
@@ -1022,7 +1056,7 @@ export default function ProfilScreen() {
               </Pressable>
             </View>
           </View>
-        </Pressable>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -1304,17 +1338,18 @@ const styles = StyleSheet.create({
   },
   legalModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
   },
   legalModalContainer: {
     backgroundColor: colors.darkGray,
     borderRadius: 20,
     width: '100%',
-    maxWidth: 500,
-    maxHeight: '80%',
+    maxWidth: 600,
+    height: '90%',
+    maxHeight: '90%',
     overflow: 'hidden',
   },
   legalModalHeader: {
@@ -1338,17 +1373,31 @@ const styles = StyleSheet.create({
   },
   legalModalScrollView: {
     flex: 1,
+    backgroundColor: colors.darkGray,
   },
   legalModalScrollContent: {
     paddingHorizontal: 24,
-    paddingVertical: 20,
-    paddingBottom: 30,
+    paddingTop: 20,
+    paddingBottom: 60,
+  },
+  legalSectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.white,
+    marginTop: 20,
+    marginBottom: 12,
+    letterSpacing: 0.5,
   },
   legalModalText: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.white,
-    lineHeight: 22,
-    opacity: 0.9,
+    lineHeight: 24,
+    opacity: 1,
+  },
+  legalDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginVertical: 24,
   },
   legalModalFooter: {
     paddingHorizontal: 24,

@@ -1,9 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { Platform } from "react-native";
+import { Platform, Alert } from "react-native";
 import { authClient, storeWebBearerToken } from "@/lib/auth";
-// NOTE: Superwall temporarily disabled due to build issues
-// import { useUser as useSuperwallUser } from "expo-superwall";
 
 interface User {
   id: string;
@@ -82,8 +80,6 @@ function openOAuthPopup(provider: string): Promise<string> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  // NOTE: Superwall temporarily disabled due to build issues
-  // const { identify: identifySuperwallUser } = useSuperwallUser();
 
   useEffect(() => {
     fetchUser();
@@ -100,18 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[AuthContext] User found:', session.data.user);
         const userData = session.data.user as User;
         setUser(userData);
-        
-        // NOTE: Superwall user identification temporarily disabled
-        // Identify user with Superwall for in-app purchases
-        // if (userData.id) {
-        //   console.log('[AuthContext] Identifying user with Superwall:', userData.id);
-        //   try {
-        //     await identifySuperwallUser(userData.id);
-        //     console.log('[AuthContext] Superwall user identified successfully');
-        //   } catch (error) {
-        //     console.error('[AuthContext] Failed to identify Superwall user:', error);
-        //   }
-        // }
       } else {
         console.log('[AuthContext] No user session found');
         setUser(null);
@@ -164,13 +148,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[AuthContext] Native platform - using Better Auth social sign in');
         console.log('[AuthContext] Calling authClient.signIn.social with provider: google');
         
+        // Use redirect: false to prevent extra screens
         const result = await authClient.signIn.social({
           provider: "google",
           callbackURL: "easybudget://auth-callback",
+          redirect: false,
         });
         
         console.log('[AuthContext] Social sign in result:', result);
-        await fetchUser();
+        
+        // If we got a redirect URL, open it in the system browser
+        if (result?.data?.url) {
+          console.log('[AuthContext] Opening OAuth URL in system browser');
+          const { openAuthSessionAsync } = await import('expo-web-browser');
+          const authResult = await openAuthSessionAsync(
+            result.data.url,
+            "easybudget://auth-callback"
+          );
+          
+          console.log('[AuthContext] Auth session result:', authResult);
+          
+          if (authResult.type === 'success') {
+            // Fetch user after successful OAuth
+            await fetchUser();
+          } else if (authResult.type === 'cancel') {
+            throw new Error('Authentication cancelled');
+          }
+        } else {
+          await fetchUser();
+        }
       }
       
       console.log('[AuthContext] Google sign in completed successfully');
@@ -200,13 +206,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[AuthContext] Native platform - using Better Auth social sign in');
         console.log('[AuthContext] Calling authClient.signIn.social with provider: apple');
         
+        // Use redirect: false to prevent extra screens
         const result = await authClient.signIn.social({
           provider: "apple",
           callbackURL: "easybudget://auth-callback",
+          redirect: false,
         });
         
         console.log('[AuthContext] Social sign in result:', result);
-        await fetchUser();
+        
+        // If we got a redirect URL, open it in the system browser
+        if (result?.data?.url) {
+          console.log('[AuthContext] Opening OAuth URL in system browser');
+          const { openAuthSessionAsync } = await import('expo-web-browser');
+          const authResult = await openAuthSessionAsync(
+            result.data.url,
+            "easybudget://auth-callback"
+          );
+          
+          console.log('[AuthContext] Auth session result:', authResult);
+          
+          if (authResult.type === 'success') {
+            // Fetch user after successful OAuth
+            await fetchUser();
+          } else if (authResult.type === 'cancel') {
+            throw new Error('Authentication cancelled');
+          }
+        } else {
+          await fetchUser();
+        }
       }
       
       console.log('[AuthContext] Apple sign in completed successfully');
@@ -234,13 +262,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await fetchUser();
       } else {
         console.log('[AuthContext] Native platform - using Better Auth social sign in');
+        
+        // Use redirect: false to prevent extra screens
         const result = await authClient.signIn.social({
           provider: "github",
           callbackURL: "easybudget://auth-callback",
+          redirect: false,
         });
         
         console.log('[AuthContext] Social sign in result:', result);
-        await fetchUser();
+        
+        // If we got a redirect URL, open it in the system browser
+        if (result?.data?.url) {
+          console.log('[AuthContext] Opening OAuth URL in system browser');
+          const { openAuthSessionAsync } = await import('expo-web-browser');
+          const authResult = await openAuthSessionAsync(
+            result.data.url,
+            "easybudget://auth-callback"
+          );
+          
+          console.log('[AuthContext] Auth session result:', authResult);
+          
+          if (authResult.type === 'success') {
+            // Fetch user after successful OAuth
+            await fetchUser();
+          } else if (authResult.type === 'cancel') {
+            throw new Error('Authentication cancelled');
+          }
+        } else {
+          await fetchUser();
+        }
       }
       
       console.log('[AuthContext] GitHub sign in completed successfully');
