@@ -80,6 +80,7 @@ export default function AbosScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    console.log('[Abos] Long press on subscription:', itemId);
     setSelectedSubId(itemId);
     setContextMenuVisible(true);
   };
@@ -88,6 +89,7 @@ export default function AbosScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    console.log('[Abos] Deleting subscription:', id);
     setSubscriptions(subscriptions.filter((sub) => sub.id !== id));
   };
 
@@ -97,6 +99,7 @@ export default function AbosScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log('[Abos] Toggling pin for subscription:', targetId);
     setSubscriptions(
       subscriptions.map((sub) =>
         sub.id === targetId ? { ...sub, isPinned: !sub.isPinned } : sub
@@ -112,6 +115,7 @@ export default function AbosScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log('[Abos] Duplicating subscription:', selectedSubId);
     const subToDuplicate = subscriptions.find((sub) => sub.id === selectedSubId);
     if (subToDuplicate) {
       const newSub = {
@@ -127,6 +131,7 @@ export default function AbosScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log(`[Abos] Opening edit modal for ${type}:`, itemId);
     setEditType(type);
     setEditValue(currentValue);
     setSelectedSubId(itemId);
@@ -139,6 +144,7 @@ export default function AbosScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log(`[Abos] Saving edit for ${editType}:`, { selectedSubId, editValue });
     setSubscriptions(
       subscriptions.map((sub) =>
         sub.id === selectedSubId
@@ -156,6 +162,7 @@ export default function AbosScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    console.log('[Abos] User tapped add subscription button');
     setNewSubName('');
     setNewSubAmount('');
     setAddModalVisible(true);
@@ -170,8 +177,11 @@ export default function AbosScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     
+    console.log('[Abos] Creating new subscription:', { name: newSubName, amount: newSubAmount });
+    
     // Check premium limit
     if (checkLimit(0, 0, subscriptions.length + 1)) {
+      console.log('[Abos] Premium limit reached for subscriptions');
       const newSubId = Date.now().toString();
       const newSub: Subscription = {
         id: newSubId,
@@ -204,6 +214,7 @@ export default function AbosScreen() {
   const addSubscriptionFromModal = useCallback((name: string, amount: number) => {
     // Check premium limit
     if (checkLimit(0, 0, subscriptions.length + 1)) {
+      console.log('[Abos] Premium limit reached for subscriptions');
       setPremiumModalVisible(true);
       return;
     }
@@ -215,7 +226,7 @@ export default function AbosScreen() {
       isPinned: false,
     };
 
-    console.log('Adding subscription:', newSub);
+    console.log('[Abos] Adding subscription from tab bar:', newSub);
 
     setSubscriptions((prevSubs) => [...prevSubs, newSub]);
 
@@ -295,6 +306,7 @@ export default function AbosScreen() {
     if (Platform.OS === 'ios' || Platform.OS === 'android') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    console.log('[Abos] Closing premium modal');
     // Delete the pending subscription when closing without purchase
     if (pendingSubId) {
       setSubscriptions(subscriptions.filter((sub) => sub.id !== pendingSubId));
@@ -315,40 +327,54 @@ export default function AbosScreen() {
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
 
+    // IMPROVED: Increased threshold for horizontal swipe detection to reduce sensitivity
+    const SWIPE_THRESHOLD = 150; // Increased from 100 to make swipes less sensitive
+    const SWIPE_VELOCITY_THRESHOLD = 500; // Minimum velocity to trigger swipe
+
     const panGesture = Gesture.Pan()
+      .activeOffsetX([-20, 20]) // Require 20px horizontal movement before activating
+      .failOffsetY([-15, 15]) // Fail if vertical movement exceeds 15px (prioritize scrolling)
       .onUpdate((event) => {
-        translateX.value = event.translationX;
-        // Smoother fade out when swiping
-        if (Math.abs(event.translationX) > 50) {
-          opacity.value = Math.max(0.3, 1 - Math.abs(event.translationX) / 300);
+        // Only update if horizontal movement is significant
+        if (Math.abs(event.translationX) > Math.abs(event.translationY)) {
+          translateX.value = event.translationX;
+          // Smoother fade out when swiping
+          if (Math.abs(event.translationX) > 50) {
+            opacity.value = Math.max(0.3, 1 - Math.abs(event.translationX) / 300);
+          }
         }
       })
       .onEnd((event) => {
-        if (event.translationX < -100) {
-          // Swipe left to delete - smoother slide out animation with cubic easing
-          translateX.value = withTiming(-500, { 
-            duration: 300, 
-            easing: Easing.bezier(0.25, 0.1, 0.25, 1)
-          });
-          opacity.value = withTiming(0, { 
-            duration: 300, 
-            easing: Easing.bezier(0.25, 0.1, 0.25, 1)
-          }, () => {
-            runOnJS(handleDeleteSub)(subscription.id);
-          });
-        } else if (event.translationX > 100) {
-          // Swipe right to pin/unpin - smoother slide animation with spring
-          runOnJS(handlePinToggle)(subscription.id);
-          translateX.value = withSpring(0, { 
-            damping: 20, 
-            stiffness: 200,
-            mass: 0.5,
-          });
-          opacity.value = withSpring(1, { 
-            damping: 20, 
-            stiffness: 200,
-            mass: 0.5,
-          });
+        const isHorizontalSwipe = Math.abs(event.translationX) > Math.abs(event.translationY);
+        const hasEnoughVelocity = Math.abs(event.velocityX) > SWIPE_VELOCITY_THRESHOLD;
+        
+        if (isHorizontalSwipe && (Math.abs(event.translationX) > SWIPE_THRESHOLD || hasEnoughVelocity)) {
+          if (event.translationX < 0) {
+            // Swipe left to delete - smoother slide out animation with cubic easing
+            translateX.value = withTiming(-500, { 
+              duration: 300, 
+              easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+            });
+            opacity.value = withTiming(0, { 
+              duration: 300, 
+              easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+            }, () => {
+              runOnJS(handleDeleteSub)(subscription.id);
+            });
+          } else {
+            // Swipe right to pin/unpin - smoother slide animation with spring
+            runOnJS(handlePinToggle)(subscription.id);
+            translateX.value = withSpring(0, { 
+              damping: 20, 
+              stiffness: 200,
+              mass: 0.5,
+            });
+            opacity.value = withSpring(1, { 
+              damping: 20, 
+              stiffness: 200,
+              mass: 0.5,
+            });
+          }
         } else {
           // Snap back with smoother spring
           translateX.value = withSpring(0, { 
@@ -409,6 +435,7 @@ export default function AbosScreen() {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
         >
           {/* Top Pills with cascading animation */}
           <FadeInView delay={0} duration={900} animationType="fadeIn">
