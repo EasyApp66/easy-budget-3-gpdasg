@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { Platform, Alert } from "react-native";
 import { authClient, storeWebBearerToken } from "@/lib/auth";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface User {
   id: string;
@@ -23,6 +24,9 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const SESSION_STORAGE_KEY = '@easy_budget_session';
+const SESSION_DURATION = 60 * 24 * 60 * 60 * 1000; // 60 days in milliseconds
 
 // Web-only OAuth popup function
 function openOAuthPopup(provider: string): Promise<string> {
@@ -82,23 +86,90 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchUser();
+    initializeAuth();
   }, []);
+
+  const initializeAuth = async () => {
+    console.log('[AuthContext] ========================================');
+    console.log('[AuthContext] Initializing authentication...');
+    
+    try {
+      // Check if we have a stored session
+      const storedSessionStr = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
+      
+      if (storedSessionStr) {
+        const storedSession = JSON.parse(storedSessionStr);
+        const now = Date.now();
+        const sessionAge = now - storedSession.timestamp;
+        
+        console.log('[AuthContext] Found stored session:');
+        console.log('[AuthContext] - User:', storedSession.user?.email);
+        console.log('[AuthContext] - Age:', Math.floor(sessionAge / (1000 * 60 * 60 * 24)), 'days');
+        console.log('[AuthContext] - Max age:', Math.floor(SESSION_DURATION / (1000 * 60 * 60 * 24)), 'days');
+        
+        // Check if session is still valid (within 60 days)
+        if (sessionAge < SESSION_DURATION) {
+          console.log('[AuthContext] ✅ Session is still valid, restoring user');
+          setUser(storedSession.user);
+          setLoading(false);
+          console.log('[AuthContext] ========================================');
+          return;
+        } else {
+          console.log('[AuthContext] ⚠️  Session expired, clearing');
+          await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+        }
+      } else {
+        console.log('[AuthContext] No stored session found');
+      }
+      
+      // Try to fetch from backend
+      await fetchUser();
+    } catch (error) {
+      console.error('[AuthContext] Error initializing auth:', error);
+      setLoading(false);
+    }
+    
+    console.log('[AuthContext] ========================================');
+  };
+
+  const storeSession = async (userData: User) => {
+    try {
+      const session = {
+        user: userData,
+        timestamp: Date.now(),
+      };
+      await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+      console.log('[AuthContext] Session stored for 60 days');
+    } catch (error) {
+      console.error('[AuthContext] Error storing session:', error);
+    }
+  };
+
+  const clearSession = async () => {
+    try {
+      await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+      console.log('[AuthContext] Session cleared');
+    } catch (error) {
+      console.error('[AuthContext] Error clearing session:', error);
+    }
+  };
 
   const fetchUser = async () => {
     try {
       setLoading(true);
-      console.log('[AuthContext] Fetching user session...');
+      console.log('[AuthContext] Fetching user session from backend...');
       const session = await authClient.getSession();
       console.log('[AuthContext] Session response:', session);
       
       if (session?.data?.user) {
-        console.log('[AuthContext] User found:', session.data.user);
+        console.log('[AuthContext] ✅ User found:', session.data.user.email);
         const userData = session.data.user as User;
         setUser(userData);
+        await storeSession(userData);
       } else {
-        console.log('[AuthContext] No user session found');
+        console.log('[AuthContext] No user session found on backend');
         setUser(null);
+        await clearSession();
       }
     } catch (error) {
       console.error("[AuthContext] Failed to fetch user:", error);
@@ -311,6 +382,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('[AuthContext] Signing out user');
       await authClient.signOut();
+      await clearSession();
       setUser(null);
       console.log('[AuthContext] Sign out successful');
     } catch (error) {

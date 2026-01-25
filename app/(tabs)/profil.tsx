@@ -89,21 +89,14 @@ const SettingsItem = ({ iosIcon, androidIcon, iconColor, title, onPress }: Setti
 export default function ProfilScreen() {
   const router = useRouter();
   const { signOut, user } = useAuth();
-  const { isPremium } = usePremium();
+  const { isPremium, premiumStatus, checkPremiumStatus, redeemPromoCode } = usePremium();
   const { language, setLanguage, t } = useLanguage();
   const [username, setUsername] = useState('mirosnic.ivan');
   
   // Log current language on every render
   console.log('[Profile] Current language:', language);
   console.log('[Profile] Current translations sample:', t.profile.language);
-  
-  // Premium status state
-  const [premiumStatus, setPremiumStatus] = useState<{
-    isPremium: boolean;
-    daysRemaining?: number;
-    expiresAt?: string;
-    isLifetime?: boolean;
-  }>({ isPremium: false });
+  console.log('[Profile] Premium status:', { isPremium, premiumStatus });
   
   // Modal states
   const [bugModalVisible, setBugModalVisible] = useState(false);
@@ -120,37 +113,14 @@ export default function ProfilScreen() {
   const [promoCode, setPromoCode] = useState('');
   const [legalModalVisible, setLegalModalVisible] = useState(false);
 
-  // Load premium status on mount
+  // Load premium status on mount and when user changes
   useEffect(() => {
-    loadPremiumStatus();
+    console.log('[Profile] User changed, reloading premium status');
+    checkPremiumStatus();
   }, [user]);
 
-  const loadPremiumStatus = async () => {
-    try {
-      console.log('[Profile] Loading premium status');
-      const { authenticatedGet, BACKEND_URL } = await import('@/utils/api');
-      
-      if (!BACKEND_URL) {
-        console.warn('[Profile] Backend URL not configured');
-        return;
-      }
-
-      const data = await authenticatedGet<{
-        isPremium: boolean;
-        expiresAt?: string;
-        daysRemaining?: number;
-        isLifetime?: boolean;
-      }>('/api/premium/status');
-      
-      console.log('[Profile] Premium status:', data);
-      setPremiumStatus(data);
-    } catch (error) {
-      console.error('[Profile] Error loading premium status:', error);
-    }
-  };
-
   const handleRedeemCode = async () => {
-    const codeToRedeem = promoCode.trim().toUpperCase();
+    const codeToRedeem = promoCode.trim();
     
     if (!codeToRedeem) {
       Alert.alert(t.common.error, language === 'DE' ? 'Bitte gib einen Code ein' : 'Please enter a code');
@@ -161,126 +131,30 @@ export default function ProfilScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
 
-    console.log('[Profile] ========================================');
-    console.log('[Profile] Starting promo code redemption');
-    console.log('[Profile] Code:', codeToRedeem);
-    console.log('[Profile] Platform:', Platform.OS);
-    console.log('[Profile] User:', user?.email);
-
-    // Special offline code: easy2 gives 1 month premium
-    if (codeToRedeem === 'EASY2') {
-      console.log('[Profile] ✅ Offline promo code EASY2 detected!');
-      
-      // Calculate expiry date (1 month from now)
-      const expiryDate = new Date();
-      expiryDate.setMonth(expiryDate.getMonth() + 1);
-      
-      // Store premium status locally
-      try {
-        const AsyncStorage = await import('@react-native-async-storage/async-storage').then(m => m.default);
-        await AsyncStorage.setItem('offline_premium_expiry', expiryDate.toISOString());
-        await AsyncStorage.setItem('offline_premium_code', codeToRedeem);
-        
-        console.log('[Profile] Offline premium activated until:', expiryDate.toISOString());
-        
-        Alert.alert(
-          language === 'DE' ? 'Code eingelöst!' : 'Code Redeemed!',
-          language === 'DE' 
-            ? '1 Monat Premium wurde aktiviert!' 
-            : '1 month of Premium has been activated!'
-        );
-        
-        setPromoCode('');
-        
-        // Update premium status
-        setPremiumStatus({
-          isPremium: true,
-          expiresAt: expiryDate.toISOString(),
-          daysRemaining: 30,
-          isLifetime: false,
-        });
-        
-        return;
-      } catch (error) {
-        console.error('[Profile] Error storing offline premium:', error);
-      }
-    }
-
-    // Try online redemption
-    try {
-      const { authenticatedPost, BACKEND_URL, getSessionToken } = await import('@/utils/api');
-      
-      console.log('[Profile] Backend URL:', BACKEND_URL);
-      
-      if (!BACKEND_URL) {
-        console.error('[Profile] Backend URL not configured!');
-        Alert.alert(t.common.error, language === 'DE' ? 'Backend nicht konfiguriert' : 'Backend not configured');
-        return;
-      }
-
-      // Check if we have a session token
-      const sessionToken = await getSessionToken();
-      console.log('[Profile] Session token available:', !!sessionToken);
-
-      console.log('[Profile] Calling API endpoint: POST /api/premium/redeem-code');
-      const response = await authenticatedPost<{
-        success: boolean;
-        message: string;
-        expiresAt?: string;
-        daysRemaining?: number;
-      }>('/api/premium/redeem-code', {
-        code: codeToRedeem,
-      });
-
-      console.log('[Profile] API Response:', JSON.stringify(response, null, 2));
-
-      if (response.success) {
-        console.log('[Profile] ✅ Promo code redeemed successfully!');
-        Alert.alert(
-          t.profile.codeRedeemed,
-          t.profile.codeRedeemedMessage
-        );
-        setPromoCode('');
-        // Reload premium status
-        console.log('[Profile] Reloading premium status...');
-        await loadPremiumStatus();
-      } else {
-        console.log('[Profile] ❌ Promo code redemption failed:', response.message);
-        Alert.alert(
-          t.profile.invalidCode,
-          response.message || t.profile.invalidCodeMessage
-        );
-      }
-    } catch (error: any) {
-      console.error('[Profile] ❌ Error redeeming code:', error);
-      console.error('[Profile] Error details:', {
-        message: error.message,
-        status: error.status,
-        stack: error.stack,
-      });
-      
-      if (error.message?.includes('404')) {
-        console.log('[Profile] Endpoint not found (404)');
-        Alert.alert(
-          language === 'DE' ? 'In Entwicklung' : 'In Development',
-          language === 'DE' 
-            ? 'Promo-Codes werden bald verfügbar sein.' 
-            : 'Promo codes will be available soon.'
-        );
-      } else if (error.message?.includes('401') || error.message?.includes('403')) {
-        console.log('[Profile] Authentication error');
-        Alert.alert(
-          t.common.error,
-          language === 'DE' ? 'Bitte melde dich erneut an' : 'Please sign in again'
-        );
-      } else {
-        Alert.alert(
-          t.common.error,
-          language === 'DE' ? 'Code konnte nicht eingelöst werden' : 'Could not redeem code'
-        );
-      }
-    } finally {
-      console.log('[Profile] ========================================');
+    console.log('[Profile] Redeeming promo code:', codeToRedeem);
+    
+    const result = await redeemPromoCode(codeToRedeem);
+    
+    if (result.success) {
+      Alert.alert(
+        language === 'DE' ? 'Code eingelöst!' : 'Code Redeemed!',
+        result.message,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setPromoCode('');
+              // Reload premium status to update UI
+              checkPremiumStatus();
+            },
+          },
+        ]
+      );
+    } else {
+      Alert.alert(
+        language === 'DE' ? 'Ungültiger Code' : 'Invalid Code',
+        result.message
+      );
     }
   };
 
@@ -385,7 +259,7 @@ export default function ProfilScreen() {
         );
         setPremiumModalVisible(false);
         // Reload premium status
-        await loadPremiumStatus();
+        await checkPremiumStatus();
       } else {
         Alert.alert(t.common.error, response.message || (language === 'DE' ? 'Zahlung fehlgeschlagen' : 'Payment failed'));
       }
@@ -681,11 +555,18 @@ export default function ProfilScreen() {
 
   // Display current language in the UI
   const languageDisplayText = `${t.profile.language}: ${language}`;
+  
+  // Display premium status text
+  const premiumStatusText = premiumStatus.isPremium 
+    ? (premiumStatus.isLifetime 
+        ? t.profile.premiumYes 
+        : `${t.profile.premiumYes} (${premiumStatus.daysRemaining} ${t.profile.premiumDays})`)
+    : t.profile.premiumNo;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
-        key={`profil-${username}`}
+        key={`profil-${username}-${isPremium}-${Date.now()}`}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -717,16 +598,11 @@ export default function ProfilScreen() {
                 styles.premiumStatusValue,
                 { color: premiumStatus.isPremium ? colors.neonGreen : colors.white }
               ]}>
-                {premiumStatus.isPremium 
-                  ? (premiumStatus.isLifetime 
-                      ? t.profile.premiumYes 
-                      : `${t.profile.premiumYes} (${premiumStatus.daysRemaining} ${t.profile.premiumDays})`)
-                  : t.profile.premiumNo
-                }
+                {premiumStatusText}
               </Text>
             </View>
 
-            {/* Promo Code Input */}
+            {/* Promo Code Input - Only show if not premium */}
             {!premiumStatus.isPremium && (
               <View style={styles.promoCodeContainer}>
                 <TextInput
