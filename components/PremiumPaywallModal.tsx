@@ -1,4 +1,15 @@
 
+import React, { useState } from 'react';
+import { IconSymbol } from '@/components/IconSymbol';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useStripePayment } from '@/components/StripePaymentSheet';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
+import * as Haptics from 'expo-haptics';
 import {
   View,
   Text,
@@ -7,18 +18,8 @@ import {
   Pressable,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
-import { IconSymbol } from '@/components/IconSymbol';
-import { useLanguage } from '@/contexts/LanguageContext';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import React, { useState } from 'react';
-// NOTE: Superwall temporarily disabled due to build issues
-// import { usePlacement } from 'expo-superwall';
 
 interface PremiumPaywallModalProps {
   visible: boolean;
@@ -26,139 +27,166 @@ interface PremiumPaywallModalProps {
   onPurchase: (type: 'onetime' | 'monthly') => void;
 }
 
-export function PremiumPaywallModal({
-  visible,
-  onClose,
-  onPurchase,
-}: PremiumPaywallModalProps) {
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  container: {
+    backgroundColor: '#232323',
+    borderRadius: 24,
+    padding: 32,
+    width: '100%',
+    maxWidth: 400,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 10,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#999',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  featuresContainer: {
+    marginBottom: 32,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  featureText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    marginLeft: 12,
+    fontWeight: '600',
+  },
+  pricingContainer: {
+    gap: 16,
+  },
+  priceButton: {
+    backgroundColor: '#BFFE84',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+  },
+  monthlyButton: {
+    backgroundColor: '#333',
+  },
+  priceType: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 4,
+  },
+  monthlyPriceType: {
+    color: '#BFFE84',
+  },
+  priceAmount: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#000',
+  },
+  monthlyPriceAmount: {
+    color: '#FFFFFF',
+  },
+  orText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#666',
+    textAlign: 'center',
+    marginVertical: 8,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#BFFE84',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+  },
+});
+
+export function PremiumPaywallModal({ visible, onClose, onPurchase }: PremiumPaywallModalProps) {
   const { t } = useLanguage();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { processPayment, loading } = useStripePayment();
+  const { checkPremiumStatus } = useSupabaseAuth();
+  const [processingType, setProcessingType] = useState<'onetime' | 'monthly' | null>(null);
+
   const onetimeScale = useSharedValue(1);
   const monthlyScale = useSharedValue(1);
-  const closeScale = useSharedValue(1);
 
-  const onetimeAnimatedStyle = useAnimatedStyle(() => ({
+  const onetimeStyle = useAnimatedStyle(() => ({
     transform: [{ scale: onetimeScale.value }],
   }));
 
-  const monthlyAnimatedStyle = useAnimatedStyle(() => ({
+  const monthlyStyle = useAnimatedStyle(() => ({
     transform: [{ scale: monthlyScale.value }],
   }));
 
-  const closeAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: closeScale.value }],
-  }));
-
-  // NOTE: Superwall temporarily disabled due to build issues
-  // const { registerPlacement } = usePlacement({
-  //   onError: (error) => {
-  //     console.error('[Superwall] Paywall error:', error);
-  //     setIsProcessing(false);
-  //     Alert.alert(
-  //       t.premium.errorTitle || 'Error',
-  //       t.premium.errorMessage || 'Failed to process purchase. Please try again.',
-  //       [{ text: 'OK' }]
-  //     );
-  //   },
-  //   onPresent: (info) => {
-  //     console.log('[Superwall] Paywall presented:', info);
-  //   },
-  //   onDismiss: (info, result) => {
-  //     console.log('[Superwall] Paywall dismissed:', info, 'Result:', result);
-  //     setIsProcessing(false);
-  //     
-  //     if (result === 'purchased' || result === 'restored') {
-  //       console.log('[Superwall] Purchase successful!');
-  //       Alert.alert(
-  //         t.premium.successTitle || 'Success',
-  //         t.premium.successMessage || 'Premium activated successfully!',
-  //         [
-  //           {
-  //             text: 'OK',
-  //             onPress: () => {
-  //               onClose();
-  //             },
-  //           },
-  //         ]
-  //       );
-  //     }
-  //   },
-  // });
-
-  const handlePress = (
-    callback: () => void,
-    scaleValue: Animated.SharedValue<number>
-  ) => {
-    if (Platform.OS === 'ios') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    scaleValue.value = withSpring(0.92, { damping: 10, stiffness: 400 });
-    setTimeout(() => {
-      scaleValue.value = withSpring(1, { damping: 10, stiffness: 400 });
-      callback();
-    }, 100);
-  };
-
-  const handlePurchase = async (type: 'onetime' | 'monthly') => {
-    console.log('[Premium] ========================================');
-    console.log('[Premium] Purchase requested:', type);
-    console.log('[Premium] Platform:', Platform.OS);
-    console.log('[Premium] NOTE: Superwall is temporarily disabled');
-    
-    if (isProcessing) {
-      console.log('[Premium] Purchase already in progress, ignoring');
-      return;
-    }
-
-    setIsProcessing(true);
-
+  const handlePress = (callback: () => void, scaleValue: Animated.SharedValue<number>) => {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    scaleValue.value = withSpring(0.95, { damping: 15, stiffness: 300 }, () => {
+      scaleValue.value = withSpring(1);
+    });
+    callback();
+  };
 
-    // NOTE: Superwall temporarily disabled - show info alert instead
-    Alert.alert(
-      'In-App-Käufe vorübergehend deaktiviert',
-      'Die In-App-Kauf-Funktion wird gerade aktualisiert. Bitte verwenden Sie in der Zwischenzeit den Promo-Code "EASY2" im Profil, um Premium für 1 Monat kostenlos zu aktivieren.',
-      [{ text: 'OK', onPress: () => setIsProcessing(false) }]
+  const handlePurchase = async (type: 'onetime' | 'monthly') => {
+    console.log('[PremiumModal] Starting purchase, type:', type);
+    setProcessingType(type);
+
+    await processPayment(
+      type,
+      async () => {
+        console.log('[PremiumModal] Payment successful');
+        
+        // Refresh premium status
+        await checkPremiumStatus();
+        
+        Alert.alert(
+          t.premium.successTitle,
+          t.premium.successMessage,
+          [
+            {
+              text: t.common.ok,
+              onPress: () => {
+                setProcessingType(null);
+                onClose();
+                onPurchase(type);
+              },
+            },
+          ]
+        );
+      },
+      (error) => {
+        console.error('[PremiumModal] Payment error:', error);
+        setProcessingType(null);
+        
+        Alert.alert(
+          t.premium.errorTitle,
+          error || t.premium.errorMessage
+        );
+      }
     );
-
-    // Original Superwall code (commented out):
-    // try {
-    //   const placementName = type === 'onetime' ? 'premium_onetime' : 'premium_monthly';
-    //   console.log('[Superwall] Registering placement:', placementName);
-    //   
-    //   await registerPlacement({
-    //     placement: placementName,
-    //     feature: () => {
-    //       console.log('[Superwall] ✅ Feature unlocked! Purchase successful');
-    //       setIsProcessing(false);
-    //       onPurchase(type);
-    //     },
-    //   });
-    //   
-    //   console.log('[Superwall] Placement registration completed');
-    // } catch (error: any) {
-    //   console.error('[Superwall] ❌ Purchase error:', error);
-    //   console.error('[Superwall] Error details:', {
-    //     message: error?.message,
-    //     code: error?.code,
-    //     name: error?.name,
-    //   });
-    //   setIsProcessing(false);
-    //   
-    //   const errorMessage = error?.message || t.premium.errorMessage || 'Failed to process purchase. Please try again.';
-    //   
-    //   Alert.alert(
-    //     t.premium.errorTitle || 'Error',
-    //     errorMessage,
-    //     [{ text: 'OK' }]
-    //   );
-    // } finally {
-    //   console.log('[Superwall] ========================================');
-    // }
-    
-    console.log('[Premium] ========================================');
   };
 
   return (
@@ -169,213 +197,77 @@ export function PremiumPaywallModal({
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          {/* Close Button */}
-          <Animated.View style={[styles.closeButtonContainer, closeAnimatedStyle]}>
-            <Pressable
-              onPress={() => handlePress(onClose, closeScale)}
-              style={styles.closeButton}
-            >
-              <IconSymbol
-                ios_icon_name="xmark"
-                android_material_icon_name="close"
-                size={18}
-                color="#000000"
-              />
-            </Pressable>
-          </Animated.View>
+        <View style={styles.container}>
+          <Pressable
+            style={styles.closeButton}
+            onPress={() => {
+              if (Platform.OS === 'ios') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }
+              onClose();
+            }}
+          >
+            <IconSymbol
+              ios_icon_name="xmark.circle.fill"
+              android_material_icon_name="cancel"
+              size={28}
+              color="#666"
+            />
+          </Pressable>
 
-          {/* Star Icon */}
-          <View style={styles.starContainer}>
-            <IconSymbol ios_icon_name="star.fill" android_material_icon_name="star" size={36} color="#BFFE84" />
-          </View>
-
-          {/* Title */}
           <Text style={styles.title}>{t.premium.title}</Text>
-
-          {/* Subtitle */}
           <Text style={styles.subtitle}>{t.premium.subtitle}</Text>
 
-          {/* Features List */}
-          <View style={styles.featureList}>
-            {t.premium.features.map((feature, index) => (
+          <View style={styles.featuresContainer}>
+            {t.premium.features.map((feature: string, index: number) => (
               <View key={index} style={styles.featureItem}>
-                <View style={styles.bullet} />
+                <IconSymbol
+                  ios_icon_name="checkmark.circle.fill"
+                  android_material_icon_name="check-circle"
+                  size={24}
+                  color="#BFFE84"
+                />
                 <Text style={styles.featureText}>{feature}</Text>
               </View>
             ))}
           </View>
 
-          {/* One-time Payment Card */}
-          <Animated.View style={onetimeAnimatedStyle}>
-            <Pressable
-              onPress={() => handlePress(() => handlePurchase('onetime'), onetimeScale)}
-              style={styles.paymentCard}
-              disabled={isProcessing}
-            >
-              <View style={styles.paymentInfo}>
-                <Text style={styles.paymentTitle}>{t.premium.oneTime}</Text>
-                <Text style={styles.paymentPrice}>{t.premium.oneTimePrice}</Text>
-              </View>
-              <View style={[styles.payButton, isProcessing && styles.payButtonDisabled]}>
-                <Text style={styles.payButtonText}>
-                  {isProcessing ? t.premium.processing || 'Processing...' : t.premium.pay}
-                </Text>
-              </View>
-            </Pressable>
-          </Animated.View>
+          {loading || processingType ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#BFFE84" />
+              <Text style={styles.loadingText}>{t.premium.processing}</Text>
+            </View>
+          ) : (
+            <View style={styles.pricingContainer}>
+              <Pressable
+                onPress={() => handlePress(() => handlePurchase('onetime'), onetimeScale)}
+                disabled={loading}
+              >
+                <Animated.View style={[styles.priceButton, onetimeStyle]}>
+                  <Text style={styles.priceType}>{t.premium.oneTime}</Text>
+                  <Text style={styles.priceAmount}>{t.premium.oneTimePrice}</Text>
+                </Animated.View>
+              </Pressable>
 
-          {/* Divider */}
-          <Text style={styles.divider}>{t.premium.or}</Text>
+              <Text style={styles.orText}>{t.premium.or}</Text>
 
-          {/* Monthly Payment Card */}
-          <Animated.View style={monthlyAnimatedStyle}>
-            <Pressable
-              onPress={() => handlePress(() => handlePurchase('monthly'), monthlyScale)}
-              style={styles.paymentCard}
-              disabled={isProcessing}
-            >
-              <View style={styles.paymentInfo}>
-                <Text style={styles.paymentTitle}>{t.premium.monthly}</Text>
-                <Text style={styles.paymentPrice}>{t.premium.monthlyPrice}</Text>
-              </View>
-              <View style={[styles.payButton, isProcessing && styles.payButtonDisabled]}>
-                <Text style={styles.payButtonText}>
-                  {isProcessing ? t.premium.processing || 'Processing...' : t.premium.pay}
-                </Text>
-              </View>
-            </Pressable>
-          </Animated.View>
+              <Pressable
+                onPress={() => handlePress(() => handlePurchase('monthly'), monthlyScale)}
+                disabled={loading}
+              >
+                <Animated.View style={[styles.priceButton, styles.monthlyButton, monthlyStyle]}>
+                  <Text style={[styles.priceType, styles.monthlyPriceType]}>
+                    {t.premium.monthly}
+                  </Text>
+                  <Text style={[styles.priceAmount, styles.monthlyPriceAmount]}>
+                    {t.premium.monthlyPrice}
+                  </Text>
+                </Animated.View>
+              </Pressable>
+            </View>
+          )}
         </View>
       </View>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContainer: {
-    width: '88%',
-    maxWidth: 380,
-    backgroundColor: '#232323',
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 18,
-    position: 'relative',
-  },
-  closeButtonContainer: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    zIndex: 10,
-  },
-  closeButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  starContainer: {
-    alignItems: 'center',
-    marginTop: 6,
-    marginBottom: 6,
-  },
-  title: {
-    fontSize: 23,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 5,
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: '#CCCCCC',
-    textAlign: 'center',
-    marginBottom: 12,
-    lineHeight: 18,
-  },
-  featureList: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    marginBottom: 12,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  bullet: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: '#BFFE84',
-    marginRight: 10,
-  },
-  featureText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
-  },
-  paymentCard: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#BFFE84',
-    paddingVertical: 11,
-    paddingHorizontal: 14,
-    marginBottom: 9,
-  },
-  paymentInfo: {
-    marginBottom: 9,
-  },
-  paymentTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 3,
-    letterSpacing: 0.4,
-  },
-  paymentPrice: {
-    fontSize: 19,
-    fontWeight: '700',
-    color: '#BFFE84',
-    letterSpacing: 0.5,
-  },
-  payButton: {
-    backgroundColor: '#BFFE84',
-    borderRadius: 11,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  payButtonDisabled: {
-    backgroundColor: '#666666',
-    opacity: 0.6,
-  },
-  payButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#000000',
-    letterSpacing: 0.4,
-  },
-  divider: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#666666',
-    textAlign: 'center',
-    marginVertical: 7,
-    letterSpacing: 1,
-  },
-});

@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
+import { IconSymbol } from '@/components/IconSymbol';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { Stack, useRouter } from 'expo-router';
+import { LoadingScreen } from '@/components/LoadingScreen';
 import {
   View,
   Text,
@@ -17,24 +18,29 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { IconSymbol } from '@/components/IconSymbol';
-import { LoadingScreen } from '@/components/LoadingScreen';
-import { colors } from '@/styles/commonStyles';
+import { Stack, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { colors } from '@/styles/commonStyles';
 
 export default function RegisterScreen() {
+  const router = useRouter();
+  const { signUpWithEmail } = useSupabaseAuth();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const { signUpWithEmail } = useAuth();
-  const { t } = useLanguage();
+
+  const buttonScale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: buttonScale.value }],
+  }));
 
   const handleRegister = async () => {
-    if (!email || !password || !confirmPassword) {
+    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
       Alert.alert(t.common.error, t.register.errorAllFields);
       return;
     }
@@ -49,21 +55,31 @@ export default function RegisterScreen() {
       return;
     }
 
+    setLoading(true);
+    console.log('[Register] Attempting registration with email:', email);
+
     try {
-      setLoading(true);
       await signUpWithEmail(email, password);
-      // Redirect to budget screen after successful registration
+      console.log('[Register] Registration successful, navigating to budget');
       router.replace('/(tabs)/budget');
     } catch (error: any) {
-      Alert.alert(t.common.error, error.message || t.register.errorRegistration);
+      console.error('[Register] Registration error:', error);
+      Alert.alert(
+        t.common.error,
+        error.message || t.register.errorRegistration
+      );
+    } finally {
       setLoading(false);
     }
   };
 
   const handlePress = (callback: () => void) => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
+    buttonScale.value = withSpring(0.95, { damping: 15, stiffness: 300 }, () => {
+      buttonScale.value = withSpring(1);
+    });
     callback();
   };
 
@@ -75,121 +91,106 @@ export default function RegisterScreen() {
     title: string;
     onPress: () => void;
     disabled?: boolean;
-  }) => {
-    const scale = useSharedValue(1);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
-    }));
-
-    return (
-      <Pressable
-        onPressIn={() => {
-          scale.value = withSpring(0.95);
-          handlePress(() => {});
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1);
-        }}
-        onPress={() => handlePress(onPress)}
-        disabled={disabled}
-        style={{ width: '100%' }}
+  }) => (
+    <Pressable
+      onPress={() => handlePress(onPress)}
+      disabled={disabled}
+    >
+      <Animated.View
+        style={[
+          styles.button,
+          animatedStyle,
+          disabled && styles.buttonDisabled,
+        ]}
       >
-        <Animated.View
-          style={[
-            styles.button,
-            disabled && styles.buttonDisabled,
-            animatedStyle,
-          ]}
-        >
-          <Text style={styles.buttonText}>{title}</Text>
-        </Animated.View>
-      </Pressable>
-    );
-  };
+        <Text style={styles.buttonText}>{title}</Text>
+      </Animated.View>
+    </Pressable>
+  );
 
   if (loading) {
     return <LoadingScreen />;
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          headerTitle: '',
+          headerStyle: { backgroundColor: colors.black },
+          headerTintColor: colors.white,
+          headerShadowVisible: false,
+        }}
+      />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Pressable
-          onPress={() => {
-            handlePress(() => router.back());
-          }}
-          style={styles.backButton}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
-          <IconSymbol
-            ios_icon_name="chevron.left"
-            android_material_icon_name="arrow-back"
-            size={24}
-            color={colors.lightGray}
-          />
-        </Pressable>
+          <View style={styles.content}>
+            <Text style={styles.title}>{t.register.title}</Text>
+            <Text style={styles.subtitle}>{t.register.subtitle}</Text>
 
-        <View style={styles.content}>
-          <Text style={styles.title}>{t.register.title}</Text>
-          <Text style={styles.subtitle}>{t.register.subtitle}</Text>
+            <View style={styles.form}>
+              <TextInput
+                style={styles.input}
+                placeholder={t.register.emailPlaceholder}
+                placeholderTextColor="#666"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
 
-          <View style={styles.form}>
-            <TextInput
-              style={styles.input}
-              placeholder={t.register.emailPlaceholder}
-              placeholderTextColor={colors.lightGray}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+              <TextInput
+                style={styles.input}
+                placeholder={t.register.passwordPlaceholder}
+                placeholderTextColor="#666"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
 
-            <TextInput
-              style={styles.input}
-              placeholder={t.register.passwordPlaceholder}
-              placeholderTextColor={colors.lightGray}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
+              <TextInput
+                style={styles.input}
+                placeholder={t.register.confirmPasswordPlaceholder}
+                placeholderTextColor="#666"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
 
-            <TextInput
-              style={styles.input}
-              placeholder={t.register.confirmPasswordPlaceholder}
-              placeholderTextColor={colors.lightGray}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoCapitalize="none"
-            />
+              <AnimatedButton
+                title={t.register.registerButton}
+                onPress={handleRegister}
+                disabled={loading}
+              />
 
-            <AnimatedButton
-              title={t.register.registerButton}
-              onPress={handleRegister}
-              disabled={!email || !password || !confirmPassword}
-            />
-
-            <Pressable
-              onPress={() => handlePress(() => router.push('/login'))}
-              style={styles.linkContainer}
-            >
-              <Text style={styles.secondaryText}>
-                {t.register.haveAccount}
-              </Text>
-            </Pressable>
+              <Pressable
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }
+                  router.push('/login');
+                }}
+                style={styles.linkContainer}
+              >
+                <Text style={styles.link}>{t.register.haveAccount}</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </>
   );
 }
 
@@ -200,49 +201,39 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    paddingBottom: 40,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.darkGray,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 32,
   },
   content: {
     flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 40,
   },
   title: {
     fontSize: 32,
-    fontWeight: '900',
+    fontWeight: '800',
     color: colors.white,
     marginBottom: 8,
     letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: colors.lightGray,
+    color: '#999',
     marginBottom: 40,
-    fontWeight: '600',
   },
   form: {
     gap: 16,
   },
   input: {
     backgroundColor: colors.darkGray,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 18,
-    fontSize: 16,
     color: colors.white,
+    fontSize: 16,
     fontWeight: '600',
   },
   button: {
     backgroundColor: colors.neonGreen,
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 18,
     alignItems: 'center',
     marginTop: 8,
@@ -253,22 +244,15 @@ const styles = StyleSheet.create({
   buttonText: {
     color: colors.black,
     fontSize: 16,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   linkContainer: {
     alignItems: 'center',
-    marginTop: 8,
+    paddingVertical: 8,
   },
   link: {
     color: colors.neonGreen,
-    fontSize: 14,
-    fontWeight: '700',
-    textDecorationLine: 'underline',
-  },
-  secondaryText: {
-    color: colors.lightGray,
     fontSize: 14,
     fontWeight: '600',
   },

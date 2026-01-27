@@ -49,7 +49,7 @@
       "expo-router",
       "expo-web-browser"
     ],
-    "scheme": "easybudget",
+    "scheme": "Easy Budget 2.0",
     "experiments": {
       "typedRoutes": true
     },

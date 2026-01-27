@@ -1,6 +1,12 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import {
   View,
   Text,
@@ -11,20 +17,14 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
-import { Stack, useRouter } from 'expo-router';
 import { useLanguage } from '@/contexts/LanguageContext';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Stack, useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { colors } from '@/styles/commonStyles';
 
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { signInWithGoogle, signInWithApple } = useAuth();
+  const { signInWithGoogle, signInWithApple } = useSupabaseAuth();
   const { t } = useLanguage();
   const [legalModalVisible, setLegalModalVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +97,7 @@ export default function WelcomeScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    console.log('[Welcome] User tapped Apple sign in button - starting OAuth flow');
+    console.log('[Welcome] User tapped Apple sign in button - starting Supabase OAuth flow');
     setIsLoading(true);
     
     try {
@@ -128,7 +128,7 @@ export default function WelcomeScreen() {
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    console.log('[Welcome] User tapped Google sign in button - starting OAuth flow');
+    console.log('[Welcome] User tapped Google sign in button - starting Supabase OAuth flow');
     setIsLoading(true);
     
     try {
@@ -242,7 +242,7 @@ export default function WelcomeScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{t.legal.modalTitle || 'Rechtliches'}</Text>
+                <Text style={styles.modalTitle}>{t.legal.modalTitle || 'Legal Information'}</Text>
                 <Pressable onPress={closeLegalModal} style={styles.closeButton}>
                   <MaterialIcons name="close" size={24} color={colors.white} />
                 </Pressable>
