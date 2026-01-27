@@ -1,5 +1,4 @@
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Database } from './types';
 import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
@@ -11,10 +10,18 @@ console.log('[Supabase] Initializing client...');
 console.log('[Supabase] URL:', SUPABASE_URL);
 console.log('[Supabase] Platform:', Platform.OS);
 
+// Lazy import AsyncStorage to avoid SSR issues
+let AsyncStorage: any = null;
+
+// Only import AsyncStorage on client-side (not during SSR)
+if (typeof window !== 'undefined' || Platform.OS !== 'web') {
+  AsyncStorage = require('@react-native-async-storage/async-storage').default;
+}
+
 // Create Supabase client with proper configuration
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: AsyncStorage,
+    storage: AsyncStorage || undefined,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: Platform.OS === 'web',
