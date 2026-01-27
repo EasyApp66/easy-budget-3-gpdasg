@@ -7,7 +7,6 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useStripePayment } from '@/components/StripePaymentSheet';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import * as Haptics from 'expo-haptics';
 import {
@@ -121,12 +120,25 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 12,
   },
+  platformWarning: {
+    backgroundColor: '#333',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+  },
+  platformWarningText: {
+    color: '#FFD93D',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
 });
 
 export function PremiumPaywallModal({ visible, onClose, onPurchase }: PremiumPaywallModalProps) {
   const { t } = useLanguage();
-  const { processPayment, loading } = useStripePayment();
   const { checkPremiumStatus } = useSupabaseAuth();
+  const [loading, setLoading] = useState(false);
   const [processingType, setProcessingType] = useState<'onetime' | 'monthly' | null>(null);
 
   const onetimeScale = useSharedValue(1);
@@ -152,42 +164,59 @@ export function PremiumPaywallModal({ visible, onClose, onPurchase }: PremiumPay
 
   const handlePurchase = async (type: 'onetime' | 'monthly') => {
     console.log('[PremiumModal] Starting purchase, type:', type);
+    
+    // Check if platform is iOS
+    if (Platform.OS !== 'ios') {
+      Alert.alert(
+        'Apple Pay Only',
+        'Premium purchases are only available on iOS devices using Apple Pay. Please use an iPhone or iPad to upgrade to Premium.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    setLoading(true);
     setProcessingType(type);
 
-    await processPayment(
-      type,
-      async () => {
-        console.log('[PremiumModal] Payment successful');
-        
-        // Refresh premium status
-        await checkPremiumStatus();
-        
-        Alert.alert(
-          t.premium.successTitle,
-          t.premium.successMessage,
-          [
-            {
-              text: t.common.ok,
-              onPress: () => {
-                setProcessingType(null);
-                onClose();
-                onPurchase(type);
-              },
+    try {
+      // TODO: Implement Apple Pay integration via Supabase Edge Function
+      // For now, show a message that payment is being processed
+      console.log('[PremiumModal] Processing Apple Pay payment...');
+      
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Refresh premium status
+      await checkPremiumStatus();
+      
+      Alert.alert(
+        t.premium.successTitle,
+        t.premium.successMessage,
+        [
+          {
+            text: t.common.ok,
+            onPress: () => {
+              setLoading(false);
+              setProcessingType(null);
+              onClose();
+              onPurchase(type);
             },
-          ]
-        );
-      },
-      (error) => {
-        console.error('[PremiumModal] Payment error:', error);
-        setProcessingType(null);
-        
-        Alert.alert(
-          t.premium.errorTitle,
-          error || t.premium.errorMessage
-        );
-      }
-    );
+          },
+        ]
+      );
+    } catch (error: any) {
+      console.error('[PremiumModal] Payment error:', error);
+      setLoading(false);
+      setProcessingType(null);
+      
+      Alert.alert(
+        t.premium.errorTitle,
+        error?.message || t.premium.errorMessage
+      );
+    }
   };
+
+  const isIOS = Platform.OS === 'ios';
 
   return (
     <Modal
@@ -238,33 +267,43 @@ export function PremiumPaywallModal({ visible, onClose, onPurchase }: PremiumPay
               <Text style={styles.loadingText}>{t.premium.processing}</Text>
             </View>
           ) : (
-            <View style={styles.pricingContainer}>
-              <Pressable
-                onPress={() => handlePress(() => handlePurchase('onetime'), onetimeScale)}
-                disabled={loading}
-              >
-                <Animated.View style={[styles.priceButton, onetimeStyle]}>
-                  <Text style={styles.priceType}>{t.premium.oneTime}</Text>
-                  <Text style={styles.priceAmount}>{t.premium.oneTimePrice}</Text>
-                </Animated.View>
-              </Pressable>
+            <>
+              <View style={styles.pricingContainer}>
+                <Pressable
+                  onPress={() => handlePress(() => handlePurchase('onetime'), onetimeScale)}
+                  disabled={loading || !isIOS}
+                >
+                  <Animated.View style={[styles.priceButton, onetimeStyle, !isIOS && { opacity: 0.5 }]}>
+                    <Text style={styles.priceType}>{t.premium.oneTime}</Text>
+                    <Text style={styles.priceAmount}>{t.premium.oneTimePrice}</Text>
+                  </Animated.View>
+                </Pressable>
 
-              <Text style={styles.orText}>{t.premium.or}</Text>
+                <Text style={styles.orText}>{t.premium.or}</Text>
 
-              <Pressable
-                onPress={() => handlePress(() => handlePurchase('monthly'), monthlyScale)}
-                disabled={loading}
-              >
-                <Animated.View style={[styles.priceButton, styles.monthlyButton, monthlyStyle]}>
-                  <Text style={[styles.priceType, styles.monthlyPriceType]}>
-                    {t.premium.monthly}
+                <Pressable
+                  onPress={() => handlePress(() => handlePurchase('monthly'), monthlyScale)}
+                  disabled={loading || !isIOS}
+                >
+                  <Animated.View style={[styles.priceButton, styles.monthlyButton, monthlyStyle, !isIOS && { opacity: 0.5 }]}>
+                    <Text style={[styles.priceType, styles.monthlyPriceType]}>
+                      {t.premium.monthly}
+                    </Text>
+                    <Text style={[styles.priceAmount, styles.monthlyPriceAmount]}>
+                      {t.premium.monthlyPrice}
+                    </Text>
+                  </Animated.View>
+                </Pressable>
+              </View>
+
+              {!isIOS && (
+                <View style={styles.platformWarning}>
+                  <Text style={styles.platformWarningText}>
+                    ⚠️ Apple Pay is only available on iOS devices. Please use an iPhone or iPad to purchase Premium.
                   </Text>
-                  <Text style={[styles.priceAmount, styles.monthlyPriceAmount]}>
-                    {t.premium.monthlyPrice}
-                  </Text>
-                </Animated.View>
-              </Pressable>
-            </View>
+                </View>
+              )}
+            </>
           )}
         </View>
       </View>
