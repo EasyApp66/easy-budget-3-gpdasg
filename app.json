@@ -1,10 +1,11 @@
+
 {
   "expo": {
     "name": "Easy Budget 2.0",
     "slug": "Easy Budget 2.0",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
+    "icon": "./assets/images/ffff3df4-2df6-48e2-b5c2-1c8f80aaaab8.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
@@ -17,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
+        "foregroundImage": "./assets/images/ffff3df4-2df6-48e2-b5c2-1c8f80aaaab8.png",
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
@@ -40,7 +41,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/images/7a5296a3-50b3-47f8-97c1-290442760300.png",
+      "favicon": "./assets/images/ffff3df4-2df6-48e2-b5c2-1c8f80aaaab8.png",
       "bundler": "metro",
       "output": "static"
     },
