@@ -54,7 +54,7 @@ export function FadeInView({
         })
       );
     }
-  }, [pathname]); // Re-run animation when pathname changes
+  }, [pathname, delay, duration, animationType, opacity, translateY]); // Re-run animation when pathname changes
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,

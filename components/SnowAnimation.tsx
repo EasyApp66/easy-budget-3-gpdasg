@@ -59,7 +59,7 @@ const Snowflake: React.FC<SnowflakeProps> = ({ delay, duration, startX, size }) 
         easing: Easing.inOut(Easing.ease),
       })
     );
-  }, [delay, duration]);
+  }, [delay, duration, translateY, translateX, opacity]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [

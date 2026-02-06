@@ -34,8 +34,43 @@ const PREMIUM_STORAGE_KEY = '@easy_budget_premium_status';
 // Lazy load AsyncStorage to avoid SSR issues
 let AsyncStorage: any = null;
 if (typeof window !== 'undefined' || Platform.OS !== 'web') {
-  AsyncStorage = require('@react-native-async-storage/async-storage').default;
+  try {
+    AsyncStorage = require('@react-native-async-storage/async-storage').default;
+  } catch (error) {
+    console.warn('[SupabaseAuth] Failed to load AsyncStorage:', error);
+  }
 }
+
+// For web, use localStorage wrapper
+const getStorage = () => {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return {
+      getItem: async (key: string) => {
+        try {
+          return window.localStorage.getItem(key);
+        } catch (error) {
+          console.error('[SupabaseAuth] localStorage.getItem error:', error);
+          return null;
+        }
+      },
+      setItem: async (key: string, value: string) => {
+        try {
+          window.localStorage.setItem(key, value);
+        } catch (error) {
+          console.error('[SupabaseAuth] localStorage.setItem error:', error);
+        }
+      },
+      removeItem: async (key: string) => {
+        try {
+          window.localStorage.removeItem(key);
+        } catch (error) {
+          console.error('[SupabaseAuth] localStorage.removeItem error:', error);
+        }
+      },
+    };
+  }
+  return AsyncStorage;
+};
 
 export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -71,20 +106,21 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [initializeAuth, checkPremiumStatus]);
 
   const initializeAuth = async () => {
     try {
       console.log('[SupabaseAuth] Checking for existing session...');
       
-      if (!AsyncStorage) {
-        console.log('[SupabaseAuth] AsyncStorage not available (SSR)');
+      const storage = getStorage();
+      if (!storage) {
+        console.log('[SupabaseAuth] Storage not available (SSR)');
         setLoading(false);
         return;
       }
       
       // Try to restore session from storage
-      const storedSessionStr = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
+      const storedSessionStr = await storage.getItem(SESSION_STORAGE_KEY);
       if (storedSessionStr) {
         const storedSession = JSON.parse(storedSessionStr);
         console.log('[SupabaseAuth] Found stored session');
@@ -112,11 +148,12 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
 
   const storeSession = async (session: Session) => {
     try {
-      if (!AsyncStorage) {
-        console.log('[SupabaseAuth] AsyncStorage not available, skipping session storage');
+      const storage = getStorage();
+      if (!storage) {
+        console.log('[SupabaseAuth] Storage not available, skipping session storage');
         return;
       }
-      await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+      await storage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
       console.log('[SupabaseAuth] Session stored');
     } catch (error) {
       console.error('[SupabaseAuth] Error storing session:', error);
@@ -125,12 +162,13 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
 
   const clearSession = async () => {
     try {
-      if (!AsyncStorage) {
-        console.log('[SupabaseAuth] AsyncStorage not available, skipping session clear');
+      const storage = getStorage();
+      if (!storage) {
+        console.log('[SupabaseAuth] Storage not available, skipping session clear');
         return;
       }
-      await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
-      await AsyncStorage.removeItem(PREMIUM_STORAGE_KEY);
+      await storage.removeItem(SESSION_STORAGE_KEY);
+      await storage.removeItem(PREMIUM_STORAGE_KEY);
       console.log('[SupabaseAuth] Session cleared');
     } catch (error) {
       console.error('[SupabaseAuth] Error clearing session:', error);
@@ -141,11 +179,12 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('[SupabaseAuth] Checking premium status...');
       
-      if (!AsyncStorage) {
-        console.log('[SupabaseAuth] AsyncStorage not available, skipping offline check');
+      const storage = getStorage();
+      if (!storage) {
+        console.log('[SupabaseAuth] Storage not available, skipping offline check');
       } else {
         // Check offline storage first
-        const storedPremiumStr = await AsyncStorage.getItem(PREMIUM_STORAGE_KEY);
+        const storedPremiumStr = await storage.getItem(PREMIUM_STORAGE_KEY);
         if (storedPremiumStr) {
           const storedPremium = JSON.parse(storedPremiumStr);
           const expiresAt = new Date(storedPremium.expiresAt);
@@ -191,8 +230,8 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         setPremiumExpiresAt(expiresAt);
         
         // Store offline
-        if (AsyncStorage) {
-          await AsyncStorage.setItem(
+        if (storage) {
+          await storage.setItem(
             PREMIUM_STORAGE_KEY,
             JSON.stringify({ expiresAt: expiresAt.toISOString() })
           );

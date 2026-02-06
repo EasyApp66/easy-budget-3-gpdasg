@@ -53,15 +53,15 @@ export default function BudgetScreen() {
   // Auto-save to storage whenever data changes
   useEffect(() => {
     storage.setMonths(months);
-  }, [months]);
+  }, [months, storage]);
 
   useEffect(() => {
     storage.setSelectedMonthId(selectedMonthId);
-  }, [selectedMonthId]);
+  }, [selectedMonthId, storage]);
 
   useEffect(() => {
     storage.setCashLabel(cashLabel);
-  }, [cashLabel]);
+  }, [cashLabel, storage]);
 
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;

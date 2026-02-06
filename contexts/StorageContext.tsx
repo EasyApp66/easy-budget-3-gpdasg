@@ -80,14 +80,14 @@ export function StorageProvider({ children }: { children: ReactNode }) {
   // Load data on mount
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Auto-save whenever data changes (after initial load)
   useEffect(() => {
     if (isLoaded) {
       saveData();
     }
-  }, [months, subscriptions, cashLabel, selectedMonthId, isLoaded]);
+  }, [months, subscriptions, cashLabel, selectedMonthId, isLoaded, saveData]);
 
   const checkSession = async (): Promise<boolean> => {
     try {

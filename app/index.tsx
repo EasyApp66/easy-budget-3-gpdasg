@@ -1,10 +1,10 @@
 
 import { Redirect } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { View } from 'react-native';
 
 export default function Index() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useSupabaseAuth();
 
   console.log('[Index] Checking auth state - user:', user ? 'logged in' : 'not logged in', 'loading:', loading);
 

@@ -100,7 +100,7 @@ export default function ProfilScreen() {
       console.log('[Profile] User loaded:', user.email);
       checkPremiumStatus();
     }
-  }, [user]);
+  }, [user, checkPremiumStatus]);
 
   const handleRedeemCode = async () => {
     if (!promoCode.trim()) {

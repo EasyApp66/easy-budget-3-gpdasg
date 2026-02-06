@@ -20,7 +20,7 @@ export function usePremium() {
 
   useEffect(() => {
     checkPremiumStatus();
-  }, [user]);
+  }, [user, checkPremiumStatus]);
 
   const checkPremiumStatus = async () => {
     console.log('[Premium] ========================================');

@@ -15,13 +15,61 @@ let AsyncStorage: any = null;
 
 // Only import AsyncStorage on client-side (not during SSR)
 if (typeof window !== 'undefined' || Platform.OS !== 'web') {
-  AsyncStorage = require('@react-native-async-storage/async-storage').default;
+  try {
+    AsyncStorage = require('@react-native-async-storage/async-storage').default;
+    console.log('[Supabase] AsyncStorage loaded successfully');
+  } catch (error) {
+    console.warn('[Supabase] Failed to load AsyncStorage:', error);
+  }
 }
+
+// For web, use localStorage as storage
+const getStorage = () => {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    console.log('[Supabase] Using localStorage for web');
+    return {
+      getItem: (key: string) => {
+        try {
+          return Promise.resolve(window.localStorage.getItem(key));
+        } catch (error) {
+          console.error('[Supabase] localStorage.getItem error:', error);
+          return Promise.resolve(null);
+        }
+      },
+      setItem: (key: string, value: string) => {
+        try {
+          window.localStorage.setItem(key, value);
+          return Promise.resolve();
+        } catch (error) {
+          console.error('[Supabase] localStorage.setItem error:', error);
+          return Promise.resolve();
+        }
+      },
+      removeItem: (key: string) => {
+        try {
+          window.localStorage.removeItem(key);
+          return Promise.resolve();
+        } catch (error) {
+          console.error('[Supabase] localStorage.removeItem error:', error);
+          return Promise.resolve();
+        }
+      },
+    };
+  }
+  
+  if (AsyncStorage) {
+    console.log('[Supabase] Using AsyncStorage for native');
+    return AsyncStorage;
+  }
+  
+  console.warn('[Supabase] No storage available');
+  return undefined;
+};
 
 // Create Supabase client with proper configuration
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: AsyncStorage || undefined,
+    storage: getStorage(),
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: Platform.OS === 'web',

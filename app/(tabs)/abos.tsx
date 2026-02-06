@@ -55,7 +55,7 @@ export default function AbosScreen() {
   // Auto-save to storage whenever data changes
   useEffect(() => {
     storage.setSubscriptions(subscriptions);
-  }, [subscriptions]);
+  }, [subscriptions, storage]);
 
   const [contextMenuVisible, setContextMenuVisible] = useState(false);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
