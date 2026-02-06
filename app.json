@@ -4,7 +4,7 @@
     "slug": "Easy Budget 2.0",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/ffff3df4-2df6-48e2-b5c2-1c8f80aaaab8.png",
+    "icon": "./assets/images/app-icon-ftb.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/ffff3df4-2df6-48e2-b5c2-1c8f80aaaab8.png",
+        "foregroundImage": "./assets/images/app-icon-ftb.png",
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
@@ -59,6 +59,9 @@
       },
       "backendUrl": "https://wu7kwypubgksy89mk4h6tatrg56ateqy.app.specular.dev"
     },
-    "owner": "anonymous"
+    "owner": "anonymous",
+    "splash": {
+      "image": "./assets/images/app-icon-ftb.png"
+    }
   }
 }
