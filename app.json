@@ -1,15 +1,17 @@
+
 {
   "expo": {
-    "name": "Easy Budget 2.0",
-    "slug": "Easy Budget 2.0",
+    "name": "Easy Budget",
+    "slug": "easybudget",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/app-icon-ftb.png",
+    "icon": "./assets/images/0c5adf92-17b4-4e1a-96e3-bfbab78549cf.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.easybudget.app",
+      "icon": "./assets/images/0c5adf92-17b4-4e1a-96e3-bfbab78549cf.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "SKAdNetworkItems": []
@@ -17,7 +19,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/app-icon-ftb.png",
+        "foregroundImage": "./assets/images/0c5adf92-17b4-4e1a-96e3-bfbab78549cf.png",
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
@@ -40,7 +42,7 @@
       ]
     },
     "web": {
-      "favicon": "./assets/images/ffff3df4-2df6-48e2-b5c2-1c8f80aaaab8.png",
+      "favicon": "./assets/images/0c5adf92-17b4-4e1a-96e3-bfbab78549cf.png",
       "bundler": "metro",
       "output": "static"
     },
@@ -49,7 +51,7 @@
       "expo-router",
       "expo-web-browser"
     ],
-    "scheme": "Easy Budget 2.0",
+    "scheme": "easybudget",
     "experiments": {
       "typedRoutes": true
     },
@@ -61,7 +63,9 @@
     },
     "owner": "anonymous",
     "splash": {
-      "image": "./assets/images/app-icon-ftb.png"
+      "image": "./assets/images/0c5adf92-17b4-4e1a-96e3-bfbab78549cf.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
     }
   }
 }
