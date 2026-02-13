@@ -21,7 +21,11 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withTiming,
+  runOnJS,
+  Easing,
 } from 'react-native-reanimated';
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import { PremiumPaywallModal } from '@/components/PremiumPaywallModal';
 import { FadeInView } from '@/components/FadeInView';
 import * as Haptics from 'expo-haptics';
@@ -49,6 +53,7 @@ export default function BudgetScreen() {
   const [months, setMonths] = useState<Month[]>(storage.months);
   const [selectedMonthId, setSelectedMonthId] = useState(storage.selectedMonthId);
   const [cashLabel, setCashLabel] = useState(storage.cashLabel);
+  const [isListView, setIsListView] = useState(false);
 
   // Auto-save to storage whenever data changes
   useEffect(() => {
@@ -228,6 +233,15 @@ export default function BudgetScreen() {
           : m
       )
     );
+  };
+
+  const handleToggleView = () => {
+    if (Platform.OS === 'ios' || Platform.OS === 'android') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    console.log('[Budget] Toggling view mode:', !isListView ? 'list' : 'grid');
+    setIsListView(!isListView);
+    setContextMenu({ visible: false, type: null, itemId: null });
   };
 
   const handlePinToggle = () => {
@@ -561,9 +575,97 @@ export default function BudgetScreen() {
 
   const ExpensePill = ({ expense }: { expense: Expense }) => {
     const scale = useSharedValue(1);
+    const translateX = useSharedValue(0);
+    const opacity = useSharedValue(1);
+
     const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
+      transform: [{ scale: scale.value }, { translateX: translateX.value }],
+      opacity: opacity.value,
     }));
+
+    if (isListView) {
+      const SWIPE_THRESHOLD = 150;
+      const SWIPE_VELOCITY_THRESHOLD = 500;
+
+      const panGesture = Gesture.Pan()
+        .activeOffsetX([-20, 20])
+        .failOffsetY([-15, 15])
+        .onUpdate((event) => {
+          if (Math.abs(event.translationX) > Math.abs(event.translationY)) {
+            translateX.value = event.translationX;
+            if (Math.abs(event.translationX) > 50) {
+              opacity.value = Math.max(0.3, 1 - Math.abs(event.translationX) / 300);
+            }
+          }
+        })
+        .onEnd((event) => {
+          const isHorizontalSwipe = Math.abs(event.translationX) > Math.abs(event.translationY);
+          const hasEnoughVelocity = Math.abs(event.velocityX) > SWIPE_VELOCITY_THRESHOLD;
+          
+          if (isHorizontalSwipe && (Math.abs(event.translationX) > SWIPE_THRESHOLD || hasEnoughVelocity)) {
+            if (event.translationX < 0) {
+              translateX.value = withTiming(-500, { 
+                duration: 300, 
+                easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+              });
+              opacity.value = withTiming(0, { 
+                duration: 300, 
+                easing: Easing.bezier(0.25, 0.1, 0.25, 1)
+              }, () => {
+                runOnJS(handleDeleteExpense)(expense.id);
+              });
+            } else {
+              runOnJS(handlePinToggle)();
+              translateX.value = withSpring(0, { 
+                damping: 20, 
+                stiffness: 200,
+                mass: 0.5,
+              });
+              opacity.value = withSpring(1, { 
+                damping: 20, 
+                stiffness: 200,
+                mass: 0.5,
+              });
+            }
+          } else {
+            translateX.value = withSpring(0, { 
+              damping: 20, 
+              stiffness: 200,
+              mass: 0.5,
+            });
+            opacity.value = withSpring(1, { 
+              damping: 20, 
+              stiffness: 200,
+              mass: 0.5,
+            });
+          }
+        });
+
+      const longPressGesture = Gesture.LongPress()
+        .minDuration(600)
+        .onStart(() => {
+          scale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
+          runOnJS(handleLongPress)('expense', expense.id);
+        })
+        .onEnd(() => {
+          scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+        });
+
+      return (
+        <GestureDetector gesture={Gesture.Simultaneous(panGesture, longPressGesture)}>
+          <Animated.View
+            style={[
+              styles.expensePillList,
+              expense.isPinned && styles.pinnedBorder,
+              animatedStyle,
+            ]}
+          >
+            <Text style={styles.expenseNameList}>{expense.name}</Text>
+            <Text style={styles.expenseAmountList}>{formatNumber(expense.amount)}</Text>
+          </Animated.View>
+        </GestureDetector>
+      );
+    }
 
     return (
       <Pressable
@@ -668,9 +770,9 @@ export default function BudgetScreen() {
           </View>
         </FadeInView>
 
-        {/* Expenses Grid with cascading animation */}
+        {/* Expenses Grid/List with cascading animation */}
         <FadeInView delay={600} duration={900} animationType="fadeInDown">
-          <View style={styles.expensesGrid}>
+          <View style={isListView ? styles.expensesList : styles.expensesGrid}>
             {sortedExpenses.map((expense) => (
               <ExpensePill key={expense.id} expense={expense} />
             ))}
@@ -717,6 +819,17 @@ export default function BudgetScreen() {
           onPress={() => setContextMenu({ visible: false, type: null, itemId: null })}
         >
           <View style={styles.contextMenu}>
+            {contextMenu.type === 'expense' && (
+              <Pressable
+                style={styles.menuItem}
+                onPress={handleToggleView}
+              >
+                <Text style={styles.menuItemText}>
+                  {isListView ? 'QUADRATISCHE ANSICHT' : 'LÄNGLICHE ANSICHT'}
+                </Text>
+              </Pressable>
+            )}
+
             <Pressable
               style={styles.menuItem}
               onPress={() => {
@@ -960,6 +1073,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
   },
+  expensesList: {
+    marginTop: 24,
+    gap: 12,
+  },
   expenseContainer: {
     width: pillWidth,
   },
@@ -969,6 +1086,15 @@ const styles = StyleSheet.create({
     padding: 16,
     height: pillWidth,
     justifyContent: 'space-between',
+  },
+  expensePillList: {
+    backgroundColor: colors.darkGray,
+    borderRadius: 20,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 80,
   },
   expenseHeader: {
     flexDirection: 'row',
@@ -982,11 +1108,23 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     flex: 1,
   },
+  expenseNameList: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
   expenseAmount: {
     color: colors.white,
     fontSize: 26,
     fontWeight: '800',
     letterSpacing: 1,
+    textAlign: 'right',
+  },
+  expenseAmountList: {
+    color: colors.white,
+    fontSize: 26,
+    fontWeight: '800',
     textAlign: 'right',
   },
   modalOverlay: {
