@@ -134,6 +134,19 @@ export default function RegisterScreen() {
           <View style={styles.content}>
             <Text style={styles.title}>{t.register.title}</Text>
             <Text style={styles.subtitle}>{t.register.subtitle}</Text>
+            
+            {/* Trial Info */}
+            <View style={styles.trialInfo}>
+              <IconSymbol
+                ios_icon_name="gift.fill"
+                android_material_icon_name="card-giftcard"
+                size={24}
+                color="#BFFE84"
+              />
+              <Text style={styles.trialInfoText}>
+                🎉 Erhalte 2 Wochen Premium GRATIS!
+              </Text>
+            </View>
 
             <View style={styles.form}>
               <TextInput
@@ -218,7 +231,24 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#999',
-    marginBottom: 40,
+    marginBottom: 24,
+  },
+  trialInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a3d1a',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#BFFE84',
+  },
+  trialInfoText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#BFFE84',
+    flex: 1,
   },
   form: {
     gap: 16,

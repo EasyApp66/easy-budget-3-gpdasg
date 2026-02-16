@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { IconSymbol } from '@/components/IconSymbol';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -188,6 +189,19 @@ export default function WelcomeScreen() {
             <Text style={styles.subtitle}>
               {t.welcome.trackSubs} <Text style={styles.highlight}>{t.welcome.subs}</Text>
             </Text>
+            
+            {/* Trial Badge */}
+            <View style={styles.trialBadge}>
+              <IconSymbol
+                ios_icon_name="gift.fill"
+                android_material_icon_name="card-giftcard"
+                size={20}
+                color="#000"
+              />
+              <Text style={styles.trialBadgeText}>
+                🎁 2 Wochen Premium GRATIS für neue Nutzer!
+              </Text>
+            </View>
           </View>
 
           {isLoading && (
@@ -359,6 +373,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  trialBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neonGreen,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 24,
+    gap: 12,
+  },
+  trialBadgeText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.black,
+    flex: 1,
   },
   footerContainer: {
     paddingHorizontal: 8,

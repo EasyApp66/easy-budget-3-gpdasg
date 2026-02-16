@@ -84,6 +84,9 @@ export default function ProfilScreen() {
     signOut,
     isPremium,
     premiumExpiresAt,
+    isLifetimePremium,
+    trialDaysRemaining,
+    hasUsedTrial,
     checkPremiumStatus,
     redeemPromoCode,
   } = useSupabaseAuth();
@@ -104,7 +107,7 @@ export default function ProfilScreen() {
 
   const handleRedeemCode = async () => {
     if (!promoCode.trim()) {
-      Alert.alert(t.common.error, 'Please enter a promo code');
+      Alert.alert(t.common.error, 'Bitte gib einen Promo-Code ein');
       return;
     }
 
@@ -113,7 +116,7 @@ export default function ProfilScreen() {
 
     if (result.success) {
       Alert.alert(
-        t.profile.codeRedeemed,
+        '✅ Code eingelöst!',
         result.message,
         [
           {
@@ -126,7 +129,7 @@ export default function ProfilScreen() {
         ]
       );
     } else {
-      Alert.alert(t.profile.invalidCode, result.message);
+      Alert.alert('❌ Fehler', result.message);
     }
   };
 
@@ -270,10 +273,34 @@ export default function ProfilScreen() {
   };
 
   const username = user?.user_metadata?.name || user?.email || 'User';
-  const premiumStatusText = isPremium ? t.profile.premiumYes : t.profile.premiumNo;
-  const premiumDaysRemaining = premiumExpiresAt
-    ? Math.ceil((premiumExpiresAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
+  
+  // Premium status text
+  let premiumStatusText = '';
+  let premiumStatusColor = colors.red;
+  let premiumExpiryText = '';
+  
+  if (isLifetimePremium) {
+    premiumStatusText = '♾️ Lifetime Premium';
+    premiumStatusColor = colors.neonGreen;
+    premiumExpiryText = 'Für immer aktiv!';
+  } else if (isPremium && trialDaysRemaining > 0 && !hasUsedTrial) {
+    premiumStatusText = '🎁 Premium Trial';
+    premiumStatusColor = colors.neonGreen;
+    const daysText = trialDaysRemaining === 1 ? 'Tag' : 'Tage';
+    premiumExpiryText = `Noch ${trialDaysRemaining} ${daysText} verbleibend`;
+  } else if (isPremium) {
+    premiumStatusText = '✅ Premium Aktiv';
+    premiumStatusColor = colors.neonGreen;
+    const premiumDaysRemaining = premiumExpiresAt
+      ? Math.ceil((premiumExpiresAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+    const daysText = premiumDaysRemaining === 1 ? 'Tag' : 'Tage';
+    premiumExpiryText = `Noch ${premiumDaysRemaining} ${daysText} verbleibend`;
+  } else {
+    premiumStatusText = '❌ Kein Premium';
+    premiumStatusColor = colors.red;
+    premiumExpiryText = hasUsedTrial ? 'Testversion abgelaufen' : '';
+  }
 
   return (
     <FadeInView>
@@ -303,20 +330,31 @@ export default function ProfilScreen() {
           <View style={styles.section}>
             <View style={styles.premiumCard}>
               <View style={styles.premiumHeader}>
-                <Text style={styles.premiumTitle}>{t.profile.premiumStatus}</Text>
-                <Text style={[styles.premiumStatus, isPremium && styles.premiumActive]}>
+                <Text style={styles.premiumTitle}>Premium Status</Text>
+                <Text style={[styles.premiumStatus, { color: premiumStatusColor }]}>
                   {premiumStatusText}
                 </Text>
               </View>
-              {isPremium && premiumDaysRemaining > 0 && (
-                <Text style={styles.premiumExpiry}>
-                  {t.profile.premiumExpires} {premiumDaysRemaining} {t.profile.premiumDays}
-                </Text>
+              {premiumExpiryText && (
+                <Text style={styles.premiumExpiry}>{premiumExpiryText}</Text>
               )}
               {!isPremium && (
                 <Pressable style={styles.premiumButton} onPress={handleBuyPremium}>
                   <Text style={styles.premiumButtonText}>{t.profile.premium}</Text>
                 </Pressable>
+              )}
+              {!isLifetimePremium && (
+                <View style={styles.promoHint}>
+                  <IconSymbol
+                    ios_icon_name="info.circle.fill"
+                    android_material_icon_name="info"
+                    size={20}
+                    color="#FFD93D"
+                  />
+                  <Text style={styles.promoHintText}>
+                    Tipp: Nutze den Code "EASY2030" für Lifetime Premium!
+                  </Text>
+                </View>
               )}
             </View>
           </View>
@@ -417,24 +455,41 @@ export default function ProfilScreen() {
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{t.profile.promoCode}</Text>
+              <Text style={styles.modalTitle}>Promo-Code einlösen</Text>
+              <Text style={styles.modalSubtitle}>
+                Gib deinen Promo-Code ein, um Premium zu aktivieren
+              </Text>
               <TextInput
                 style={styles.input}
-                placeholder={t.profile.promoCodePlaceholder}
+                placeholder="z.B. EASY2030"
                 placeholderTextColor="#666"
                 value={promoCode}
                 onChangeText={setPromoCode}
                 autoCapitalize="characters"
               />
+              <View style={styles.codeHint}>
+                <IconSymbol
+                  ios_icon_name="sparkles"
+                  android_material_icon_name="stars"
+                  size={16}
+                  color="#FFD93D"
+                />
+                <Text style={styles.codeHintText}>
+                  Tipp: "EASY2030" = Lifetime Premium!
+                </Text>
+              </View>
               <View style={styles.modalButtons}>
                 <Pressable
                   style={[styles.modalButton, styles.cancelButton]}
-                  onPress={() => setShowPromoCodeModal(false)}
+                  onPress={() => {
+                    setShowPromoCodeModal(false);
+                    setPromoCode('');
+                  }}
                 >
                   <Text style={styles.cancelButtonText}>{t.common.cancel}</Text>
                 </Pressable>
                 <Pressable style={styles.modalButton} onPress={handleRedeemCode}>
-                  <Text style={styles.modalButtonText}>{t.profile.redeemCode}</Text>
+                  <Text style={styles.modalButtonText}>Einlösen</Text>
                 </Pressable>
               </View>
             </View>
@@ -548,10 +603,6 @@ const styles = StyleSheet.create({
   premiumStatus: {
     fontSize: 16,
     fontWeight: '800',
-    color: colors.red,
-  },
-  premiumActive: {
-    color: colors.neonGreen,
   },
   premiumExpiry: {
     fontSize: 14,
@@ -568,6 +619,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     color: colors.black,
+  },
+  promoHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#333',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+  },
+  promoHintText: {
+    fontSize: 13,
+    color: '#FFD93D',
+    fontWeight: '600',
+    marginLeft: 8,
+    flex: 1,
   },
   settingsItem: {
     flexDirection: 'row',
@@ -602,6 +668,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     color: colors.white,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#999',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -612,7 +684,20 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  codeHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 20,
+  },
+  codeHintText: {
+    fontSize: 13,
+    color: '#FFD93D',
+    fontWeight: '600',
+    marginLeft: 6,
   },
   modalButtons: {
     flexDirection: 'row',

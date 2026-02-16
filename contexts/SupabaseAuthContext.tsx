@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import { supabase } from '@/app/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
@@ -22,14 +22,23 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   isPremium: boolean;
   premiumExpiresAt: Date | null;
+  isLifetimePremium: boolean;
+  trialDaysRemaining: number;
+  hasUsedTrial: boolean;
   checkPremiumStatus: () => Promise<void>;
   redeemPromoCode: (code: string) => Promise<{ success: boolean; message: string }>;
+  dismissTrialPopup: () => Promise<void>;
+  shouldShowTrialPopup: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const SESSION_STORAGE_KEY = '@easy_budget_supabase_session';
 const PREMIUM_STORAGE_KEY = '@easy_budget_premium_status';
+const TRIAL_POPUP_KEY = '@easy_budget_trial_popup_shown';
+const PROMO_CODE_KEY = '@easy_budget_promo_code';
+const LIFETIME_PROMO_CODE = 'EASY2030';
+const TRIAL_DURATION_DAYS = 14;
 
 // Lazy load AsyncStorage to avoid SSR issues
 let AsyncStorage: any = null;
@@ -78,6 +87,10 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [premiumExpiresAt, setPremiumExpiresAt] = useState<Date | null>(null);
+  const [isLifetimePremium, setIsLifetimePremium] = useState(false);
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState(0);
+  const [hasUsedTrial, setHasUsedTrial] = useState(false);
+  const [shouldShowTrialPopup, setShouldShowTrialPopup] = useState(false);
 
   useEffect(() => {
     console.log('[SupabaseAuth] Initializing...');
@@ -106,7 +119,7 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [initializeAuth, checkPremiumStatus]);
+  }, []);
 
   const initializeAuth = async () => {
     try {
@@ -181,70 +194,192 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       
       const storage = getStorage();
       if (!storage) {
-        console.log('[SupabaseAuth] Storage not available, skipping offline check');
-      } else {
-        // Check offline storage first
-        const storedPremiumStr = await storage.getItem(PREMIUM_STORAGE_KEY);
-        if (storedPremiumStr) {
-          const storedPremium = JSON.parse(storedPremiumStr);
-          const expiresAt = new Date(storedPremium.expiresAt);
-          
-          if (expiresAt > new Date()) {
-            console.log('[SupabaseAuth] Premium active (offline)');
-            setIsPremium(true);
-            setPremiumExpiresAt(expiresAt);
-            return;
-          }
-        }
-      }
-
-      // Check database
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('[SupabaseAuth] No user, premium = false');
-        setIsPremium(false);
-        setPremiumExpiresAt(null);
+        console.log('[SupabaseAuth] Storage not available');
         return;
       }
 
+      // Check for offline promo code (EASY2030 for lifetime)
+      const storedPromoCode = await storage.getItem(PROMO_CODE_KEY);
+      if (storedPromoCode === LIFETIME_PROMO_CODE) {
+        console.log('[SupabaseAuth] Lifetime premium active (offline promo code)');
+        setIsPremium(true);
+        setIsLifetimePremium(true);
+        setPremiumExpiresAt(null);
+        setTrialDaysRemaining(0);
+        setHasUsedTrial(true);
+        return;
+      }
+
+      // Check offline storage for premium status
+      const storedPremiumStr = await storage.getItem(PREMIUM_STORAGE_KEY);
+      if (storedPremiumStr) {
+        const storedPremium = JSON.parse(storedPremiumStr);
+        const expiresAt = storedPremium.expiresAt ? new Date(storedPremium.expiresAt) : null;
+        
+        if (storedPremium.isLifetime) {
+          console.log('[SupabaseAuth] Lifetime premium active (offline)');
+          setIsPremium(true);
+          setIsLifetimePremium(true);
+          setPremiumExpiresAt(null);
+          setTrialDaysRemaining(0);
+          setHasUsedTrial(true);
+          return;
+        }
+        
+        if (expiresAt && expiresAt > new Date()) {
+          const daysRemaining = Math.ceil((expiresAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          console.log('[SupabaseAuth] Premium active (offline), days remaining:', daysRemaining);
+          setIsPremium(true);
+          setIsLifetimePremium(false);
+          setPremiumExpiresAt(expiresAt);
+          setTrialDaysRemaining(daysRemaining);
+          setHasUsedTrial(storedPremium.hasUsedTrial || false);
+          return;
+        }
+      }
+
+      // Check database for premium status
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('[SupabaseAuth] No user, checking for trial eligibility');
+        setIsPremium(false);
+        setIsLifetimePremium(false);
+        setPremiumExpiresAt(null);
+        setTrialDaysRemaining(0);
+        setHasUsedTrial(false);
+        return;
+      }
+
+      // Check if user has used trial
+      const trialPopupShown = await storage.getItem(TRIAL_POPUP_KEY);
+      const userCreatedAt = new Date(user.created_at);
+      const now = new Date();
+      const accountAgeDays = Math.floor((now.getTime() - userCreatedAt.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // New user gets 2-week trial automatically
+      if (accountAgeDays <= TRIAL_DURATION_DAYS && !trialPopupShown) {
+        const trialExpiresAt = new Date(userCreatedAt);
+        trialExpiresAt.setDate(trialExpiresAt.getDate() + TRIAL_DURATION_DAYS);
+        
+        const daysRemaining = Math.ceil((trialExpiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysRemaining > 0) {
+          console.log('[SupabaseAuth] New user trial active, days remaining:', daysRemaining);
+          setIsPremium(true);
+          setIsLifetimePremium(false);
+          setPremiumExpiresAt(trialExpiresAt);
+          setTrialDaysRemaining(daysRemaining);
+          setHasUsedTrial(false);
+          setShouldShowTrialPopup(true);
+          
+          // Store trial status offline
+          await storage.setItem(
+            PREMIUM_STORAGE_KEY,
+            JSON.stringify({
+              expiresAt: trialExpiresAt.toISOString(),
+              isLifetime: false,
+              hasUsedTrial: false,
+              isTrial: true,
+            })
+          );
+          return;
+        } else {
+          setHasUsedTrial(true);
+        }
+      } else if (accountAgeDays > TRIAL_DURATION_DAYS) {
+        setHasUsedTrial(true);
+      }
+
+      // Check for active premium subscription in database
       const { data: subscriptions, error } = await supabase
         .from('premium_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
         .order('expires_at', { ascending: false })
         .limit(1);
 
       if (error) {
         console.error('[SupabaseAuth] Error checking premium:', error);
         setIsPremium(false);
+        setIsLifetimePremium(false);
         setPremiumExpiresAt(null);
+        setTrialDaysRemaining(0);
         return;
       }
 
       if (subscriptions && subscriptions.length > 0) {
-        const expiresAt = new Date(subscriptions[0].expires_at);
-        console.log('[SupabaseAuth] Premium active until:', expiresAt);
-        setIsPremium(true);
-        setPremiumExpiresAt(expiresAt);
+        const sub = subscriptions[0];
+        const isLifetime = sub.expires_at === null || sub.provider === 'promo_lifetime';
         
-        // Store offline
-        if (storage) {
+        if (isLifetime) {
+          console.log('[SupabaseAuth] Lifetime premium active (database)');
+          setIsPremium(true);
+          setIsLifetimePremium(true);
+          setPremiumExpiresAt(null);
+          setTrialDaysRemaining(0);
+          setHasUsedTrial(true);
+          
+          // Store offline
           await storage.setItem(
             PREMIUM_STORAGE_KEY,
-            JSON.stringify({ expiresAt: expiresAt.toISOString() })
+            JSON.stringify({ isLifetime: true, hasUsedTrial: true })
           );
+        } else {
+          const expiresAt = new Date(sub.expires_at);
+          if (expiresAt > new Date()) {
+            const daysRemaining = Math.ceil((expiresAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+            console.log('[SupabaseAuth] Premium active until:', expiresAt, 'days remaining:', daysRemaining);
+            setIsPremium(true);
+            setIsLifetimePremium(false);
+            setPremiumExpiresAt(expiresAt);
+            setTrialDaysRemaining(daysRemaining);
+            setHasUsedTrial(true);
+            
+            // Store offline
+            await storage.setItem(
+              PREMIUM_STORAGE_KEY,
+              JSON.stringify({
+                expiresAt: expiresAt.toISOString(),
+                isLifetime: false,
+                hasUsedTrial: true,
+              })
+            );
+          } else {
+            console.log('[SupabaseAuth] Premium subscription expired');
+            setIsPremium(false);
+            setIsLifetimePremium(false);
+            setPremiumExpiresAt(null);
+            setTrialDaysRemaining(0);
+            setHasUsedTrial(true);
+          }
         }
       } else {
         console.log('[SupabaseAuth] No active premium subscription');
         setIsPremium(false);
+        setIsLifetimePremium(false);
         setPremiumExpiresAt(null);
+        setTrialDaysRemaining(0);
       }
     } catch (error) {
       console.error('[SupabaseAuth] Error checking premium status:', error);
       setIsPremium(false);
+      setIsLifetimePremium(false);
       setPremiumExpiresAt(null);
+      setTrialDaysRemaining(0);
+    }
+  };
+
+  const dismissTrialPopup = async () => {
+    try {
+      const storage = getStorage();
+      if (storage) {
+        await storage.setItem(TRIAL_POPUP_KEY, 'true');
+        setShouldShowTrialPopup(false);
+        console.log('[SupabaseAuth] Trial popup dismissed');
+      }
+    } catch (error) {
+      console.error('[SupabaseAuth] Error dismissing trial popup:', error);
     }
   };
 
@@ -425,6 +560,10 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setIsPremium(false);
       setPremiumExpiresAt(null);
+      setIsLifetimePremium(false);
+      setTrialDaysRemaining(0);
+      setHasUsedTrial(false);
+      setShouldShowTrialPopup(false);
       await clearSession();
       console.log('[SupabaseAuth] Sign out successful');
     } catch (error: any) {
@@ -437,97 +576,48 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('[SupabaseAuth] Redeeming promo code:', code);
       
-      if (!user) {
-        return { success: false, message: 'You must be signed in to redeem a code' };
+      const storage = getStorage();
+      if (!storage) {
+        return { success: false, message: 'Storage nicht verfügbar' };
       }
 
-      // Check if code exists and is valid
-      const { data: promoCodes, error: promoError } = await supabase
-        .from('promo_codes')
-        .select('*')
-        .eq('code', code.toUpperCase())
-        .limit(1);
+      const codeUpper = code.toUpperCase().trim();
 
-      if (promoError || !promoCodes || promoCodes.length === 0) {
-        console.error('[SupabaseAuth] Promo code not found');
-        return { success: false, message: 'Invalid promo code' };
+      // Check for lifetime promo code (EASY2030) - works offline
+      if (codeUpper === LIFETIME_PROMO_CODE) {
+        // Check if already redeemed
+        const existingCode = await storage.getItem(PROMO_CODE_KEY);
+        if (existingCode === LIFETIME_PROMO_CODE) {
+          return { success: false, message: 'Du hast diesen Code bereits eingelöst' };
+        }
+
+        // Store promo code for offline access
+        await storage.setItem(PROMO_CODE_KEY, LIFETIME_PROMO_CODE);
+        await storage.setItem(
+          PREMIUM_STORAGE_KEY,
+          JSON.stringify({ isLifetime: true, hasUsedTrial: true })
+        );
+
+        // Update state
+        setIsPremium(true);
+        setIsLifetimePremium(true);
+        setPremiumExpiresAt(null);
+        setTrialDaysRemaining(0);
+        setHasUsedTrial(true);
+        setShouldShowTrialPopup(false);
+
+        console.log('[SupabaseAuth] Lifetime promo code redeemed successfully (offline)');
+        return {
+          success: true,
+          message: '🎉 Premium für immer aktiviert!',
+        };
       }
 
-      const promoCode = promoCodes[0];
-
-      // Check if already redeemed
-      const { data: redemptions, error: redemptionError } = await supabase
-        .from('promo_code_redemptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('promo_code_id', promoCode.id)
-        .limit(1);
-
-      if (redemptionError) {
-        console.error('[SupabaseAuth] Error checking redemptions:', redemptionError);
-        return { success: false, message: 'Error checking promo code' };
-      }
-
-      if (redemptions && redemptions.length > 0) {
-        return { success: false, message: 'You have already redeemed this code' };
-      }
-
-      // Check redemption limit
-      if (promoCode.max_redemptions && promoCode.current_redemptions >= promoCode.max_redemptions) {
-        return { success: false, message: 'This code has reached its redemption limit' };
-      }
-
-      // Calculate expiration
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + promoCode.duration_days);
-
-      // Create redemption record
-      const { error: insertRedemptionError } = await supabase
-        .from('promo_code_redemptions')
-        .insert({
-          user_id: user.id,
-          promo_code_id: promoCode.id,
-          expires_at: expiresAt.toISOString(),
-        });
-
-      if (insertRedemptionError) {
-        console.error('[SupabaseAuth] Error creating redemption:', insertRedemptionError);
-        return { success: false, message: 'Error redeeming code' };
-      }
-
-      // Create premium subscription
-      const { error: insertSubError } = await supabase
-        .from('premium_subscriptions')
-        .insert({
-          user_id: user.id,
-          type: 'subscription',
-          provider: 'promo',
-          status: 'active',
-          expires_at: expiresAt.toISOString(),
-        });
-
-      if (insertSubError) {
-        console.error('[SupabaseAuth] Error creating subscription:', insertSubError);
-        return { success: false, message: 'Error activating premium' };
-      }
-
-      // Update redemption count
-      await supabase
-        .from('promo_codes')
-        .update({ current_redemptions: promoCode.current_redemptions + 1 })
-        .eq('id', promoCode.id);
-
-      // Refresh premium status
-      await checkPremiumStatus();
-
-      console.log('[SupabaseAuth] Promo code redeemed successfully');
-      return {
-        success: true,
-        message: `Premium activated for ${promoCode.duration_days} days!`,
-      };
+      // Invalid code
+      return { success: false, message: 'Ungültiger Promo-Code' };
     } catch (error: any) {
       console.error('[SupabaseAuth] Error redeeming promo code:', error);
-      return { success: false, message: error.message || 'Error redeeming code' };
+      return { success: false, message: error.message || 'Fehler beim Einlösen des Codes' };
     }
   };
 
@@ -544,8 +634,13 @@ export function SupabaseAuthProvider({ children }: { children: ReactNode }) {
         signOut,
         isPremium,
         premiumExpiresAt,
+        isLifetimePremium,
+        trialDaysRemaining,
+        hasUsedTrial,
         checkPremiumStatus,
         redeemPromoCode,
+        dismissTrialPopup,
+        shouldShowTrialPopup,
       }}
     >
       {children}
