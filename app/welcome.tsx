@@ -1,34 +1,135 @@
 
 import React, { useState } from 'react';
-import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Stack, useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/IconSymbol';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { colors } from '@/styles/commonStyles';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
+import * as Haptics from 'expo-haptics';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
   Platform,
-  Modal,
   ScrollView,
-  Alert,
+  Linking,
 } from 'react-native';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { Stack, useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import { colors } from '@/styles/commonStyles';
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 40,
+  },
+  titleContainer: {
+    marginBottom: 60,
+  },
+  titleLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  titleText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: colors.text,
+    letterSpacing: 1,
+  },
+  titleHighlight: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: colors.primary,
+    letterSpacing: 1,
+    marginLeft: 8,
+  },
+  titleLarge: {
+    fontSize: 42,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  buttonsContainer: {
+    gap: 16,
+    marginBottom: 32,
+  },
+  button: {
+    height: 56,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  buttonPrimary: {
+    backgroundColor: colors.primary,
+  },
+  buttonSecondary: {
+    backgroundColor: colors.text,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  buttonTextPrimary: {
+    color: colors.background,
+  },
+  buttonTextSecondary: {
+    color: colors.background,
+  },
+  iconContainer: {
+    marginRight: 8,
+  },
+  footer: {
+    marginTop: 'auto',
+    paddingTop: 24,
+  },
+  footerText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  footerLink: {
+    color: colors.primary,
+    textDecorationLine: 'underline',
+  },
+});
 
 export default function WelcomeScreen() {
+  const { t } = useLanguage();
   const router = useRouter();
   const { signInWithGoogle, signInWithApple } = useSupabaseAuth();
-  const { t } = useLanguage();
-  const [legalModalVisible, setLegalModalVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const emailScale = useSharedValue(1);
+  const appleScale = useSharedValue(1);
+  const googleScale = useSharedValue(1);
+
+  const emailAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: emailScale.value }],
+  }));
+
+  const appleAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: appleScale.value }],
+  }));
+
+  const googleAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: googleScale.value }],
+  }));
 
   const AnimatedButton = ({
     title,
@@ -45,440 +146,195 @@ export default function WelcomeScreen() {
     iconName?: string;
     disabled?: boolean;
   }) => {
-    const buttonScale = useSharedValue(1);
-
+    const scale = useSharedValue(1);
     const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ scale: buttonScale.value }],
-      opacity: disabled ? 0.5 : 1,
+      transform: [{ scale: scale.value }],
     }));
 
+    const handlePressIn = () => {
+      scale.value = withSpring(0.95);
+      if (Platform.OS !== 'web') {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
+    };
+
+    const handlePressOut = () => {
+      scale.value = withSpring(1);
+    };
+
     return (
-      <Pressable
-        onPressIn={() => {
-          if (!disabled) {
-            buttonScale.value = withSpring(0.95, { damping: 15, stiffness: 300 });
-            if (Platform.OS === 'ios') {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }
-          }
-        }}
-        onPressOut={() => {
-          if (!disabled) {
-            buttonScale.value = withSpring(1, { damping: 15, stiffness: 300 });
-          }
-        }}
-        onPress={disabled ? undefined : onPress}
-        disabled={disabled}
-      >
-        <Animated.View
+      <Animated.View style={animatedStyle}>
+        <Pressable
+          onPress={onPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          disabled={disabled}
           style={[
             styles.button,
             { backgroundColor },
-            animatedStyle,
+            disabled && styles.buttonDisabled,
           ]}
         >
           {iconName && (
-            <MaterialIcons name={iconName as any} size={20} color={textColor} style={styles.buttonIcon} />
+            <View style={styles.iconContainer}>
+              <IconSymbol
+                ios_icon_name={iconName}
+                android_material_icon_name={iconName}
+                size={20}
+                color={textColor}
+              />
+            </View>
           )}
           <Text style={[styles.buttonText, { color: textColor }]}>{title}</Text>
-        </Animated.View>
-      </Pressable>
+        </Pressable>
+      </Animated.View>
     );
   };
 
   const handleEmailPress = () => {
-    if (Platform.OS === 'ios') {
+    console.log('User tapped Email button');
+    if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    console.log('[Welcome] User tapped email login button');
     router.push('/login');
   };
 
   const handleApplePress = async () => {
-    if (Platform.OS === 'ios') {
+    console.log('User tapped Apple button');
+    if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    console.log('[Welcome] User tapped Apple sign in button - starting Supabase OAuth flow');
-    setIsLoading(true);
     
+    if (Platform.OS !== 'ios' && Platform.OS !== 'web') {
+      console.log('Apple Sign In only available on iOS and Web');
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      console.log('[Welcome] Calling signInWithApple()...');
       await signInWithApple();
-      console.log('[Welcome] Apple sign in successful, navigating to budget screen');
+      console.log('Apple Sign In successful, navigating to app');
       router.replace('/(tabs)/budget');
     } catch (error: any) {
-      console.error('[Welcome] Apple sign in error:', error);
-      console.error('[Welcome] Error details:', {
-        message: error?.message,
-        code: error?.code,
-        stack: error?.stack,
-      });
-      
-      const errorMessage = error?.message || 'Failed to sign in with Apple. Please try again.';
-      Alert.alert(
-        'Sign In Failed',
-        errorMessage,
-        [{ text: 'OK', style: 'default' }]
-      );
+      console.error('Apple Sign In error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGooglePress = async () => {
-    if (Platform.OS === 'ios') {
+    console.log('User tapped Google button');
+    if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    console.log('[Welcome] User tapped Google sign in button - starting Supabase OAuth flow');
+
     setIsLoading(true);
-    
     try {
-      console.log('[Welcome] Calling signInWithGoogle()...');
       await signInWithGoogle();
-      console.log('[Welcome] Google sign in successful, navigating to budget screen');
+      console.log('Google Sign In successful, navigating to app');
       router.replace('/(tabs)/budget');
     } catch (error: any) {
-      console.error('[Welcome] Google sign in error:', error);
-      console.error('[Welcome] Error details:', {
-        message: error?.message,
-        code: error?.code,
-        stack: error?.stack,
-      });
-      
-      const errorMessage = error?.message || 'Failed to sign in with Google. Please try again.';
-      Alert.alert(
-        'Sign In Failed',
-        errorMessage,
-        [{ text: 'OK', style: 'default' }]
-      );
+      console.error('Google Sign In error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleLegalPress = () => {
-    if (Platform.OS === 'ios') {
+  const handlePrivacyPress = () => {
+    console.log('User tapped Privacy Policy link');
+    if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log('[Welcome] User tapped legal link - opening full legal modal');
-    setLegalModalVisible(true);
+    router.push('/privacy-policy');
   };
 
-  const closeLegalModal = () => {
-    if (Platform.OS === 'ios') {
+  const handleTermsPress = () => {
+    console.log('User tapped Terms of Service link');
+    if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    console.log('[Welcome] Closing legal modal');
-    setLegalModalVisible(false);
+    router.push('/terms-of-service');
   };
-
-  const loadingText = isLoading ? 'Signing in...' : '';
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.container}>
-        <View style={styles.content}>
-          <View style={styles.textBlock}>
-            <Text style={styles.title}>
-              {t.welcome.greeting} <Text style={styles.highlight}>{t.welcome.appName}</Text>
-            </Text>
-            <Text style={styles.subtitle}>
-              {t.welcome.trackBudget} <Text style={styles.highlight}>{t.welcome.budget}</Text>
-            </Text>
-            <Text style={styles.subtitle}>
-              {t.welcome.trackSubs} <Text style={styles.highlight}>{t.welcome.subs}</Text>
-            </Text>
-            
-            {/* Trial Badge */}
-            <View style={styles.trialBadge}>
-              <IconSymbol
-                ios_icon_name="gift.fill"
-                android_material_icon_name="card-giftcard"
-                size={20}
-                color="#000"
-              />
-              <Text style={styles.trialBadgeText}>
-                🎁 2 Wochen Premium GRATIS für neue Nutzer!
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.titleContainer}>
+            <View style={styles.titleLine}>
+              <Text style={styles.titleText}>Hallo! Ich bin</Text>
+            </View>
+            <View style={styles.titleLine}>
+              <Text style={[styles.titleText, styles.titleLarge, styles.titleHighlight]}>
+                EASY BUDGET
+              </Text>
+            </View>
+            <View style={styles.titleLine}>
+              <Text style={styles.titleText}>Tracke dein</Text>
+            </View>
+            <View style={styles.titleLine}>
+              <Text style={[styles.titleText, styles.titleLarge, styles.titleHighlight]}>
+                BUDGET
+              </Text>
+            </View>
+            <View style={styles.titleLine}>
+              <Text style={styles.titleText}>Und Deine</Text>
+            </View>
+            <View style={styles.titleLine}>
+              <Text style={[styles.titleText, styles.titleLarge, styles.titleHighlight]}>
+                ABOS
               </Text>
             </View>
           </View>
 
-          {isLoading && (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>{loadingText}</Text>
-            </View>
-          )}
-
-          <View style={styles.buttonContainer}>
+          <View style={styles.buttonsContainer}>
             <AnimatedButton
-              title={t.welcome.continueEmail}
+              title="Mit E-Mail fortfahren"
               onPress={handleEmailPress}
-              backgroundColor={colors.neonGreen}
-              textColor={colors.black}
+              backgroundColor={colors.primary}
+              textColor={colors.background}
               iconName="email"
               disabled={isLoading}
             />
+
             <AnimatedButton
-              title={t.welcome.continueApple}
+              title="Mit Apple fortfahren"
               onPress={handleApplePress}
-              backgroundColor={colors.white}
-              textColor={colors.black}
-              iconName="apple"
-              disabled={isLoading}
+              backgroundColor={colors.text}
+              textColor={colors.background}
+              iconName="phone"
+              disabled={isLoading || (Platform.OS !== 'ios' && Platform.OS !== 'web')}
             />
+
             <AnimatedButton
-              title={t.welcome.continueGoogle}
+              title="Mit Google anmelden"
               onPress={handleGooglePress}
-              backgroundColor={colors.white}
-              textColor={colors.black}
-              iconName="login"
+              backgroundColor={colors.text}
+              textColor={colors.background}
+              iconName="account-circle"
               disabled={isLoading}
             />
           </View>
 
-          <View style={styles.footerContainer}>
-            <Pressable onPress={handleLegalPress}>
-              <Text style={styles.footer}>
-                {t.welcome.legalFooter}
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>
+              Indem du fortfährst, bestätigst du, dass du die{' '}
+              <Text style={styles.footerLink} onPress={handleTermsPress}>
+                Nutzungsbedingungen
               </Text>
-            </Pressable>
+              {' '}und die{' '}
+              <Text style={styles.footerLink} onPress={handlePrivacyPress}>
+                Datenschutzerklärung
+              </Text>
+              {' '}gelesen hast.
+            </Text>
           </View>
-        </View>
-
-        {/* Legal Modal - Full Legal Documents */}
-        <Modal
-          visible={legalModalVisible}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={closeLegalModal}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{t.legal.modalTitle || 'Legal Information'}</Text>
-                <Pressable onPress={closeLegalModal} style={styles.closeButton}>
-                  <MaterialIcons name="close" size={24} color={colors.white} />
-                </Pressable>
-              </View>
-              
-              <ScrollView 
-                style={styles.modalScrollView}
-                contentContainerStyle={styles.modalScrollContent}
-                showsVerticalScrollIndicator={true}
-              >
-                {/* Terms of Use */}
-                <Text style={styles.sectionTitle}>{t.legal.termsTitle}</Text>
-                <Text style={styles.modalText}>{t.legal.termsContent}</Text>
-
-                <View style={styles.divider} />
-
-                {/* Privacy Policy */}
-                <Text style={styles.sectionTitle}>{t.legal.privacyTitle}</Text>
-                <Text style={styles.modalText}>{t.legal.privacyContent}</Text>
-
-                <View style={styles.divider} />
-
-                {/* AGB */}
-                <Text style={styles.sectionTitle}>{t.legal.agbTitle}</Text>
-                <Text style={styles.modalText}>{t.legal.agbContent}</Text>
-
-                <View style={styles.divider} />
-
-                {/* Impressum - At the bottom */}
-                <Text style={styles.sectionTitle}>{t.legal.impressumTitle}</Text>
-                <Text style={styles.modalText}>{t.legal.impressumContent}</Text>
-              </ScrollView>
-
-              <View style={styles.modalFooter}>
-                <Pressable
-                  onPress={closeLegalModal}
-                  style={styles.modalButton}
-                  onPressIn={() => {
-                    if (Platform.OS === 'ios') {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    }
-                  }}
-                >
-                  <Text style={styles.modalButtonText}>{t.common.ok}</Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
+        </ScrollView>
       </View>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.black,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 40,
-    justifyContent: 'space-between',
-  },
-  textBlock: {
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: colors.white,
-    textAlign: 'left',
-    marginBottom: 16,
-    letterSpacing: 0.5,
-  },
-  subtitle: {
-    fontSize: 43,
-    fontWeight: '800',
-    color: colors.white,
-    textAlign: 'left',
-    marginBottom: 8,
-    letterSpacing: 0.5,
-  },
-  highlight: {
-    color: colors.neonGreen,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.neonGreen,
-  },
-  buttonContainer: {
-    gap: 16,
-    marginBottom: 24,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-  },
-  buttonIcon: {
-    marginRight: 12,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  trialBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neonGreen,
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 24,
-    gap: 12,
-  },
-  trialBadgeText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.black,
-    flex: 1,
-  },
-  footerContainer: {
-    paddingHorizontal: 8,
-  },
-  footer: {
-    fontSize: 10,
-    color: '#666666',
-    textAlign: 'center',
-    lineHeight: 14,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  modalContainer: {
-    backgroundColor: colors.darkGray,
-    borderRadius: 20,
-    width: '100%',
-    maxWidth: 600,
-    height: '90%',
-    maxHeight: '90%',
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.white,
-    flex: 1,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  modalScrollView: {
-    flex: 1,
-    backgroundColor: colors.darkGray,
-  },
-  modalScrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 60,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.white,
-    marginTop: 20,
-    marginBottom: 12,
-    letterSpacing: 0.5,
-  },
-  modalText: {
-    fontSize: 15,
-    color: colors.white,
-    lineHeight: 24,
-    opacity: 1,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginVertical: 24,
-  },
-  modalFooter: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 24,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  modalButton: {
-    backgroundColor: colors.neonGreen,
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.black,
-    letterSpacing: 0.3,
-  },
-});

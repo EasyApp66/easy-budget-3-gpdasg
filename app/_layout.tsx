@@ -11,6 +11,7 @@ import { SupabaseAuthProvider, useSupabaseAuth } from '@/contexts/SupabaseAuthCo
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { StorageProvider } from '@/contexts/StorageContext';
 import { TrialWelcomeModal } from '@/components/TrialWelcomeModal';
+import { colors } from '@/styles/commonStyles';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -42,6 +43,26 @@ function RootLayoutContent() {
           <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
           <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen 
+            name="privacy-policy" 
+            options={{ 
+              presentation: 'modal',
+              headerShown: true,
+              title: 'Datenschutzerklärung',
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.text,
+            }} 
+          />
+          <Stack.Screen 
+            name="terms-of-service" 
+            options={{ 
+              presentation: 'modal',
+              headerShown: true,
+              title: 'Nutzungsbedingungen',
+              headerStyle: { backgroundColor: colors.background },
+              headerTintColor: colors.text,
+            }} 
+          />
           <Stack.Screen name="+not-found" />
         </Stack>
         <StatusBar style="light" />

@@ -1,28 +1,48 @@
+
 {
   "expo": {
-    "name": "Easy Budget 2.0",
-    "slug": "Easy Budget 2.0",
+    "name": "Easy Budget",
+    "slug": "easy-budget",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/cc495521-291f-49db-87df-f422556dd1ef.png",
+    "icon": "./assets/images/0c5adf92-17b4-4e1a-96e3-bfbab78549cf.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/0c5adf92-17b4-4e1a-96e3-bfbab78549cf.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.easybudget.app",
-      "icon": "./assets/images/cc495521-291f-49db-87df-f422556dd1ef.png",
+      "buildNumber": "1",
+      "icon": "./assets/images/0c5adf92-17b4-4e1a-96e3-bfbab78549cf.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "SKAdNetworkItems": []
-      }
+        "SKAdNetworkItems": [],
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you.",
+        "NSCameraUsageDescription": "Allow Easy Budget to access your camera to take photos.",
+        "NSPhotoLibraryUsageDescription": "Allow Easy Budget to access your photo library to select images.",
+        "NSPhotoLibraryAddUsageDescription": "Allow Easy Budget to save photos to your photo library."
+      },
+      "associatedDomains": [
+        "applinks:easybudget.app"
+      ]
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/cc495521-291f-49db-87df-f422556dd1ef.png",
+        "foregroundImage": "./assets/images/0c5adf92-17b4-4e1a-96e3-bfbab78549cf.png",
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.easybudget.app",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -41,16 +61,17 @@
       ]
     },
     "web": {
-      "favicon": "./assets/images/cc495521-291f-49db-87df-f422556dd1ef.png",
+      "favicon": "./assets/images/0c5adf92-17b4-4e1a-96e3-bfbab78549cf.png",
       "bundler": "metro",
       "output": "static"
     },
     "plugins": [
       "expo-font",
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-secure-store"
     ],
-    "scheme": "Easy Budget 2.0",
+    "scheme": "easybudget",
     "experiments": {
       "typedRoutes": true
     },
@@ -58,13 +79,12 @@
       "router": {
         "origin": false
       },
-      "backendUrl": "https://wu7kwypubgksy89mk4h6tatrg56ateqy.app.specular.dev"
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
     },
-    "owner": "anonymous",
-    "splash": {
-      "image": "./assets/images/cc495521-291f-49db-87df-f422556dd1ef.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
-    }
+    "owner": "your-expo-username",
+    "description": "Easy Budget 3.0 - Minimalistischer Dark-Mode Budget- und Abo-Tracker mit Premium-Feeling",
+    "githubUrl": "https://github.com/yourusername/easy-budget"
   }
 }
